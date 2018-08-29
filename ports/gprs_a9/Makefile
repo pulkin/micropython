@@ -75,7 +75,8 @@ INC += -I$(TOP)
 INC += -I$(BUILD_PATH_ABS)
 INC += -I${PATH_CURR}/GPRS_C_SDK/include \
        -I${PATH_CURR}/GPRS_C_SDK/include/std_inc \
-	   -I${PATH_CURR}/GPRS_C_SDK/include/api_inc 
+	   -I${PATH_CURR}/GPRS_C_SDK/include/api_inc \
+	   -I${PATH_CURR}/GPRS_C_SDK/libs/utils/include
 
 # DFU = $(TOP)/tools/dfu.py
 # PYDFU = $(TOP)/tools/pydfu.py
@@ -98,43 +99,54 @@ CFLAGS = $(INC) -Wshadow \
 LIBS =
 
 SRC_C = \
-	test.c 
+	main.c \
+	$(BUILD)/_frozen_mpy.c
 
-
-
+LIB_SRC_C = $(addprefix lib/,\
+	utils/stdout_helpers.c \
+	utils/pyexec.c \
+	mp-readline/readline.c \
+	)
 
 all: lod
 
 
 lod: ${HEX}
-	$(MAKE) targetgen
-	srecmap -c ${MAP_CFG_FILE} -m ${FLSH_MODEL} -b ${TARGET_FILE} ${HEX} ${LODBASE} ${STDOUT_NULL}
-	$(LODCOMBINE_TOOL) openat -l  $(PLATFORM_LOD_FILE) -i $(LOD_FILE) -o $(WITH_PLT_LOD_FILE) -u $(WITH_PLT_OTA_FILE);
+	$(Q)$(MAKE) targetgen
+	$(Q)srecmap -c ${MAP_CFG_FILE} -m ${FLSH_MODEL} -b ${TARGET_FILE} ${HEX} ${LODBASE} ${STDOUT_NULL}
+	$(Q)$(LODCOMBINE_TOOL) openat -l  $(PLATFORM_LOD_FILE) -i $(LOD_FILE) -o $(WITH_PLT_LOD_FILE) -u $(WITH_PLT_OTA_FILE);
+	$(ECHO) "BUILD OK"
 
 OBJ = $(PY_CORE_O) $(addprefix $(BUILD_PATH)/, $(SRC_C:.c=.o))
+OBJ += $(addprefix $(BUILD_PATH)/, $(LIB_SRC_C:.c=.o))
+
+$(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
+	$(ECHO) "MISC freezing bytecode"
+	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
+
 
 ${BIN}: $(OBJ)
 	$(ECHO) "LINK $@"
-	test -f ${LD_FILE} && chmod +w ${LD_FILE} || echo ""
-	${LDPP} ${LDPPFLAGS} ${LD_SRC} > ${LD_FILE}
-	${LD} -nostdlib -o ${BIN} ${OFORMAT} $^ ${FULL_SRC_OBJECTS} ${LD_OPTIONAL_OBJECTS} \
+	$(Q)test -f ${LD_FILE} && chmod +w ${LD_FILE} || echo ""
+	$(Q)${LDPP} ${LDPPFLAGS} ${LD_SRC} > ${LD_FILE}
+	$(Q)${LD} -nostdlib -o ${BIN} ${OFORMAT} $^ ${FULL_SRC_OBJECTS} ${LD_OPTIONAL_OBJECTS} \
 	${LDFLAG_USED_ELF_FILES}	\
 	--script ${LD_FILE} \
 	$(LDFLAGS) \
 	-Map ${MAP}
 
 bin: ${BIN}
-	${MKDIR} -p ${BIN_PATH}
-	${CP} -f ${BIN} ${BIN_PATH}
-	${CP} -f ${PLATFORM_ELF_PATH} ${BIN_PATH}
-	${OBJCOPY} --strip-symbols=${STRIP_SYMBOL_FILE} ${BIN_PATH}/firmware.elf ${BIN_PATH}/firmware.elf
-	${ELFCOMBINE_TOOL} -e1 ${BIN_PATH}/firmware.elf -e2 ${BIN_PATH}/${PLATFORM_ELF_NAME} -o ${BIN_PATH}/firmware_final.elf
-	${RM} -f ${BIN_PATH}/firmware.elf
-	${RM} -f ${BIN_PATH}/${PLATFORM_ELF_NAME}
+	$(Q)${MKDIR} -p ${BIN_PATH}
+	$(Q)${CP} -f ${BIN} ${BIN_PATH}
+	$(Q)${CP} -f ${PLATFORM_ELF_PATH} ${BIN_PATH}
+	$(Q)${OBJCOPY} --strip-symbols=${STRIP_SYMBOL_FILE} ${BIN_PATH}/firmware.elf ${BIN_PATH}/firmware.elf
+	$(Q)${ELFCOMBINE_TOOL} -e1 ${BIN_PATH}/firmware.elf -e2 ${BIN_PATH}/${PLATFORM_ELF_NAME} -o ${BIN_PATH}/firmware_final.elf
+	$(Q)${RM} -f ${BIN_PATH}/firmware.elf
+	$(Q)${RM} -f ${BIN_PATH}/${PLATFORM_ELF_NAME}
 
 ${HEX}:bin
-	${MAKE} ${BIN}
-	$(OBJCOPY) ${SREC} ${BIN} ${HEX}
+	$(Q)${MAKE} ${BIN}
+	$(Q)$(OBJCOPY) ${SREC} ${BIN} ${HEX}
 
 .PHONY: targetgen
 TARGET_FILE := ${BUILD_PATH_ABS}/targetgen
@@ -161,5 +173,10 @@ targetgen:
 	@${ECHO} "#############################################"    >> $(TARGET_FILE)
 	@${ECHO} "# others"                                  	    >> $(TARGET_FILE)
 	@${ECHO} "#############################################"    >> $(TARGET_FILE)
+
+
+
+
+
 
 include $(TOP)/py/mkrules.mk

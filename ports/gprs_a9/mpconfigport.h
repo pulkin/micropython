@@ -22,7 +22,7 @@
 #define MICROPY_DEBUG_PRINTERS      (0)
 #define MICROPY_ENABLE_GC           (0)
 #define MICROPY_GC_ALLOC_THRESHOLD  (0)
-#define MICROPY_REPL_EVENT_DRIVEN   (0)
+#define MICROPY_REPL_EVENT_DRIVEN   (1)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_HELPER_LEXER_UNIX   (0)
 #define MICROPY_ENABLE_SOURCE_LINE  (0)
@@ -89,11 +89,6 @@ typedef long mp_off_t;
 
 #ifdef __linux__
 #define MICROPY_MIN_USE_STDOUT (1)
-#endif
-
-#ifdef __thumb__
-#define MICROPY_MIN_USE_CORTEX_CPU (1)
-#define MICROPY_MIN_USE_STM32_MCU (1)
 #endif
 
 #define MP_STATE_PORT MP_STATE_VM
