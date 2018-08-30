@@ -17,6 +17,7 @@ function clean_CSDK_lib()
     echo ">> Clean CSDK lib now"
     cd ../../  #root path of micropython project
     cd lib/GPRS_C_SDK/platform/tools/genlib
+    chmod +x genlib.sh
     ./genlib.sh clean
     cd ${curr_path_abs}
 }
@@ -76,6 +77,7 @@ function generate_CSDK_lib()
     echo ">> Generate CSDK lib now"
     cd ../../  #root path of micropython project
     cd lib/GPRS_C_SDK/platform/tools/genlib
+    chmod +x genlib.sh
     ./genlib.sh ${CFG_RELEASE}
     cd ../../../../../
     if [[ -f "lib/GPRS_C_SDK/hex/libcsdk/libcsdk_${CFG_RELEASE}.a" ]]; then
