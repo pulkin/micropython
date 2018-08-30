@@ -27,7 +27,7 @@
 
 HANDLE mainTaskHandle  = NULL;
 HANDLE microPyTaskHandle = NULL;
-Buffer_t fifoBuffer;
+Buffer_t fifoBuffer;   //ringbuf
 uint8_t  fifoBufferData[UART_CIRCLE_FIFO_BUFFER_MAX_LENGTH];
 
 typedef enum
@@ -142,7 +142,7 @@ void MicroPyEventDispatch(MicroPy_Event_t* pEvent)
         {
             uint8_t c;
             bool ret;
-
+            printf("micropy task received data:%d,%s",pEvent->param1,pEvent->pParam1);
             for (;;) {
                 if(!Buffer_Gets(&fifoBuffer,&c,1))
                     break;
@@ -167,11 +167,13 @@ void MicroPyTask(VOID *pData)
 
     while(1)
     {
-        if(OS_WaitEvent(mainTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))
+        if(OS_WaitEvent(microPyTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))
         {
+            printf("microPy task received event:%d",event->id);
             // PM_SetSysMinFreq(PM_SYS_FREQ_178M);//set back system min frequency to 178M or higher(/lower) value
             MicroPyEventDispatch(event);
             OS_Free(event->pParam1);
+            OS_Free(event);
             // PM_SetSysMinFreq(PM_SYS_FREQ_32K);//release system freq to enter sleep mode to save power,
                                               //system remain runable but slower, and close eripheral not using
         }
@@ -189,16 +191,20 @@ void EventDispatch(API_Event_t* pEvent)
         case API_EVENT_ID_NETWORK_REGISTERED_ROAMING:
             break;
         case API_EVENT_ID_UART_RECEIVED:
-            Trace(1,"UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
+            printf("UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
             if(pEvent->param1 == UART1)
             {
-                MicroPy_Event_t event;
-
+                MicroPy_Event_t* event = (MicroPy_Event_t*)malloc(sizeof(MicroPy_Event_t));
+                if(!event)
+                {
+                    printf("malloc fail");
+                    break;
+                }
                 Buffer_Puts(&fifoBuffer,pEvent->pParam1,pEvent->param2);
-                memset((void*)&event,0,sizeof(MicroPy_Event_t));
-                event.id = MICROPY_EVENT_ID_UART_RECEIVED;
-                event.param1 = (uint32_t)(pEvent->param2);
-                OS_SendEvent(microPyTaskHandle,&event,OS_TIME_OUT_WAIT_FOREVER,0);
+                memset((void*)event,0,sizeof(MicroPy_Event_t));
+                event->id = MICROPY_EVENT_ID_UART_RECEIVED;
+                event->param1 = (uint32_t)(pEvent->param2);
+                OS_SendEvent(microPyTaskHandle,(void*)event,OS_TIME_OUT_WAIT_FOREVER,0);
             }
             break;
         default:
