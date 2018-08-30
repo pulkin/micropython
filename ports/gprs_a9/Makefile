@@ -1,14 +1,22 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))  #获取当前正在执行的makefile的绝对路径
 PATH_CURR := $(strip $(patsubst %/, %, $(dir ${mkfile_path})))
+PATH_MICROPY := $(strip $(patsubst %/ports/, %, $(dir ${PATH_CURR})))
+CSDK_PATH := ${PATH_MICROPY}/lib/GPRS_C_SDK
 include ../../py/mkenv.mk
 
-include ${PATH_CURR}/GPRS_C_SDK/platform/csdk/memd.def
-include ${PATH_CURR}/GPRS_C_SDK/platform/chip/defs/8955_base.def
-include ${PATH_CURR}/GPRS_C_SDK/init/target.def
+include ${CSDK_PATH}/platform/csdk/memd.def
+include ${CSDK_PATH}/platform/chip/defs/8955_base.def
+include ${CSDK_PATH}/init/target.def
 
+RELEASE = 0
 
-CT_RELEASE = debug
+ifeq ($(strip $(RELEASE)),1)
+	CFG_RELEASE = release
+else
+	CFG_RELEASE = debug
+endif
 
+$(info Compile Version:$(CFG_RELEASE))
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h
@@ -25,29 +33,29 @@ STDOUT_NULL := 1>/dev/null
 
 BUILD_PATH := build
 BUILD_PATH_ABS := ${PATH_CURR}/${BUILD_PATH}
-CSDK_PATH := ${PATH_CURR}/GPRS_C_SDK
-BIN := $(BUILD_PATH_ABS)/firmware.elf
-HEX := $(BUILD_PATH_ABS)/firmware.srec
+FIRMWARE_NAME := firmware_${CFG_RELEASE}
+BIN := $(BUILD_PATH_ABS)/${FIRMWARE_NAME}.elf
+HEX := $(BUILD_PATH_ABS)/${FIRMWARE_NAME}.srec
 BIN_PATH := ${PATH_CURR}/hex
-LODBASE   := $(BIN_PATH)/firmware_
+LODBASE   := $(BIN_PATH)/${FIRMWARE_NAME}_
 LOD_FILE := ${LODBASE}flash.lod
-WITH_PLT_LOD_FILE := ${BIN_PATH}/firmware_full.lod
-WITH_PLT_OTA_FILE := ${BIN_PATH}/firmware_ota.lod
-STRIP_SYMBOL_FILE := ${PATH_CURR}/GPRS_C_SDK/platform/compilation/platform_symbols_to_strip
-PLATFORM_ELF_FOLDER_PATH := ${PATH_CURR}/GPRS_C_SDK/platform/csdk/debug
+WITH_PLT_LOD_FILE := ${BIN_PATH}/${FIRMWARE_NAME}_full.lod
+WITH_PLT_OTA_FILE := ${BIN_PATH}/${FIRMWARE_NAME}_ota.lod
+STRIP_SYMBOL_FILE := ${CSDK_PATH}/platform/compilation/platform_symbols_to_strip
+PLATFORM_ELF_FOLDER_PATH := ${CSDK_PATH}/platform/csdk/debug
 PLATFORM_ELF_PATH := ${wildcard ${PLATFORM_ELF_FOLDER_PATH}/*.elf}
 PLATFORM_ELF_NAME := ${notdir ${PLATFORM_ELF_PATH}}
-PLATFORM_LOD_PATH := ${CSDK_PATH}/platform/csdk/${strip ${CT_RELEASE}}
+PLATFORM_LOD_PATH := ${CSDK_PATH}/platform/csdk/${strip ${CFG_RELEASE}}
 PLATFORM_LOD_FILE := ${wildcard ${PLATFORM_LOD_PATH}/*.lod}
-ELFCOMBINE_TOOL := ${PATH_CURR}/GPRS_C_SDK/platform/compilation/elfCombine.pl
+ELFCOMBINE_TOOL := ${CSDK_PATH}/platform/compilation/elfCombine.pl
 TARGET_FILE := ${BUILD_PATH_ABS}/targetgen
 MAP_CFG_FILE := ${CSDK_PATH}/platform/compilation/8955_map_cfg
 LODCOMBINE_TOOL := ${CSDK_PATH}/platform/compilation/lodCombine.pl
 
 
-LIBGCC_PATH := ${PATH_CURR}/GPRS_C_SDK/platform/lib/gcc/mips-elf/4.4.2
-MAP := ${BUILD_PATH_ABS}/firmware.map
-FULL_LIBRARY_PATH := -L${PATH_CURR}/GPRS_C_SDK/build/csdk/lib
+LIBGCC_PATH := ${CSDK_PATH}/platform/lib/gcc/mips-elf/4.4.2
+MAP := ${BUILD_PATH_ABS}/${FIRMWARE_NAME}.map
+FULL_LIBRARY_PATH := -L${CSDK_PATH}/hex/libcsdk
 MYLIBFILES := 
 FULL_LIBRARY_EXT := -lcsdk_debug 
 
@@ -58,11 +66,11 @@ LDPPFLAGS += \
         -DUSER_RAM_BASE=${EXT_RAM_BASE}+${USER_RAM_BASE} \
         -DUSER_RAM_SIZE=${USER_RAM_SIZE} \
         -DDUSE_BINUTILS_2_19=1
-LD_SRC := ${PATH_CURR}/GPRS_C_SDK/platform/compilation/cust.ld
+LD_SRC := ${CSDK_PATH}/platform/compilation/cust.ld
 LD_FILE := ${BUILD_PATH_ABS}/cust.ld
 OFORMAT := --oformat=elf32-littlemips
 SREC	:= --input-target=elf32-littlemips --output-target=srec
-LDFLAG_USED_ELF_FILES := -just-symbols ${PATH_CURR}/GPRS_C_SDK/platform/chip/rom/8955/lib/mem_bridge_rom_CHIP.elf
+LDFLAG_USED_ELF_FILES := -just-symbols ${CSDK_PATH}/platform/chip/rom/8955/lib/mem_bridge_rom_CHIP.elf
 LDFLAGS += --gc-sections
 LDFLAGS += ${FULL_LIBRARY_PATH} --start-group ${MYLIBFILES} ${FULL_LIBRARY_EXT} --end-group
 LDFLAGS	+= -L${LIBGCC_PATH} -lgcc 
@@ -73,10 +81,10 @@ LD_OPTIONAL_OBJECTS :=
 INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD_PATH_ABS)
-INC += -I${PATH_CURR}/GPRS_C_SDK/include \
-       -I${PATH_CURR}/GPRS_C_SDK/include/std_inc \
-	   -I${PATH_CURR}/GPRS_C_SDK/include/api_inc \
-	   -I${PATH_CURR}/GPRS_C_SDK/libs/utils/include
+INC += -I${CSDK_PATH}/include \
+       -I${CSDK_PATH}/include/std_inc \
+	   -I${CSDK_PATH}/include/api_inc \
+	   -I${CSDK_PATH}/libs/utils/include
 
 # DFU = $(TOP)/tools/dfu.py
 # PYDFU = $(TOP)/tools/pydfu.py
@@ -139,9 +147,9 @@ bin: ${BIN}
 	$(Q)${MKDIR} -p ${BIN_PATH}
 	$(Q)${CP} -f ${BIN} ${BIN_PATH}
 	$(Q)${CP} -f ${PLATFORM_ELF_PATH} ${BIN_PATH}
-	$(Q)${OBJCOPY} --strip-symbols=${STRIP_SYMBOL_FILE} ${BIN_PATH}/firmware.elf ${BIN_PATH}/firmware.elf
-	$(Q)${ELFCOMBINE_TOOL} -e1 ${BIN_PATH}/firmware.elf -e2 ${BIN_PATH}/${PLATFORM_ELF_NAME} -o ${BIN_PATH}/firmware_final.elf
-	$(Q)${RM} -f ${BIN_PATH}/firmware.elf
+	$(Q)${OBJCOPY} --strip-symbols=${STRIP_SYMBOL_FILE} ${BIN_PATH}/${FIRMWARE_NAME}.elf ${BIN_PATH}/${FIRMWARE_NAME}.elf
+	$(Q)${ELFCOMBINE_TOOL} -e1 ${BIN_PATH}/${FIRMWARE_NAME}.elf -e2 ${BIN_PATH}/${PLATFORM_ELF_NAME} -o ${BIN_PATH}/${FIRMWARE_NAME}_final.elf
+	$(Q)${RM} -f ${BIN_PATH}/${FIRMWARE_NAME}.elf
 	$(Q)${RM} -f ${BIN_PATH}/${PLATFORM_ELF_NAME}
 
 ${HEX}:bin
