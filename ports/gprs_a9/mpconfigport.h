@@ -1,3 +1,6 @@
+#ifndef __MPCONFIGPORT_H
+#define __MPCONFIGPORT_H
+
 #include <stdint.h>
 
 // options to control how MicroPython is built
@@ -105,6 +108,14 @@
 #define MICROPY_PY_THREAD_GIL               (0)
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
+// extra built in modules to add to the list of known ones
+extern const struct _mp_obj_module_t mp_module_machine;
+
+#define MICROPY_PORT_BUILTIN_MODULES \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&mp_module_machine }, \
+
+
+
 // type definitions for the specific machine
 
 #define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
@@ -115,8 +126,8 @@
 // to print such value. So, we avoid int32_t and use int directly.
 #define UINT_FMT "%u"
 #define INT_FMT "%d"
-typedef int mp_int_t; // must be pointer size
-typedef unsigned mp_uint_t; // must be pointer size
+typedef int32_t  mp_int_t; // must be pointer size
+typedef uint32_t mp_uint_t; // must be pointer size
 
 typedef long mp_off_t;
 
@@ -158,4 +169,4 @@ typedef long mp_off_t;
     } while (0);
 #endif
 
-
+#endif

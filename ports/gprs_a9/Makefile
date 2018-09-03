@@ -108,7 +108,10 @@ LIBS =
 
 SRC_C = \
 	main.c \
-	help.c 
+	help.c \
+	modmachine.c \
+	machine_pin.c \
+	mphalport.c 
 
 LIB_SRC_C = $(addprefix lib/,\
 	utils/stdout_helpers.c \
@@ -126,6 +129,11 @@ OBJ_MP += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
 OBJ = $(OBJ_MP) $(PY_CORE_O)
 OBJ += $(addprefix $(BUILD_PATH)/, $(LIB_SRC_C:.c=.o))
+
+# List of sources for qstr extraction
+SRC_QSTR += $(SRC_C)  $(LIB_SRC_C) 
+# Append any auto-generated sources that are needed by sources listed in SRC_QSTR
+SRC_QSTR_AUTO_DEPS +=
 
 
 

@@ -420,7 +420,6 @@ friendly_repl_reset:
         #endif
 
         vstr_reset(&line);
-        #error "============================"
         int ret = readline(&line, ">>> ");
         mp_parse_input_kind_t parse_input_kind = MP_PARSE_SINGLE_INPUT;
 
