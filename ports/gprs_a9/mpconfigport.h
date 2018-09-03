@@ -2,10 +2,17 @@
 
 // options to control how MicroPython is built
 
-// You can disable the built-in MicroPython compiler by setting the following
-// config option to 0.  If you do this then you won't get a REPL prompt, but you
-// will still be able to execute pre-compiled scripts, compiled with mpy-cross.
+
+#define MICROPY_OBJ_REPR            (MICROPY_OBJ_REPR_A)
+#define MICROPY_NLR_SETJMP          (1)
+
+// Python internal features
 #define MICROPY_ENABLE_COMPILER     (1)
+#define MICROPY_REPL_EVENT_DRIVEN   (1)
+#define MICROPY_ENABLE_GC           (0)
+#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_MPZ)
+#define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_DOUBLE)
+#define MICROPY_MODULE_FROZEN_MPY   (1)
 
 #define MICROPY_QSTR_BYTES_IN_HASH  (1)
 #define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
@@ -20,9 +27,7 @@
 #define MICROPY_COMP_TRIPLE_TUPLE_ASSIGN (0)
 #define MICROPY_MEM_STATS           (0)
 #define MICROPY_DEBUG_PRINTERS      (0)
-#define MICROPY_ENABLE_GC           (0)
 #define MICROPY_GC_ALLOC_THRESHOLD  (0)
-#define MICROPY_REPL_EVENT_DRIVEN   (1)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_HELPER_LEXER_UNIX   (0)
 #define MICROPY_ENABLE_SOURCE_LINE  (0)
@@ -30,35 +35,75 @@
 #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
 #define MICROPY_PY_ASYNC_AWAIT      (0)
-#define MICROPY_PY_BUILTINS_BYTEARRAY (0)
-#define MICROPY_PY_BUILTINS_MEMORYVIEW (0)
-#define MICROPY_PY_BUILTINS_ENUMERATE (0)
-#define MICROPY_PY_BUILTINS_FILTER  (0)
-#define MICROPY_PY_BUILTINS_FROZENSET (0)
-#define MICROPY_PY_BUILTINS_REVERSED (0)
-#define MICROPY_PY_BUILTINS_SET     (0)
-#define MICROPY_PY_BUILTINS_SLICE   (0)
-#define MICROPY_PY_BUILTINS_PROPERTY (0)
-#define MICROPY_PY_BUILTINS_MIN_MAX (0)
-#define MICROPY_PY___FILE__         (0)
-#define MICROPY_PY_GC               (0)
-#define MICROPY_PY_ARRAY            (0)
-#define MICROPY_PY_ATTRTUPLE        (0)
-#define MICROPY_PY_COLLECTIONS      (0)
-#define MICROPY_PY_MATH             (0)
-#define MICROPY_PY_CMATH            (0)
-#define MICROPY_PY_IO               (0)
-#define MICROPY_PY_STRUCT           (0)
-#define MICROPY_PY_SYS              (0)
-#define MICROPY_MODULE_FROZEN_MPY   (1)
 #define MICROPY_CPYTHON_COMPAT      (0)
-#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
-#define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 #define MICROPY_NO_ALLOCA           (1)
 #define MP_ENDIANNESS_LITTLE        (1)
 #define MICROPY_PY_OS_DUPTERM       (1)
-#define MICROPY_NLR_SETJMP          (1)
 #define MICROPY_PY_LWIP_SLIP        (0)
+
+
+
+// control over Python builtins
+#define MICROPY_PY_FUNCTION_ATTRS           (1)
+#define MICROPY_PY_DESCRIPTORS              (1)
+#define MICROPY_PY_STR_BYTES_CMP_WARN       (1)
+#define MICROPY_PY_BUILTINS_STR_UNICODE     (1)
+#define MICROPY_PY_BUILTINS_STR_CENTER      (1)
+#define MICROPY_PY_BUILTINS_STR_PARTITION   (1)
+#define MICROPY_PY_BUILTINS_STR_SPLITLINES  (1)
+#define MICROPY_PY_BUILTINS_BYTEARRAY       (1)
+#define MICROPY_PY_BUILTINS_MEMORYVIEW      (1)
+#define MICROPY_PY_BUILTINS_SET             (1)
+#define MICROPY_PY_BUILTINS_SLICE           (1)
+#define MICROPY_PY_BUILTINS_SLICE_ATTRS     (1)
+#define MICROPY_PY_BUILTINS_FROZENSET       (1)
+#define MICROPY_PY_BUILTINS_PROPERTY        (1)
+#define MICROPY_PY_BUILTINS_RANGE_ATTRS     (1)
+#define MICROPY_PY_BUILTINS_ROUND_INT       (1)
+#define MICROPY_PY_BUILTINS_TIMEOUTERROR    (1)
+#define MICROPY_PY_ALL_SPECIAL_METHODS      (1)
+#define MICROPY_PY_BUILTINS_COMPILE         (1)
+#define MICROPY_PY_BUILTINS_ENUMERATE       (1)
+#define MICROPY_PY_BUILTINS_EXECFILE        (1)
+#define MICROPY_PY_BUILTINS_FILTER          (1)
+#define MICROPY_PY_BUILTINS_REVERSED        (1)
+#define MICROPY_PY_BUILTINS_NOTIMPLEMENTED  (1)
+#define MICROPY_PY_BUILTINS_INPUT           (1)
+#define MICROPY_PY_BUILTINS_MIN_MAX         (1)
+#define MICROPY_PY_BUILTINS_POW3            (1)
+#define MICROPY_PY_BUILTINS_HELP            (1)
+#define MICROPY_PY_BUILTINS_HELP_TEXT       gprs_a9_help_text
+#define MICROPY_PY_BUILTINS_HELP_MODULES    (1)
+#define MICROPY_PY___FILE__                 (1)
+#define MICROPY_PY_MICROPYTHON_MEM_INFO     (1)
+#define MICROPY_PY_ARRAY                    (1)
+#define MICROPY_PY_ARRAY_SLICE_ASSIGN       (1)
+#define MICROPY_PY_ATTRTUPLE                (1)
+#define MICROPY_PY_COLLECTIONS              (1)
+#define MICROPY_PY_COLLECTIONS_DEQUE        (1)
+#define MICROPY_PY_COLLECTIONS_ORDEREDDICT  (1)
+#define MICROPY_PY_MATH                     (1)
+#define MICROPY_PY_MATH_SPECIAL_FUNCTIONS   (1)
+#define MICROPY_PY_CMATH                    (1)
+#define MICROPY_PY_GC                       (0)
+#define MICROPY_PY_IO                       (1)
+#define MICROPY_PY_IO_IOBASE                (1)
+#define MICROPY_PY_IO_FILEIO                (0)
+#define MICROPY_PY_IO_BYTESIO               (1)
+#define MICROPY_PY_IO_BUFFEREDWRITER        (1)
+#define MICROPY_PY_STRUCT                   (1)
+#define MICROPY_PY_SYS                      (1)
+#define MICROPY_PY_SYS_MAXSIZE              (1)
+#define MICROPY_PY_SYS_MODULES              (1)
+#define MICROPY_PY_SYS_EXIT                 (1)
+#define MICROPY_PY_SYS_STDFILES             (0)
+#define MICROPY_PY_SYS_STDIO_BUFFER         (0)
+#define MICROPY_PY_UERRNO                   (1)
+#define MICROPY_PY_USELECT                  (1)
+#define MICROPY_PY_UTIME_MP_HAL             (1)
+#define MICROPY_PY_THREAD                   (0)
+#define MICROPY_PY_THREAD_GIL               (0)
+#define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
 // type definitions for the specific machine
 
@@ -84,14 +129,33 @@ typedef long mp_off_t;
 // We need to provide a declaration/definition of alloca()
 #include <stdlib.h>
 
-#define MICROPY_HW_BOARD_NAME "gprs_a9"
-#define MICROPY_HW_MCU_NAME "GPRS_A9"
+#define MICROPY_HW_BOARD_NAME   "GPRS_A9_A9G"
+#define MICROPY_HW_MCU_NAME     "GPRS_A9_RDA8955"
+#define MICROPY_PY_SYS_PLATFORM "gprs_a9"
 
-#ifdef __linux__
-#define MICROPY_MIN_USE_STDOUT (1)
-#endif
 
 #define MP_STATE_PORT MP_STATE_VM
 
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[8];
+
+#include "csdk_config.h"
+
+#if MICROPY_PY_THREAD
+#define MICROPY_EVENT_POLL_HOOK \
+    do { \
+        extern void mp_handle_pending(void); \
+        mp_handle_pending(); \
+        MICROPY_PY_USOCKET_EVENTS_HANDLER \
+        MP_THREAD_GIL_EXIT(); \
+        MP_THREAD_GIL_ENTER(); \
+    } while (0);
+#else
+#define MICROPY_EVENT_POLL_HOOK \
+    do { \
+        extern void mp_handle_pending(void); \
+        mp_handle_pending(); \
+    } while (0);
+#endif
+
+

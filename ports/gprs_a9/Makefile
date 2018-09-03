@@ -21,11 +21,15 @@ $(info Compile Version:$(CFG_RELEASE))
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h
 
-# include py core make definitions
-include $(TOP)/py/py.mk
 
-CROSS_COMPILE = mips-elf-
+
 #############################################
+
+
+FROZEN_MPY_DIR ?= modules
+
+#############################################
+CROSS_COMPILE = mips-elf-
 MAKE = make
 LD  := $(CROSS_COMPILE)ld
 LDPP := $(CROSS_COMPILE)cpp -C -P -undef
@@ -86,10 +90,6 @@ INC += -I${CSDK_PATH}/include \
 	   -I${CSDK_PATH}/include/api_inc \
 	   -I${CSDK_PATH}/libs/utils/include
 
-# DFU = $(TOP)/tools/dfu.py
-# PYDFU = $(TOP)/tools/pydfu.py
-# CFLAGS_CORTEX_M4 = -mthumb -mtune=cortex-m4 -mabi=aapcs-linux -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
-# CFLAGS = $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_CORTEX_M4) $(COPT)
 CFLAGS = $(INC) -Wshadow \
 		  -std=gnu99 \
           -Os -g -fno-inline-small-functions -fno-inline-functions -fno-align-functions -fno-align-jumps -fno-align-loops -fno-align-labels \
@@ -108,13 +108,26 @@ LIBS =
 
 SRC_C = \
 	main.c \
-	$(BUILD)/_frozen_mpy.c
+	help.c 
 
 LIB_SRC_C = $(addprefix lib/,\
 	utils/stdout_helpers.c \
 	utils/pyexec.c \
 	mp-readline/readline.c \
 	)
+
+
+# include py core make definitions
+include $(TOP)/py/py.mk
+
+OBJ_MP =
+OBJ_MP += $(PY_O)
+OBJ_MP += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+
+OBJ = $(OBJ_MP) $(PY_CORE_O)
+OBJ += $(addprefix $(BUILD_PATH)/, $(LIB_SRC_C:.c=.o))
+
+
 
 all: lod
 
@@ -125,12 +138,8 @@ lod: ${HEX}
 	$(Q)$(LODCOMBINE_TOOL) openat -l  $(PLATFORM_LOD_FILE) -i $(LOD_FILE) -o $(WITH_PLT_LOD_FILE) -u $(WITH_PLT_OTA_FILE);
 	$(ECHO) "BUILD OK"
 
-OBJ = $(PY_CORE_O) $(addprefix $(BUILD_PATH)/, $(SRC_C:.c=.o))
-OBJ += $(addprefix $(BUILD_PATH)/, $(LIB_SRC_C:.c=.o))
 
-$(BUILD)/_frozen_mpy.c: frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
-	$(ECHO) "MISC freezing bytecode"
-	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
+
 
 
 ${BIN}: $(OBJ)

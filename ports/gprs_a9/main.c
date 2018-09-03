@@ -93,11 +93,13 @@ mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) 
 MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
 void nlr_jump_fail(void *val) {
-    assert("nlr_jump_fail");
+    __assert("nlr_jump_fail");
+    while (1);//never reach here actully
 }
 
 void NORETURN __fatal_error(const char *msg) {
-    assert(msg);
+    __assert(msg);
+    while (1);//never reach here actully
 }
 
 #ifndef NDEBUG
@@ -131,7 +133,7 @@ bool UartInit()
         .useEvent = true,
     };
     UART_Init(UART1,config);
-    Buffer_Init(&fifoBuffer,fifoBufferData,sizeof(fifoBufferData));
+    return true;
 }
 
 void MicroPyEventDispatch(MicroPy_Event_t* pEvent)
@@ -141,7 +143,6 @@ void MicroPyEventDispatch(MicroPy_Event_t* pEvent)
         case MICROPY_EVENT_ID_UART_RECEIVED:
         {
             uint8_t c;
-            bool ret;
             printf("micropy task received data:%d,%s",pEvent->param1,pEvent->pParam1);
             for (;;) {
                 if(!Buffer_Gets(&fifoBuffer,&c,1))
@@ -162,6 +163,7 @@ void MicroPyTask(VOID *pData)
 {
     MicroPy_Event_t* event;
 
+    Buffer_Init(&fifoBuffer,fifoBufferData,sizeof(fifoBufferData));
     UartInit();
     mp_Init();
 
@@ -218,7 +220,7 @@ void AppMainTask(VOID *pData)
     API_Event_t* event=NULL;
 
     microPyTaskHandle = OS_CreateTask(MicroPyTask,
-                                    NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, "ohter Task");
+                                    NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, (PCSTR)"ohter Task");
     while(1)
     {
         if(OS_WaitEvent(mainTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))
@@ -233,19 +235,31 @@ void AppMainTask(VOID *pData)
         }
     }
 }
-int _Main(void)
+void _Main(void)
 {
     mainTaskHandle = OS_CreateTask(AppMainTask ,
-                                   NULL, NULL, MICROPYTHON_TASK_PRIORITY, AppMain_TASK_PRIORITY, 0, 0, "init Task");
+                                   NULL, NULL, MICROPYTHON_TASK_PRIORITY, AppMain_TASK_PRIORITY, 0, 0, (PCSTR)"init Task");
     OS_SetUserMainHandle(&mainTaskHandle);
-    return 0;
 }
 
 // Send string of given length
 void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
-    UART_Write(UART1,str,len);
+    UART_Write(UART1,(uint8_t*)str,len);
 }
 
 // void mp_hal_stdout_tx_str(const char *str) {
 //     mp_hal_stdout_tx_strn(str, strlen(str));
 // }
+
+
+
+int mp_hal_stdin_rx_chr(void) {
+    uint8_t c;
+    for (;;) {
+        if(Buffer_Gets(&fifoBuffer,&c,1))
+            return c;
+        MICROPY_EVENT_POLL_HOOK
+        OS_Sleep(1);
+    }
+}
+

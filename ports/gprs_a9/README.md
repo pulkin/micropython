@@ -7,6 +7,7 @@
 
 ```
 git clone git@github.com:Neutree/micropython.git
+make -C mpy-cross
 cd micropython/ports/gprs_a9
 chmod +x build.sh
 ./build.sh
