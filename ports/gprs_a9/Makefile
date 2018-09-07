@@ -103,6 +103,8 @@ CFLAGS = $(INC) -Wshadow \
           -G0 -Wall -march=xcpu -mtune=xcpu -Wa,-march=xcpu,-mtune=xcpu -EL -mexplicit-relocs -fweb -frename-registers -mmemcpy -mmips-tfile -nostartfiles -nostdlib -nostdinc -nodefaultlibs -c -pipe \
           -fwide-exec-charset=UTF-16LE -fshort-wchar \
 		  -mips16 
+CFLAGS += $(CFLAGS_MOD)
+
 
 LIBS =
 
@@ -111,13 +113,22 @@ SRC_C = \
 	help.c \
 	modmachine.c \
 	machine_pin.c \
-	mphalport.c 
+	mphalport.c \
+	moduos.c \
+	rng.c \
+	fatfs_port.c 
 
 LIB_SRC_C = $(addprefix lib/,\
-	utils/stdout_helpers.c \
-	utils/pyexec.c \
 	mp-readline/readline.c \
+	utils/pyexec.c \
+	utils/interrupt_char.c \
+	utils/sys_stdio_mphal.c \
+	timeutils/timeutils.c \
 	)
+
+LIB_SRC_C += \
+	lib/oofatfs/ff.c \
+	lib/oofatfs/option/unicode.c
 
 
 # include py core make definitions

@@ -5,7 +5,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2013-2016 Damien P. George
+ * Copyright (c) 2013, 2014, 2016 Damien P. George
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,39 +26,16 @@
  * THE SOFTWARE.
  */
 
-#include "py/builtin.h"
+#include "time.h"
+#include "lib/oofatfs/ff.h"
+#include "lib/timeutils/timeutils.h"
 
-const char gprs_a9_help_text[] =
-"Welcome to MicroPython on the GPRS A9/A9G!\n"
-"\n"
-"For generic online docs please visit http://docs.micropython.org/\n"
-"\n"
-"For access to the hardware use the 'machine' module:\n"
-"\n"
-"import machine\n"
-"led = machine.Pin(27, machine.Pin.OUT,0)\n"
-"led.value(1)\n"
-"pin25 = machine.Pin(25, machine.Pin.IN, machine.Pin.PULL_UP)\n"
-"print(pin25.value())\n"
-"i2c = machine.I2C(id=2,freq=400000)\n"
-"i2c.scan()\n"
-"i2c.writeto(addr, b'1234')\n"
-"i2c.readfrom(addr, 4)\n"
-"\n"
-"Basic GPRS configuration:\n"
-"\n"
-"import network\n"
-"gprs = network.GPRS();\n"
-"gprs.attach()\n"
-"gprs.activate(\"cmnet\",\"\",\"\")\n"
-"\n"
-"Control commands:\n"
-"  CTRL-A        -- on a blank line, enter raw REPL mode\n"
-"  CTRL-B        -- on a blank line, enter normal REPL mode\n"
-"  CTRL-C        -- interrupt a running program\n"
-"  CTRL-D        -- on a blank line, do a soft reset of the board\n"
-"  CTRL-E        -- on a blank line, enter paste mode\n"
-"\n"
-"For further help on a specific object, type help(obj)\n"
-"For a list of available modules, type help('modules')\n"
-;
+DWORD get_fattime(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    timeutils_struct_time_t tm;
+    timeutils_seconds_since_2000_to_struct_time(tv.tv_sec, &tm);
+
+    return (((DWORD)(tm.tm_year - 1980) << 25) | ((DWORD)tm.tm_mon << 21) | ((DWORD)tm.tm_mday << 16) |
+           ((DWORD)tm.tm_hour << 11) | ((DWORD)tm.tm_min << 5) | ((DWORD)tm.tm_sec >> 1));
+}

@@ -17,6 +17,9 @@
 #include "api_hal_uart.h"
 #include "buffer.h"
 
+#include "mphalport.h"
+#include "mpconfigport.h"
+
 
 
 #define AppMain_TASK_STACK_SIZE    (2048 * 2)
@@ -42,12 +45,6 @@ typedef struct
     uint32_t param1;
     uint8_t* pParam1;
 }MicroPy_Event_t;
-
-
-
-
-
-
 
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
@@ -79,36 +76,41 @@ void gc_collect(void) {
     gc_dump_info();
 }
 
-mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
-    mp_raise_OSError(MP_ENOENT);
-}
+// mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
+//     mp_raise_OSError(MP_ENOENT);
+// }
 
-mp_import_stat_t mp_import_stat(const char *path) {
-    return MP_IMPORT_STAT_NO_EXIST;
-}
+// mp_import_stat_t mp_import_stat(const char *path) {
+//     return MP_IMPORT_STAT_NO_EXIST;
+// }
 
-mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
-    return mp_const_none;
-}
-MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
+// mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+//     return mp_const_none;
+// }
+// MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
 void nlr_jump_fail(void *val) {
-    __assert("nlr_jump_fail");
+    Assert(false,"nlr_jump_fail");
     while (1);//never reach here actully
 }
 
 void NORETURN __fatal_error(const char *msg) {
-    __assert(msg);
+    Assert(false,msg);
     while (1);//never reach here actully
 }
 
 #ifndef NDEBUG
 void MP_WEAK __assert_func(const char *file, int line, const char *func, const char *expr) {
-    printf("Assertion '%s' failed, at file %s:%d\n", expr, file, line);
+    Trace(1,"Assertion '%s' failed, at file %s:%d\n", expr, file, line);
     __fatal_error("Assertion failed");
 }
 #endif
 
+typedef struct{
+    uint32_t size;
+    uint32_t used;
+    uint32_t top;
+}Stack_Info_t;
 
 
 
@@ -122,19 +124,6 @@ bool mp_Init()
     return true;
 }
 
-bool UartInit()
-{
-    UART_Config_t config = {
-        .baudRate = UART_BAUD_RATE_115200,
-        .dataBits = UART_DATA_BITS_8,
-        .stopBits = UART_STOP_BITS_1,
-        .parity   = UART_PARITY_NONE,
-        .rxCallback = NULL,
-        .useEvent = true,
-    };
-    UART_Init(UART1,config);
-    return true;
-}
 
 void MicroPyEventDispatch(MicroPy_Event_t* pEvent)
 {
@@ -143,7 +132,10 @@ void MicroPyEventDispatch(MicroPy_Event_t* pEvent)
         case MICROPY_EVENT_ID_UART_RECEIVED:
         {
             uint8_t c;
-            printf("micropy task received data:%d,%s",pEvent->param1,pEvent->pParam1);
+            Trace(1,"micropy task received data length:%d",pEvent->param1);
+            Stack_Info_t info;
+            GetStackInfo(&info);
+            printf("stack info, %d/%d, top:0x%x",info.used,info.size,info.top);
             for (;;) {
                 if(!Buffer_Gets(&fifoBuffer,&c,1))
                     break;
@@ -151,6 +143,7 @@ void MicroPyEventDispatch(MicroPy_Event_t* pEvent)
                     break;
                 }
             }
+            Trace(1,"REPL complete");
             break;
         }
         default:
@@ -159,7 +152,7 @@ void MicroPyEventDispatch(MicroPy_Event_t* pEvent)
 }
 
 
-void MicroPyTask(VOID *pData)
+void MicroPyTask(void *pData)
 {
     MicroPy_Event_t* event;
 
@@ -171,7 +164,7 @@ void MicroPyTask(VOID *pData)
     {
         if(OS_WaitEvent(microPyTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))
         {
-            printf("microPy task received event:%d",event->id);
+            Trace(1,"microPy task received event:%d",event->id);
             // PM_SetSysMinFreq(PM_SYS_FREQ_178M);//set back system min frequency to 178M or higher(/lower) value
             MicroPyEventDispatch(event);
             OS_Free(event->pParam1);
@@ -193,13 +186,13 @@ void EventDispatch(API_Event_t* pEvent)
         case API_EVENT_ID_NETWORK_REGISTERED_ROAMING:
             break;
         case API_EVENT_ID_UART_RECEIVED:
-            printf("UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
+            Trace(1,"UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
             if(pEvent->param1 == UART1)
             {
                 MicroPy_Event_t* event = (MicroPy_Event_t*)malloc(sizeof(MicroPy_Event_t));
                 if(!event)
                 {
-                    printf("malloc fail");
+                    Trace(1,"malloc fail");
                     break;
                 }
                 Buffer_Puts(&fifoBuffer,pEvent->pParam1,pEvent->param2);
@@ -215,12 +208,12 @@ void EventDispatch(API_Event_t* pEvent)
 }
 
 
-void AppMainTask(VOID *pData)
+void AppMainTask(void *pData)
 {
     API_Event_t* event=NULL;
 
     microPyTaskHandle = OS_CreateTask(MicroPyTask,
-                                    NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, (PCSTR)"ohter Task");
+                                    NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, "ohter Task");
     while(1)
     {
         if(OS_WaitEvent(mainTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))
@@ -238,19 +231,9 @@ void AppMainTask(VOID *pData)
 void _Main(void)
 {
     mainTaskHandle = OS_CreateTask(AppMainTask ,
-                                   NULL, NULL, MICROPYTHON_TASK_PRIORITY, AppMain_TASK_PRIORITY, 0, 0, (PCSTR)"init Task");
+                                   NULL, NULL, MICROPYTHON_TASK_PRIORITY, AppMain_TASK_PRIORITY, 0, 0, "init Task");
     OS_SetUserMainHandle(&mainTaskHandle);
 }
-
-// Send string of given length
-void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
-    UART_Write(UART1,(uint8_t*)str,len);
-}
-
-// void mp_hal_stdout_tx_str(const char *str) {
-//     mp_hal_stdout_tx_strn(str, strlen(str));
-// }
-
 
 
 int mp_hal_stdin_rx_chr(void) {
@@ -262,4 +245,30 @@ int mp_hal_stdin_rx_chr(void) {
         OS_Sleep(1);
     }
 }
+
+
+#if MICROPY_DEBUG_VERBOSE
+int DEBUG_printf(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    int ret = mp_vprintf(MICROPY_DEBUG_PRINTER, fmt, ap);
+    va_end(ap);
+    return ret;
+}
+
+STATIC void debug_print_strn(void *env, const char *str, size_t len) {
+    (void)env;
+    char p[len+1];
+    // char* p =  (char*)OS_Malloc(len+1);
+    // if(!p)
+    //     return;
+    memcpy(p,str,len);
+    p[len] = 0;
+    Trace(2,p);
+}
+
+const mp_print_t mp_debug_print = {NULL, debug_print_strn};
+
+#endif
+
 

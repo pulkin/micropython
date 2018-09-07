@@ -1,49 +1,73 @@
 #ifndef __MPCONFIGPORT_H
 #define __MPCONFIGPORT_H
 
+#include <stdbool.h>
 #include <stdint.h>
+#include <unistd.h>
 
 // options to control how MicroPython is built
+
+
+#define MICROPY_DEBUG_VERBOSE       (1)
+#define MICROPY_DEBUG_PRINTER       (&mp_debug_print)
 
 
 #define MICROPY_OBJ_REPR            (MICROPY_OBJ_REPR_A)
 #define MICROPY_NLR_SETJMP          (1)
 
-// Python internal features
-#define MICROPY_ENABLE_COMPILER     (1)
-#define MICROPY_REPL_EVENT_DRIVEN   (1)
-#define MICROPY_ENABLE_GC           (0)
-#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_MPZ)
-#define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_DOUBLE)
-#define MICROPY_MODULE_FROZEN_MPY   (1)
-
-#define MICROPY_QSTR_BYTES_IN_HASH  (1)
-#define MICROPY_QSTR_EXTRA_POOL     mp_qstr_frozen_const_pool
+// memory allocation policies
 #define MICROPY_ALLOC_PATH_MAX      (256)
-#define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)
-#define MICROPY_EMIT_X64            (0)
-#define MICROPY_EMIT_THUMB          (0)
-#define MICROPY_EMIT_INLINE_THUMB   (0)
-#define MICROPY_COMP_MODULE_CONST   (0)
-#define MICROPY_COMP_CONST          (0)
-#define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN (0)
-#define MICROPY_COMP_TRIPLE_TUPLE_ASSIGN (0)
-#define MICROPY_MEM_STATS           (0)
-#define MICROPY_DEBUG_PRINTERS      (0)
-#define MICROPY_GC_ALLOC_THRESHOLD  (0)
-#define MICROPY_HELPER_REPL         (1)
-#define MICROPY_HELPER_LEXER_UNIX   (0)
-#define MICROPY_ENABLE_SOURCE_LINE  (0)
-#define MICROPY_ENABLE_DOC_STRING   (0)
-#define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
-#define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
-#define MICROPY_PY_ASYNC_AWAIT      (0)
-#define MICROPY_CPYTHON_COMPAT      (0)
-#define MICROPY_NO_ALLOCA           (1)
-#define MP_ENDIANNESS_LITTLE        (1)
-#define MICROPY_PY_OS_DUPTERM       (1)
-#define MICROPY_PY_LWIP_SLIP        (0)
 
+// emitters
+#define MICROPY_PERSISTENT_CODE_LOAD        (1)
+
+// compiler configuration
+#define MICROPY_COMP_MODULE_CONST           (1)
+#define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN    (1) //a, b = c, d
+#define MICROPY_COMP_TRIPLE_TUPLE_ASSIGN    (1) //a, b, c = c, d, c
+#define MICROPY_COMP_RETURN_IF_EXPR         (1)
+
+// optimisations
+#define MICROPY_OPT_COMPUTED_GOTO           (1)
+#define MICROPY_OPT_MPZ_BITWISE             (1)
+
+// Python internal features
+#define MICROPY_ENABLE_COMPILER             (1)
+#define MICROPY_REPL_EVENT_DRIVEN           (1)
+// #define MICROPY_ENABLE_GC                   (1)
+#define MICROPY_LONGINT_IMPL                (MICROPY_LONGINT_IMPL_MPZ)
+#define MICROPY_FLOAT_IMPL                  (MICROPY_FLOAT_IMPL_DOUBLE)
+#define MICROPY_MODULE_FROZEN_MPY           (1)
+#define MICROPY_READER_VFS                  (1)
+// #define MICROPY_ENABLE_FINALISER            (1)
+// #define MICROPY_STACK_CHECK                 (1)
+#define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
+#define MICROPY_KBD_EXCEPTION               (1)
+#define MICROPY_HELPER_REPL                 (1)
+#define MICROPY_REPL_EMACS_KEYS             (1)
+#define MICROPY_REPL_AUTO_INDENT            (1)
+#define MICROPY_ENABLE_SOURCE_LINE          (1)
+#define MICROPY_ERROR_REPORTING             (MICROPY_ERROR_REPORTING_NORMAL)
+#define MICROPY_WARNINGS                    (1)
+#define MICROPY_CPYTHON_COMPAT              (1)
+#define MICROPY_STREAMS_NON_BLOCK           (1)
+#define MICROPY_STREAMS_POSIX_API           (1)
+#define MICROPY_MODULE_BUILTIN_INIT         (1)
+#define MICROPY_MODULE_WEAK_LINKS           (1)
+#define MICROPY_MODULE_FROZEN_STR           (0)
+#define MICROPY_QSTR_EXTRA_POOL             mp_qstr_frozen_const_pool
+#define MICROPY_CAN_OVERRIDE_BUILTINS       (1)
+#define MICROPY_USE_INTERNAL_ERRNO          (1)
+#define MICROPY_USE_INTERNAL_PRINTF         (0)
+#define MICROPY_ENABLE_SCHEDULER            (1)
+#define MICROPY_SCHEDULER_DEPTH             (8)
+#define MICROPY_VFS                         (1)
+#define MICROPY_VFS_FAT                     (1)
+#define MICROPY_COMP_CONST                  (1)
+
+// MCU definition
+#define MP_ENDIANNESS_LITTLE                (1)
+#define MICROPY_NO_ALLOCA                   (1)
 
 
 // control over Python builtins
@@ -99,8 +123,8 @@
 #define MICROPY_PY_SYS_MAXSIZE              (1)
 #define MICROPY_PY_SYS_MODULES              (1)
 #define MICROPY_PY_SYS_EXIT                 (1)
-#define MICROPY_PY_SYS_STDFILES             (0)
-#define MICROPY_PY_SYS_STDIO_BUFFER         (0)
+#define MICROPY_PY_SYS_STDFILES             (1)
+#define MICROPY_PY_SYS_STDIO_BUFFER         (1)
 #define MICROPY_PY_UERRNO                   (1)
 #define MICROPY_PY_USELECT                  (1)
 #define MICROPY_PY_UTIME_MP_HAL             (1)
@@ -108,13 +132,82 @@
 #define MICROPY_PY_THREAD_GIL               (0)
 #define MICROPY_PY_THREAD_GIL_VM_DIVISOR    (32)
 
+
+// extended modules
+#define MICROPY_PY_UCTYPES                  (1)
+#define MICROPY_PY_UZLIB                    (1)
+#define MICROPY_PY_UJSON                    (1)
+#define MICROPY_PY_URE                      (1)
+#define MICROPY_PY_URE_SUB                  (1)
+#define MICROPY_PY_UHEAPQ                   (1)
+#define MICROPY_PY_UTIMEQ                   (1)
+// #define MICROPY_PY_UHASHLIB                 (1)
+// #define MICROPY_PY_UHASHLIB_SHA1            (1)
+// #define MICROPY_PY_UHASHLIB_SHA256          (1)
+// #define MICROPY_PY_UCRYPTOLIB               (1)
+#define MICROPY_PY_UBINASCII                (1)
+#define MICROPY_PY_UBINASCII_CRC32          (1)
+#define MICROPY_PY_URANDOM                  (1)
+#define MICROPY_PY_URANDOM_EXTRA_FUNCS      (1)
+#define MICROPY_PY_OS_DUPTERM               (0)
+#define MICROPY_PY_MACHINE                  (1)
+#define MICROPY_PY_MACHINE_PIN_MAKE_NEW     mp_pin_make_new
+// #define MICROPY_PY_MACHINE_PULSE            (1)
+// #define MICROPY_PY_MACHINE_I2C              (1)
+// #define MICROPY_PY_MACHINE_SPI              (1)
+// #define MICROPY_PY_MACHINE_SPI_MSB          (1)
+// #define MICROPY_PY_MACHINE_SPI_LSB          (1)
+// #define MICROPY_PY_MACHINE_SPI_MAKE_NEW     machine_hw_spi_make_new
+// #define MICROPY_HW_SOFTSPI_MIN_DELAY        (0)
+// #define MICROPY_HW_SOFTSPI_MAX_BAUDRATE     (ets_get_cpu_frequency() * 1000000 / 200) // roughly
+// #define MICROPY_PY_USSL                     (1)
+// #define MICROPY_SSL_MBEDTLS                 (1)
+// #define MICROPY_PY_USSL_FINALISER           (1)
+// #define MICROPY_PY_WEBSOCKET                (1)
+// #define MICROPY_PY_WEBREPL                  (1)
+#define MICROPY_PY_FRAMEBUF                 (1)
+// #define MICROPY_PY_USOCKET_EVENTS           (MICROPY_PY_WEBREPL)
+
+
+// fatfs configuration
+#define MICROPY_FATFS_ENABLE_LFN            (1)
+#define MICROPY_FATFS_RPATH                 (2)
+#define MICROPY_FATFS_MAX_SS                (4096)
+#define MICROPY_FATFS_LFN_CODE_PAGE         (437) /* 1=SFN/ANSI 437=LFN/U.S.(OEM) */
+#define mp_type_fileio                      mp_type_vfs_fat_fileio
+#define mp_type_textio                      mp_type_vfs_fat_textio
+
+// use vfs's functions for import stat and builtin open
+#define mp_import_stat mp_vfs_import_stat
+#define mp_builtin_open mp_vfs_open
+#define mp_builtin_open_obj mp_vfs_open_obj
+
+// extra built in names to add to the global namespace
+#define MICROPY_PORT_BUILTINS \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_input), (mp_obj_t)&mp_builtin_input_obj }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_open), (mp_obj_t)&mp_builtin_open_obj },
+
 // extra built in modules to add to the list of known ones
 extern const struct _mp_obj_module_t mp_module_machine;
+extern const struct _mp_obj_module_t uos_module;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&mp_module_machine }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
 
 
+#define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_collections), (mp_obj_t)&mp_module_collections }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_errno), (mp_obj_t)&mp_module_uerrno }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_heapq), (mp_obj_t)&mp_module_uheapq }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_io), (mp_obj_t)&mp_module_io }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_json), (mp_obj_t)&mp_module_ujson }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&uos_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_random), (mp_obj_t)&mp_module_urandom }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_re), (mp_obj_t)&mp_module_ure }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_struct), (mp_obj_t)&mp_module_ustruct }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_zlib), (mp_obj_t)&mp_module_uzlib }, \
 
 // type definitions for the specific machine
 
@@ -133,15 +226,11 @@ typedef long mp_off_t;
 
 #define MP_PLAT_PRINT_STRN(str, len) mp_hal_stdout_tx_strn_cooked(str, len)
 
-// extra built in names to add to the global namespace
-#define MICROPY_PORT_BUILTINS \
-    { MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
-
 // We need to provide a declaration/definition of alloca()
 #include <stdlib.h>
 
-#define MICROPY_HW_BOARD_NAME   "GPRS_A9_A9G"
-#define MICROPY_HW_MCU_NAME     "GPRS_A9_RDA8955"
+#define MICROPY_HW_BOARD_NAME   "A9/A9G module"
+#define MICROPY_HW_MCU_NAME     "RDA8955"
 #define MICROPY_PY_SYS_PLATFORM "gprs_a9"
 
 
@@ -170,3 +259,9 @@ typedef long mp_off_t;
 #endif
 
 #endif
+
+#if MICROPY_DEBUG_VERBOSE
+// printer for debugging output
+extern const struct _mp_print_t mp_debug_print;
+#endif
+
