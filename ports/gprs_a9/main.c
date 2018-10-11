@@ -143,10 +143,10 @@ bool mp_Init()
     OS_GetTaskInfo(microPyTaskHandle,&info);
     mp_stack_ctrl_init();
     mp_stack_set_top((void *)(info.stackTop+info.stackSize*4));
-    mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE*4 - 512);
-    printf("mmp stack used:%d",mp_stack_usage());
+    mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE*4 - 1024);
+    printf("mp stack used:%d",mp_stack_usage());
 
-    printf("aaaaaaaaaa");
+    
     OS_Sleep(5000);
     //mp init
     mp_init();
