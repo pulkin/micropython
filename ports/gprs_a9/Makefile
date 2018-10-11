@@ -54,7 +54,7 @@ PLATFORM_LOD_FILE := ${wildcard ${PLATFORM_LOD_PATH}/*.lod}
 ELFCOMBINE_TOOL := ${CSDK_PATH}/platform/compilation/elfCombine.pl
 TARGET_FILE := ${BUILD_PATH_ABS}/targetgen
 MAP_CFG_FILE := ${CSDK_PATH}/platform/compilation/8955_map_cfg
-LODCOMBINE_TOOL := ${CSDK_PATH}/platform/compilation/lodCombine.pl
+LODCOMBINE_TOOL := ${CSDK_PATH}/platform/compilation/lodtool.py
 
 
 LIBGCC_PATH := ${CSDK_PATH}/platform/lib/gcc/mips-elf/4.4.2
@@ -83,12 +83,12 @@ FULL_SRC_OBJECTS :=
 LD_OPTIONAL_OBJECTS := 
 ########################################3###
 INC += -I.
-INC += -I$(TOP)
+INC += -I$(TOP) -I$(TOP)/py
 INC += -I$(BUILD_PATH_ABS)
 INC += -I${CSDK_PATH}/include \
        -I${CSDK_PATH}/include/std_inc \
 	   -I${CSDK_PATH}/include/api_inc \
-	   -I${CSDK_PATH}/libs/utils/include
+	   -I${CSDK_PATH}/libs/utils/include 
 
 CFLAGS = $(INC) -Wshadow \
 		  -std=gnu99 \
@@ -154,7 +154,7 @@ all: lod
 lod: ${HEX}
 	$(Q)$(MAKE) targetgen
 	$(Q)srecmap -c ${MAP_CFG_FILE} -m ${FLSH_MODEL} -b ${TARGET_FILE} ${HEX} ${LODBASE} ${STDOUT_NULL}
-	$(Q)$(LODCOMBINE_TOOL) openat -l  $(PLATFORM_LOD_FILE) -i $(LOD_FILE) -o $(WITH_PLT_LOD_FILE) -u $(WITH_PLT_OTA_FILE);
+	$(Q)python $(LODCOMBINE_TOOL) merge --platform $(PLATFORM_LOD_FILE) --app $(LOD_FILE) --out $(WITH_PLT_LOD_FILE)
 	$(ECHO) "BUILD OK"
 
 
