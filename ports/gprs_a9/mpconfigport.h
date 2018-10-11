@@ -8,7 +8,7 @@
 // options to control how MicroPython is built
 
 
-#define MICROPY_DEBUG_VERBOSE       (1)
+#define MICROPY_DEBUG_VERBOSE       (0)
 #define MICROPY_DEBUG_PRINTER       (&mp_debug_print)
 
 
@@ -40,7 +40,7 @@
 #define MICROPY_MODULE_FROZEN_MPY           (1)
 #define MICROPY_READER_VFS                  (1)
 // #define MICROPY_ENABLE_FINALISER            (1)
-// #define MICROPY_STACK_CHECK                 (1)
+#define MICROPY_STACK_CHECK                 (1)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
 #define MICROPY_KBD_EXCEPTION               (1)
 #define MICROPY_HELPER_REPL                 (1)

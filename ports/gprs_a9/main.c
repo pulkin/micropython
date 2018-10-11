@@ -20,11 +20,11 @@
 #include "mphalport.h"
 #include "mpconfigport.h"
 
-
+#include "mpstate.h"
 
 #define AppMain_TASK_STACK_SIZE    (2048 * 2)
 #define AppMain_TASK_PRIORITY      0
-#define MICROPYTHON_TASK_STACK_SIZE     (2048 * 2)
+#define MICROPYTHON_TASK_STACK_SIZE     (2048 * 4)
 #define MICROPYTHON_TASK_PRIORITY       1
 #define UART_CIRCLE_FIFO_BUFFER_MAX_LENGTH 2048
 
@@ -112,14 +112,45 @@ typedef struct{
     uint32_t top;
 }Stack_Info_t;
 
+void StackUsage()
+{
+    OS_Task_Info_t info;
+    OS_GetTaskInfo(microPyTaskHandle,&info);
+    volatile int stack_dummy;
+    uint32_t last = info.stackTop - (uint32_t)&stack_dummy;
+    Trace(1,"0x%x <-- 0x%x",info.stackTop,(uint32_t)&stack_dummy);
+    Trace(1,"stack zone last:%d",last);
+    last = (uint32_t)&stack_dummy - info.stackTop;
+    Trace(1,"stack zone last:%d",last);
+}
 
+
+void ShowStackInfo()
+{
+    OS_Task_Info_t info;
+    OS_GetTaskInfo(microPyTaskHandle,&info);
+    volatile uint32_t j = 0;
+    uint32_t last_bytes = (uint32_t)&j - info.stackTop;
+    uint32_t all_bytes  = info.stackSize*4;
+    printf("stack usage:%d/%d", all_bytes-last_bytes,all_bytes);
+}
 
 bool mp_Init()
-{
-    int stack_dummy;
-    stack_top = (char*)&stack_dummy;
+{   
+    OS_Sleep(5000);
+    //stack check info
+    OS_Task_Info_t info;
+    OS_GetTaskInfo(microPyTaskHandle,&info);
+    mp_stack_ctrl_init();
+    mp_stack_set_top((void *)(info.stackTop+info.stackSize*4));
+    mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE*4 - 512);
+    printf("mmp stack used:%d",mp_stack_usage());
 
+    printf("aaaaaaaaaa");
+    OS_Sleep(5000);
+    //mp init
     mp_init();
+    //repl init
     pyexec_event_repl_init();
     return true;
 }
@@ -133,9 +164,6 @@ void MicroPyEventDispatch(MicroPy_Event_t* pEvent)
         {
             uint8_t c;
             Trace(1,"micropy task received data length:%d",pEvent->param1);
-            Stack_Info_t info;
-            GetStackInfo(&info);
-            printf("stack info, %d/%d, top:0x%x",info.used,info.size,info.top);
             for (;;) {
                 if(!Buffer_Gets(&fifoBuffer,&c,1))
                     break;
@@ -174,6 +202,7 @@ void MicroPyTask(void *pData)
         }
     }
 }
+
 void EventDispatch(API_Event_t* pEvent)
 {
     switch(pEvent->id)
@@ -213,7 +242,7 @@ void AppMainTask(void *pData)
     API_Event_t* event=NULL;
 
     microPyTaskHandle = OS_CreateTask(MicroPyTask,
-                                    NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, "ohter Task");
+                                    NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, "mpy Task");
     while(1)
     {
         if(OS_WaitEvent(mainTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))
@@ -231,7 +260,7 @@ void AppMainTask(void *pData)
 void _Main(void)
 {
     mainTaskHandle = OS_CreateTask(AppMainTask ,
-                                   NULL, NULL, MICROPYTHON_TASK_PRIORITY, AppMain_TASK_PRIORITY, 0, 0, "init Task");
+                                   NULL, NULL, AppMain_TASK_STACK_SIZE, AppMain_TASK_PRIORITY, 0, 0, "main Task");
     OS_SetUserMainHandle(&mainTaskHandle);
 }
 
