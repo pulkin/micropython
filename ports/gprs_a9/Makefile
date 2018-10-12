@@ -83,7 +83,7 @@ FULL_SRC_OBJECTS :=
 LD_OPTIONAL_OBJECTS := 
 ########################################3###
 INC += -I.
-INC += -I$(TOP) -I$(TOP)/py
+INC += -I$(TOP)
 INC += -I$(BUILD_PATH_ABS)
 INC += -I${CSDK_PATH}/include \
        -I${CSDK_PATH}/include/std_inc \

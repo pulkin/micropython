@@ -8,6 +8,9 @@
 #include "py/gc.h"
 #include "py/mperrno.h"
 #include "lib/utils/pyexec.h"
+#include "py/stackctrl.h"
+#include "py/mpstate.h"
+#include "py/mphal.h"
 
 #include "stdbool.h"
 #include "api_os.h"
@@ -20,7 +23,7 @@
 #include "mphalport.h"
 #include "mpconfigport.h"
 
-#include "mpstate.h"
+
 
 #define AppMain_TASK_STACK_SIZE    (2048 * 2)
 #define AppMain_TASK_PRIORITY      0
@@ -106,25 +109,6 @@ void MP_WEAK __assert_func(const char *file, int line, const char *func, const c
 }
 #endif
 
-typedef struct{
-    uint32_t size;
-    uint32_t used;
-    uint32_t top;
-}Stack_Info_t;
-
-void StackUsage()
-{
-    OS_Task_Info_t info;
-    OS_GetTaskInfo(microPyTaskHandle,&info);
-    volatile int stack_dummy;
-    uint32_t last = info.stackTop - (uint32_t)&stack_dummy;
-    Trace(1,"0x%x <-- 0x%x",info.stackTop,(uint32_t)&stack_dummy);
-    Trace(1,"stack zone last:%d",last);
-    last = (uint32_t)&stack_dummy - info.stackTop;
-    Trace(1,"stack zone last:%d",last);
-}
-
-
 void ShowStackInfo()
 {
     OS_Task_Info_t info;
@@ -137,7 +121,6 @@ void ShowStackInfo()
 
 bool mp_Init()
 {   
-    OS_Sleep(5000);
     //stack check info
     OS_Task_Info_t info;
     OS_GetTaskInfo(microPyTaskHandle,&info);
@@ -146,8 +129,6 @@ bool mp_Init()
     mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE*4 - 1024);
     printf("mp stack used:%d",mp_stack_usage());
 
-    
-    OS_Sleep(5000);
     //mp init
     mp_init();
     //repl init
@@ -205,6 +186,7 @@ void MicroPyTask(void *pData)
 
 void EventDispatch(API_Event_t* pEvent)
 {
+    uint32_t len = 0;
     switch(pEvent->id)
     {
         case API_EVENT_ID_POWER_ON:
@@ -224,10 +206,26 @@ void EventDispatch(API_Event_t* pEvent)
                     Trace(1,"malloc fail");
                     break;
                 }
-                Buffer_Puts(&fifoBuffer,pEvent->pParam1,pEvent->param2);
+                for(uint16_t i=0; i<pEvent->param2; ++i)
+                {
+                   if (pEvent->pParam1[i] == mp_interrupt_char) {
+                        // inline version of mp_keyboard_interrupt();
+                        MP_STATE_VM(mp_pending_exception) = MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception));
+                        #if MICROPY_ENABLE_SCHEDULER
+                        if (MP_STATE_VM(sched_state) == MP_SCHED_IDLE) {
+                            MP_STATE_VM(sched_state) = MP_SCHED_PENDING;
+                        }
+                        #endif
+                   }
+                   else
+                   {
+                       Buffer_Puts(&fifoBuffer,pEvent->pParam1+i,1);
+                       len++;
+                   }
+                }
                 memset((void*)event,0,sizeof(MicroPy_Event_t));
                 event->id = MICROPY_EVENT_ID_UART_RECEIVED;
-                event->param1 = (uint32_t)(pEvent->param2);
+                event->param1 = len;
                 OS_SendEvent(microPyTaskHandle,(void*)event,OS_TIME_OUT_WAIT_FOREVER,0);
             }
             break;
