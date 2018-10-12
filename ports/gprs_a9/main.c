@@ -19,6 +19,8 @@
 #include "api_hal_pm.h"
 #include "api_hal_uart.h"
 #include "buffer.h"
+#include "api_network.h"
+#include "time.h"
 
 #include "mphalport.h"
 #include "mpconfigport.h"
@@ -195,6 +197,34 @@ void EventDispatch(API_Event_t* pEvent)
             break;
         case API_EVENT_ID_NETWORK_REGISTERED_HOME:
         case API_EVENT_ID_NETWORK_REGISTERED_ROAMING:
+        {
+            uint8_t status;
+            Trace(1,"network register success");
+            bool ret = Network_GetAttachStatus(&status);
+            if(!ret)
+                Trace(1,"get attach staus fail");
+            Trace(1,"attach status:%d",status);
+            if(status == 0)
+            {
+                ret = Network_StartAttach();
+                if(!ret)
+                {
+                    Trace(1,"network attach fail");
+                }
+            }
+            else
+            {
+            }
+        }
+            break;
+        case API_EVENT_ID_NETWORK_DETACHED:
+            Trace(2,"network detached");
+            break;
+        case API_EVENT_ID_NETWORK_ATTACH_FAILED:
+            Trace(2,"network attach failed");
+            break;
+        case API_EVENT_ID_NETWORK_GOT_TIME:
+            Trace(2,"network got time");
             break;
         case API_EVENT_ID_UART_RECEIVED:
             Trace(1,"UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
@@ -238,9 +268,11 @@ void EventDispatch(API_Event_t* pEvent)
 void AppMainTask(void *pData)
 {
     API_Event_t* event=NULL;
+    
+    TIME_SetIsAutoUpdateRtcTime(true);
 
     microPyTaskHandle = OS_CreateTask(MicroPyTask,
-                                    NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, "mpy Task");
+                                    NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, "mpy Task");                                    
     while(1)
     {
         if(OS_WaitEvent(mainTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))

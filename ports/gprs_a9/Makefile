@@ -115,6 +115,7 @@ SRC_C = \
 	machine_pin.c \
 	mphalport.c \
 	moduos.c \
+	modutime.c \
 	rng.c \
 	fatfs_port.c 
 

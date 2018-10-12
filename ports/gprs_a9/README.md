@@ -12,3 +12,6 @@ cd micropython/ports/gprs_a9
 chmod +x build.sh
 ./build.sh
 ```
+
+and the  final lod file in the `hex` folder
+

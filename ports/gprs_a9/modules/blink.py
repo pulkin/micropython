@@ -1,12 +1,14 @@
 
 import machine
+import time
 
 def blink(interval):
     print("blink")
-    led = machine.Pin(27,machine.Pin.OUT)
+    led = machine.Pin(27,machine.Pin.OUT,0)
     value = 1
     while(1):
         led.value(value)
-        # time.sleep(1)
-        # value = (value==1)?0:1
+        time.sleep(interval)
+        value = 0 if (value==1) else 1
+
 

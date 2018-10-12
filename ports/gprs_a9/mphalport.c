@@ -9,12 +9,8 @@
 #include "api_hal_pm.h"
 #include "api_hal_uart.h"
 #include "buffer.h"
+#include "time.h"
 
-
-mp_uint_t mp_hal_ticks_ms(void)
-{
-    return (int)(clock()/CLOCKS_PER_MSEC);
-}
 
 
 
@@ -64,4 +60,33 @@ void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
         mp_hal_stdout_tx_strn(last, str - last);
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+/////hal time////////////////////////////////////////////////////////////////
+
+
+uint32_t mp_hal_ticks_ms(void) {
+    return (uint32_t)(clock()/CLOCKS_PER_MSEC);
+}
+
+uint32_t mp_hal_ticks_us(void) {
+    return (uint32_t)(clock()/CLOCKS_PER_MSEC*1000);
+}
+
+void mp_hal_delay_ms(uint32_t ms) {
+    OS_Sleep(ms);
+}
+
+void mp_hal_delay_us(uint32_t us) {
+    OS_SleepUs(us);
+}
+
+// this function could do with improvements (eg use ets_delay_us)
+void mp_hal_delay_us_fast(uint32_t us) {
+    OS_SleepUs(us);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 
