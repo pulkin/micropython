@@ -117,7 +117,9 @@ SRC_C = \
 	moduos.c \
 	modutime.c \
 	rng.c \
-	fatfs_port.c 
+	fatfs_port.c \
+	modchip.c 
+
 
 LIB_SRC_C = $(addprefix lib/,\
 	mp-readline/readline.c \

@@ -19,7 +19,7 @@
 #define MICROPY_ALLOC_PATH_MAX      (256)
 
 // emitters
-#define MICROPY_PERSISTENT_CODE_LOAD        (1)
+// #define MICROPY_PERSISTENT_CODE_LOAD        (1)
 
 // compiler configuration
 #define MICROPY_COMP_MODULE_CONST           (1)
@@ -38,7 +38,6 @@
 #define MICROPY_LONGINT_IMPL                (MICROPY_LONGINT_IMPL_MPZ)
 #define MICROPY_FLOAT_IMPL                  (MICROPY_FLOAT_IMPL_DOUBLE)
 #define MICROPY_MODULE_FROZEN_MPY           (1)
-#define MICROPY_READER_VFS                  (1)
 // #define MICROPY_ENABLE_FINALISER            (1)
 #define MICROPY_STACK_CHECK                 (1)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
@@ -61,8 +60,6 @@
 #define MICROPY_USE_INTERNAL_PRINTF         (0)
 #define MICROPY_ENABLE_SCHEDULER            (1)
 #define MICROPY_SCHEDULER_DEPTH             (8)
-#define MICROPY_VFS                         (1)
-#define MICROPY_VFS_FAT                     (1)
 #define MICROPY_COMP_CONST                  (1)
 
 // MCU definition
@@ -177,10 +174,17 @@
 #define mp_type_fileio                      mp_type_vfs_fat_fileio
 #define mp_type_textio                      mp_type_vfs_fat_textio
 
+
+// #define MICROPY_VFS                         (1)
+// #define MICROPY_VFS_FAT                     (1)
+// #define MICROPY_READER_VFS                  (1)
+
 // use vfs's functions for import stat and builtin open
+#ifdef MICROPY_VFS
 #define mp_import_stat mp_vfs_import_stat
 #define mp_builtin_open mp_vfs_open
 #define mp_builtin_open_obj mp_vfs_open_obj
+#endif
 
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS \
@@ -191,11 +195,13 @@
 extern const struct _mp_obj_module_t mp_module_machine;
 extern const struct _mp_obj_module_t uos_module;
 extern const struct _mp_obj_module_t utime_module;
+extern const struct _mp_obj_module_t chip_module;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&mp_module_machine }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_utime), (mp_obj_t)&utime_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_chip), (mp_obj_t)&chip_module }, \
 
 
 #define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \

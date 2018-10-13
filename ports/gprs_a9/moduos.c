@@ -40,6 +40,7 @@
 #include "genhdr/mpversion.h"
 
 #include "rng.h"
+#include "api_fs.h"
 
 extern const mp_obj_type_t mp_fat_vfs_type;
 
@@ -85,6 +86,163 @@ STATIC mp_obj_t os_urandom(mp_obj_t num) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_urandom_obj, os_urandom);
 
+//////////////// fs ////////////////////////////////////////////////////
+
+#if !MICROPY_VFS
+mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
+    mp_raise_OSError(MP_ENOENT);
+}
+
+mp_import_stat_t mp_import_stat(const char *path) {
+    (void)path;
+    return MP_IMPORT_STAT_NO_EXIST;
+}
+
+mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
+#include "api_debug.h"
+mp_obj_t mp_vfs_listdir(size_t n_args, const mp_obj_t *args) {
+    mp_obj_t dir_list = mp_obj_new_list(0, NULL);
+    char* tmp = (char*)malloc(200);
+    if(!tmp)
+        mp_raise_OSError(MP_ENOMEM);
+    memset(tmp,0,200);
+    uint32_t ret =API_FS_GetCurDir(200,tmp);
+    if(ret != 0)
+    {
+        free(tmp);
+        mp_raise_OSError(MP_EIO);
+    }
+    char* dirToList = "/";
+    if(n_args != 0 )
+        dirToList = mp_obj_str_get_str(args[0]);
+    else
+    {
+        dirToList = tmp;
+    }
+    Dir_t* dir = API_FS_OpenDir((const char*)dirToList);
+    Dirent_t* dirent = NULL;
+    while(dirent = API_FS_ReadDir(dir))
+    {
+        // Trace(1,"dir name:%s",dirent->d_name);
+        mp_obj_t dirStr = mp_obj_new_str(dirent->d_name,strlen(dirent->d_name));
+        mp_obj_list_append(dir_list, dirStr);
+    }
+    API_FS_CloseDir(dir);
+    API_FS_OpenDir(tmp);
+    free(tmp);
+    return dir_list;
+}
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_vfs_listdir_obj, 0, 1, mp_vfs_listdir);
+
+
+mp_obj_t mp_vfs_mkdir(mp_obj_t path_in) {
+    const char* path = mp_obj_str_get_str(path_in);
+    if(strcmp(path,"/")==0 || strcmp(path,"/t")==0)
+    {
+        mp_raise_OSError(MP_EEXIST);
+    }
+    int32_t ret = API_FS_Mkdir(path,0);
+    if(ret != 0)
+        mp_raise_OSError(MP_EIO);
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_mkdir_obj, mp_vfs_mkdir);
+
+mp_obj_t mp_vfs_remove(mp_obj_t path_in) {
+    const char* path = mp_obj_str_get_str(path_in);
+    if(strcmp(path,"/")==0 || strcmp(path,"/t")==0)
+    {
+        mp_raise_OSError(MP_EINVAL);
+    }
+    int32_t ret = API_FS_Delete(path);
+    if(ret != 0)
+        mp_raise_OSError(MP_EIO);
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_remove_obj, mp_vfs_remove);
+
+mp_obj_t mp_vfs_rename(mp_obj_t old_path_in, mp_obj_t new_path_in) {
+    const char* path_old = mp_obj_str_get_str(old_path_in);
+    const char* path_new = mp_obj_str_get_str(new_path_in);
+    int32_t ret = API_FS_Rename(path_old,path_new);
+    if(ret != 0)
+        mp_raise_OSError(MP_EIO);
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_2(mp_vfs_rename_obj, mp_vfs_rename);
+
+mp_obj_t mp_vfs_rmdir(mp_obj_t path_in) {
+    const char* path = mp_obj_str_get_str(path_in);
+    if(strcmp(path,"/")==0 || strcmp(path,"/t")==0)
+    {
+        mp_raise_OSError(MP_EINVAL);
+    }
+    int32_t ret = API_FS_Rmdir(path);
+    if(ret != 0)
+        mp_raise_OSError(MP_EIO);
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_rmdir_obj, mp_vfs_rmdir);
+
+
+mp_obj_t mp_vfs_chdir(mp_obj_t path_in) {
+    const char* path = mp_obj_str_get_str(path_in);
+    int32_t ret = API_FS_ChangeDir(path);
+    if(ret != 0)
+        mp_raise_OSError(MP_EIO);
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_chdir_obj, mp_vfs_chdir);
+
+mp_obj_t mp_vfs_getcwd(void) {
+    char* tmp = (char*)malloc(200);
+    if(!tmp)
+        mp_raise_OSError(MP_ENOMEM);
+    memset(tmp,0,200);
+    uint32_t ret =API_FS_GetCurDir(200,tmp);
+    if(ret != 0)
+    {
+        free(tmp);
+        mp_raise_OSError(MP_EIO);
+    }
+    mp_obj_t retVal = mp_obj_new_str(tmp,strlen(tmp));
+    free(tmp);
+    return retVal;
+}
+MP_DEFINE_CONST_FUN_OBJ_0(mp_vfs_getcwd_obj, mp_vfs_getcwd);
+
+mp_obj_t mp_vfs_stat(mp_obj_t path_in) {
+    const char* path = mp_obj_str_get_str(path_in);
+    API_FS_INFO info;
+    int32_t ret = API_FS_GetFSInfo(path,&info);
+    if(ret != 0)
+        mp_raise_OSError(MP_EIO);
+    mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
+    t->items[0] = mp_obj_new_int(info.totalSize);
+    t->items[1] = mp_obj_new_int(info.usedSize);
+    return MP_OBJ_FROM_PTR(t);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_stat_obj, mp_vfs_stat);
+
+mp_obj_t mp_vfs_statvfs(mp_obj_t path_in) {
+    const char* path = mp_obj_str_get_str(path_in);
+    API_FS_INFO info;
+    int32_t ret = API_FS_GetFSInfo(path,&info);
+    if(ret != 0)
+        mp_raise_OSError(MP_EIO);
+    mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
+    t->items[0] = mp_obj_new_int(info.totalSize);
+    t->items[1] = mp_obj_new_int(info.usedSize);
+    return MP_OBJ_FROM_PTR(t);
+}
+MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_statvfs_obj, mp_vfs_statvfs);
+
+#endif //#if !MICROPY_VFS
+///////////////////////////////////////////////////////////////////
+
 #if MICROPY_PY_OS_DUPTERM
 STATIC mp_obj_t os_dupterm_notify(mp_obj_t obj_in) {
     (void)obj_in;
@@ -124,6 +282,16 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     #if MICROPY_VFS_FAT
     { MP_ROM_QSTR(MP_QSTR_VfsFat), MP_ROM_PTR(&mp_fat_vfs_type) },
     #endif
+    #else
+    { MP_ROM_QSTR(MP_QSTR_listdir), MP_ROM_PTR(&mp_vfs_listdir_obj) },
+    { MP_ROM_QSTR(MP_QSTR_mkdir), MP_ROM_PTR(&mp_vfs_mkdir_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rmdir), MP_ROM_PTR(&mp_vfs_rmdir_obj) },
+    { MP_ROM_QSTR(MP_QSTR_chdir), MP_ROM_PTR(&mp_vfs_chdir_obj) },
+    { MP_ROM_QSTR(MP_QSTR_getcwd), MP_ROM_PTR(&mp_vfs_getcwd_obj) },
+    { MP_ROM_QSTR(MP_QSTR_remove), MP_ROM_PTR(&mp_vfs_remove_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rename), MP_ROM_PTR(&mp_vfs_rename_obj) },
+    { MP_ROM_QSTR(MP_QSTR_stat), MP_ROM_PTR(&mp_vfs_stat_obj) },
+    { MP_ROM_QSTR(MP_QSTR_statvfs), MP_ROM_PTR(&mp_vfs_statvfs_obj) },
     #endif
 };
 
