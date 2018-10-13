@@ -18,8 +18,6 @@
 // memory allocation policies
 #define MICROPY_ALLOC_PATH_MAX      (256)
 
-// emitters
-// #define MICROPY_PERSISTENT_CODE_LOAD        (1)
 
 // compiler configuration
 #define MICROPY_COMP_MODULE_CONST           (1)
@@ -112,7 +110,7 @@
 #define MICROPY_PY_GC                       (0)
 #define MICROPY_PY_IO                       (1)
 #define MICROPY_PY_IO_IOBASE                (1)
-#define MICROPY_PY_IO_FILEIO                (0)
+#define MICROPY_PY_IO_FILEIO                (1)
 #define MICROPY_PY_IO_BYTESIO               (1)
 #define MICROPY_PY_IO_BUFFEREDWRITER        (1)
 #define MICROPY_PY_STRUCT                   (1)
@@ -185,6 +183,11 @@
 #define mp_builtin_open mp_vfs_open
 #define mp_builtin_open_obj mp_vfs_open_obj
 #endif
+
+// emitters
+#define MICROPY_PERSISTENT_CODE_LOAD        (1)
+
+
 
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS \

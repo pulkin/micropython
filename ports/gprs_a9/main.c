@@ -21,6 +21,7 @@
 #include "buffer.h"
 #include "api_network.h"
 #include "time.h"
+#include "api_fs.h"
 
 #include "mphalport.h"
 #include "mpconfigport.h"
@@ -81,18 +82,6 @@ void gc_collect(void) {
     gc_dump_info();
 }
 
-// mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
-//     mp_raise_OSError(MP_ENOENT);
-// }
-
-// mp_import_stat_t mp_import_stat(const char *path) {
-//     return MP_IMPORT_STAT_NO_EXIST;
-// }
-
-// mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
-//     return mp_const_none;
-// }
-// MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
 void nlr_jump_fail(void *val) {
     Assert(false,"nlr_jump_fail");
@@ -170,6 +159,24 @@ void MicroPyTask(void *pData)
     Buffer_Init(&fifoBuffer,fifoBufferData,sizeof(fifoBufferData));
     UartInit();
     mp_Init();
+
+    pyexec_frozen_module("_boot.py");
+    int fd = API_FS_Open("/boot.py",FS_O_RDONLY,0);
+    if(fd > 0)
+    {
+        API_FS_Close(fd);
+        pyexec_file("/boot.py");
+    }
+    else
+    {
+        fd = API_FS_Open("/t/boot.py",FS_O_RDONLY,0);
+        if(fd > 0)
+        {
+            API_FS_Close(fd);
+            pyexec_file("/t/boot.py");
+        }
+    }
+    
 
     while(1)
     {

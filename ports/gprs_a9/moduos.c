@@ -89,20 +89,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_urandom_obj, os_urandom);
 //////////////// fs ////////////////////////////////////////////////////
 
 #if !MICROPY_VFS
-mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
-    mp_raise_OSError(MP_ENOENT);
-}
 
-mp_import_stat_t mp_import_stat(const char *path) {
-    (void)path;
-    return MP_IMPORT_STAT_NO_EXIST;
-}
 
-mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
-    return mp_const_none;
-}
-MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
-#include "api_debug.h"
+
 mp_obj_t mp_vfs_listdir(size_t n_args, const mp_obj_t *args) {
     mp_obj_t dir_list = mp_obj_new_list(0, NULL);
     char* tmp = (char*)malloc(200);
@@ -117,14 +106,14 @@ mp_obj_t mp_vfs_listdir(size_t n_args, const mp_obj_t *args) {
     }
     char* dirToList = "/";
     if(n_args != 0 )
-        dirToList = mp_obj_str_get_str(args[0]);
+        dirToList = (char*)mp_obj_str_get_str(args[0]);
     else
     {
         dirToList = tmp;
     }
     Dir_t* dir = API_FS_OpenDir((const char*)dirToList);
     Dirent_t* dirent = NULL;
-    while(dirent = API_FS_ReadDir(dir))
+    while( (dirent = API_FS_ReadDir(dir)) )
     {
         // Trace(1,"dir name:%s",dirent->d_name);
         mp_obj_t dirStr = mp_obj_new_str(dirent->d_name,strlen(dirent->d_name));

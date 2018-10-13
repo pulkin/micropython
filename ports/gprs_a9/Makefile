@@ -118,7 +118,8 @@ SRC_C = \
 	modutime.c \
 	rng.c \
 	fatfs_port.c \
-	modchip.c 
+	modchip.c \
+	file_io.c 
 
 
 LIB_SRC_C = $(addprefix lib/,\
