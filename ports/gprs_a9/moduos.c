@@ -169,7 +169,11 @@ mp_obj_t mp_vfs_rmdir(mp_obj_t path_in) {
     {
         mp_raise_OSError(MP_EINVAL);
     }
-    int32_t ret = API_FS_Rmdir(path);
+    char* path0 = (char*)malloc(160);
+    memset(path0,0,160);
+    API_FS_RealPath(path,path0);
+    int32_t ret = API_FS_Rmdir(path0);
+    free(path0);
     if(ret != 0)
         mp_raise_OSError(MP_EIO);
     return mp_const_none;
@@ -179,6 +183,12 @@ MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_rmdir_obj, mp_vfs_rmdir);
 
 mp_obj_t mp_vfs_chdir(mp_obj_t path_in) {
     const char* path = mp_obj_str_get_str(path_in);
+    Dir_t* dir = API_FS_OpenDir(path);
+    if(dir == NULL)
+    {
+        mp_raise_OSError(MP_EIO);
+    }
+    API_FS_CloseDir(dir);
     int32_t ret = API_FS_ChangeDir(path);
     if(ret != 0)
         mp_raise_OSError(MP_EIO);

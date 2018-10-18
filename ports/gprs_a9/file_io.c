@@ -295,16 +295,18 @@ mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
 
 mp_import_stat_t mp_import_stat(const char *path) {
     uint8_t flag = 0;
-    char* path0 = (char*)malloc(200);
-    memset(path0,0,sizeof(path0));
+    char* path0 = (char*)malloc(160);
+    memset(path0,0,160);
     API_FS_RealPath(path,path0);
     int32_t fd = API_FS_Open(path0,FS_O_RDONLY,0);
     if(fd>0)
     {
         API_FS_Close(fd);
+        free(path0);
         return MP_IMPORT_STAT_FILE;
     }
     Dir_t* dir = API_FS_OpenDir(path0);
+    free(path0);
     if(dir != NULL)
     {
         return MP_IMPORT_STAT_DIR;
