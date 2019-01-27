@@ -88,7 +88,9 @@ INC += -I$(BUILD_PATH_ABS)
 INC += -I${CSDK_PATH}/include \
        -I${CSDK_PATH}/include/std_inc \
 	   -I${CSDK_PATH}/include/api_inc \
-	   -I${CSDK_PATH}/libs/utils/include 
+	   -I${CSDK_PATH}/libs/utils/include \
+	   -I${CSDK_PATH}/libs/gps/include \
+	   -I${CSDK_PATH}/libs/gps/minmea/src 
 
 CFLAGS = $(INC) -Wshadow \
 		  -std=gnu99 \
@@ -119,7 +121,9 @@ SRC_C = \
 	rng.c \
 	fatfs_port.c \
 	modchip.c \
-	file_io.c 
+	file_io.c \
+	modcellular.c \
+	modgps.c
 
 
 LIB_SRC_C = $(addprefix lib/,\

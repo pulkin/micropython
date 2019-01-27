@@ -22,6 +22,7 @@
 #include "api_network.h"
 #include "time.h"
 #include "api_fs.h"
+#include "api_gps.h"
 
 #include "mphalport.h"
 #include "mpconfigport.h"
@@ -265,6 +266,10 @@ void EventDispatch(API_Event_t* pEvent)
                 event->param1 = len;
                 OS_SendEvent(microPyTaskHandle,(void*)event,OS_TIME_OUT_WAIT_FOREVER,0);
             }
+            break;
+        case API_EVENT_ID_GPS_UART_RECEIVED:
+            Trace(2, "received GPS data, length: %d, data:%s", pEvent->param1, pEvent->pParam1);
+            GPS_Update(pEvent->pParam1,pEvent->param1);
             break;
         default:
             break;

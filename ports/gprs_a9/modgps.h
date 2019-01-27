@@ -1,0 +1,2 @@
+#define MAX_GPS_POLL_ATTEMPTS 10
+
