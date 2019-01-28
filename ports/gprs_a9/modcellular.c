@@ -6,6 +6,11 @@
 #include "api_info.h"
 
 STATIC mp_obj_t get_imei(void) {
+    // ========================================
+    // Retrieves IMEI number.
+    // Returns:
+    //     IMEI number as a string.
+    // ========================================
     uint8_t imei[16];
     memset(imei,0,sizeof(imei));
     INFO_GetIMEI(imei);

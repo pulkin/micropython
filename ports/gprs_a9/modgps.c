@@ -10,7 +10,13 @@
 #include "modgps.h"
 #include "gps.h"
 
+
 STATIC mp_obj_t on(void) {
+    // ========================================
+    // Turns GPS on.
+    // Raises:
+    //     ValueError if failed to turn GPS on.
+    // ========================================
     GPS_Init();
     GPS_Open(NULL);
     GPS_Info_t* gpsInfo = Gps_GetInfo();
@@ -29,6 +35,9 @@ STATIC mp_obj_t on(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(on_obj, on);
 
 STATIC mp_obj_t off(void) {
+    // ========================================
+    // Turns GPS off.
+    // ========================================
     GPS_Close();
     return mp_const_none;
 }
@@ -36,6 +45,13 @@ STATIC mp_obj_t off(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(off_obj, off);
 
 STATIC mp_obj_t get_firmware_version(void) {
+    // ========================================
+    // Retrieves firmware version.
+    // Returns:
+    //     The firmware version as a string.
+    // Raises:
+    //     ValueError if GPS was off.
+    // ========================================
     char buffer[300];
     if (!GPS_GetVersion(buffer,150)) {
         mp_raise_ValueError("Failed to get the firmware version: did you run gps.on()?");
