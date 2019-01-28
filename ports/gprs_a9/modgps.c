@@ -11,6 +11,8 @@
 #include "gps.h"
 
 
+GPS_Info_t* gpsInfo = NULL;
+
 STATIC mp_obj_t on(void) {
     // ========================================
     // Turns GPS on.
@@ -19,7 +21,7 @@ STATIC mp_obj_t on(void) {
     // ========================================
     GPS_Init();
     GPS_Open(NULL);
-    GPS_Info_t* gpsInfo = Gps_GetInfo();
+    gpsInfo = Gps_GetInfo();
     uint8_t attempts = 0;
     while (gpsInfo->rmc.latitude.value == 0) {
         attempts ++;
@@ -62,11 +64,33 @@ STATIC mp_obj_t get_firmware_version(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_firmware_version_obj, get_firmware_version);
 
+STATIC mp_obj_t get_location(void) {
+    // ========================================
+    // Retrieves GPS location.
+    // Returns:
+    //     Location reported by GPS: latitude and longitude (degrees).
+    // ========================================
+    REQUIRES_VALID_GPS_INFO(gpsInfo)
+
+    int temp = (int)(gpsInfo->rmc.latitude.value/gpsInfo->rmc.latitude.scale/100);
+    double latitude = temp+(double)(gpsInfo->rmc.latitude.value - temp*gpsInfo->rmc.latitude.scale*100)/gpsInfo->rmc.latitude.scale/60.0;
+    temp = (int)(gpsInfo->rmc.longitude.value/gpsInfo->rmc.longitude.scale/100);
+    double longitude = temp+(double)(gpsInfo->rmc.longitude.value - temp*gpsInfo->rmc.longitude.scale*100)/gpsInfo->rmc.longitude.scale/60.0;
+    mp_obj_t tuple[2] = {
+        mp_obj_new_float(latitude),
+        mp_obj_new_float(longitude),
+    };
+    return mp_obj_new_tuple(2, tuple);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_location_obj, get_location);
+
 STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_gps) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on), (mp_obj_t)&on_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&off_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_firmware_version), (mp_obj_t)&get_firmware_version_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_location), (mp_obj_t)&get_location_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_gps_globals, mp_module_gps_globals_table);

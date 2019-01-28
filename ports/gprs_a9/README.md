@@ -41,3 +41,6 @@ Retrieves the firmware version.
 **Returns**: the firmware version as a string.
 **Raises**: `ValueError` if the GPS module fails to respond.
 
+* `get_location()`
+Retrieves the current GPS location.
+**Returns**: latitude and longitude in degrees.
