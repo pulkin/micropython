@@ -22,28 +22,22 @@ and burn the final lod file in the `hex` folder.
 Provides cellular functionality.
 
 * `get_imei()`
-
 Retrieves IMEI number.
-
-*Returns*: a string with IMEI number.
+**Returns**: a string with IMEI number.
 
 ### `gps`
 
-Provides GPS functionality
+Provides the GPS functionality
 
 * `on()`
-
-Turns GPS on. Blocks until the GPS module responds.
-
-*Raises*: `ValueError` if the GPS module does not respond within 10 seconds.
+Turns the GPS on. Blocks until the GPS module responds.
+**Raises**: `ValueError` if the GPS module does not respond within 10 seconds.
 
 * `off()`
-
-Turns GPS off.
+Turns the GPS off.
 
 * `get_firmware_version()`
-
 Retrieves the firmware version.
-
-*Raises*: `ValueError` if the GPS module fails to respond.
+**Returns**: the firmware version as a string.
+**Raises**: `ValueError` if the GPS module fails to respond.
 
