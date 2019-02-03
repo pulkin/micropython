@@ -85,12 +85,30 @@ STATIC mp_obj_t get_location(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_location_obj, get_location);
 
+STATIC mp_obj_t get_satellites(void) {
+    // ========================================
+    // Retrieves the number of visible GPS satellites.
+    // Returns:
+    //     The number of visible GPS satellites.
+    // ========================================
+    REQUIRES_VALID_GPS_INFO(gpsInfo)
+
+    mp_obj_t tuple[2] = {
+        mp_obj_new_int(gpsInfo->gga.satellites_tracked),
+        mp_obj_new_int(gpsInfo->gsv[0].total_sats),
+    };
+    return mp_obj_new_tuple(2, tuple);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_satellites_obj, get_satellites);
+
 STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_gps) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on), (mp_obj_t)&on_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&off_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_firmware_version), (mp_obj_t)&get_firmware_version_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_location), (mp_obj_t)&get_location_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_satellites), (mp_obj_t)&get_satellites_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_gps_globals, mp_module_gps_globals_table);
