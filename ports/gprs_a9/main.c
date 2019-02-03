@@ -108,48 +108,44 @@ void ShowStackInfo()
     volatile uint32_t j = 0;
     uint32_t last_bytes = (uint32_t)&j - info.stackTop;
     uint32_t all_bytes  = info.stackSize*4;
-    printf("stack usage:%d/%d", all_bytes-last_bytes,all_bytes);
+    char msg[32];
+    sprintf(msg, "Stack used: %d/%d\r\n", all_bytes - last_bytes, all_bytes);
+    mp_hal_stdout_tx_str(msg);
 }
 
 bool mp_Init()
 {   
     //stack check info
     OS_Task_Info_t info;
-    OS_GetTaskInfo(microPyTaskHandle,&info);
+    OS_GetTaskInfo(microPyTaskHandle, &info);
     mp_stack_ctrl_init();
     mp_stack_set_top((void *)(info.stackTop+info.stackSize*4));
     mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE*4 - 1024);
-    printf("mp stack used:%d",mp_stack_usage());
+    ShowStackInfo();
 
-    //mp init
     mp_init();
-    //repl init
+
+    // Startup scripts
+    int file_descriptor;
+    pyexec_frozen_module("_boot.py");
+    if ((file_descriptor = API_FS_Open("boot.py", FS_O_RDONLY, 0)) > 0) {
+        API_FS_Close(file_descriptor);
+        pyexec_file("boot.py");
+    }
+    if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL && (file_descriptor = API_FS_Open("main.py", FS_O_RDONLY, 0)) > 0) {
+        API_FS_Close(file_descriptor);
+        pyexec_file("main.py");
+    }
+
     pyexec_event_repl_init();
     return true;
 }
 
 
-void MicroPyEventDispatch(MicroPy_Event_t* pEvent)
-{
-    switch(pEvent->id)
-    {
-        case MICROPY_EVENT_ID_UART_RECEIVED:
-        {
-            uint8_t c;
-            Trace(1,"micropy task received data length:%d",pEvent->param1);
-            for (;;) {
-                if(!Buffer_Gets(&fifoBuffer,&c,1))
-                    break;
-                if (pyexec_event_repl_process_char((int)c)) {
-                    break;
-                }
-            }
-            Trace(1,"REPL complete");
-            break;
-        }
-        default:
-            break;
-    }
+void soft_reset(void) {
+    mp_hal_stdout_tx_str("PYB: soft reboot\r\n");
+    mp_hal_delay_us(10000); // allow UART to flush output
+    mp_Init();
 }
 
 
@@ -157,41 +153,41 @@ void MicroPyTask(void *pData)
 {
     MicroPy_Event_t* event;
 
-    Buffer_Init(&fifoBuffer,fifoBufferData,sizeof(fifoBufferData));
+    Buffer_Init(&fifoBuffer, fifoBufferData, sizeof(fifoBufferData));
     UartInit();
     mp_Init();
-
-    pyexec_frozen_module("_boot.py");
-    int fd = API_FS_Open("/boot.py",FS_O_RDONLY,0);
-    if(fd > 0)
-    {
-        API_FS_Close(fd);
-        pyexec_file("/boot.py");
-    }
-    else
-    {
-        fd = API_FS_Open("/t/boot.py",FS_O_RDONLY,0);
-        if(fd > 0)
-        {
-            API_FS_Close(fd);
-            pyexec_file("/t/boot.py");
-        }
-    }
     
+    uint8_t reset;
+soft_reset:
+    reset = 0;
+    while (1) if (OS_WaitEvent(microPyTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER)) {
 
-    while(1)
-    {
-        if(OS_WaitEvent(microPyTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))
-        {
-            Trace(1,"microPy task received event:%d",event->id);
-            // PM_SetSysMinFreq(PM_SYS_FREQ_178M);//set back system min frequency to 178M or higher(/lower) value
-            MicroPyEventDispatch(event);
-            OS_Free(event->pParam1);
-            OS_Free(event);
-            // PM_SetSysMinFreq(PM_SYS_FREQ_32K);//release system freq to enter sleep mode to save power,
-                                              //system remain runable but slower, and close eripheral not using
+        Trace(1,"microPy task received event:%d",event->id);
+        // PM_SetSysMinFreq(PM_SYS_FREQ_178M);
+
+        switch(event->id) {
+            case MICROPY_EVENT_ID_UART_RECEIVED: {
+                uint8_t c;
+                Trace(1, "micropy task received data length: %d", event->param1);
+                while (Buffer_Gets(&fifoBuffer, &c, 1))
+                    if (pyexec_event_repl_process_char((int)c)) {
+                        reset = 1;
+                        break;
+                    }
+                Trace(1, "REPL complete");
+                break;
+            }
+            default:
+                break;
         }
+
+        OS_Free(event->pParam1);
+        OS_Free(event);
+        if (reset) break;
+        // PM_SetSysMinFreq(PM_SYS_FREQ_32K);
     }
+    soft_reset();
+    goto soft_reset;
 }
 
 void EventDispatch(API_Event_t* pEvent)
