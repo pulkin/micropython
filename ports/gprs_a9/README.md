@@ -25,6 +25,14 @@ Provides cellular functionality.
 Retrieves IMEI number.
 **Returns**: a string with IMEI number.
 
+* `is_sim_present()`
+Checks whether the SIM card is present and ICCID can be retrieved.
+**Returns**: True if SIM card is present.
+
+* `get_iccid()`
+Retrieves ICCID number of the inserted SIM card.
+**Returns**: a string with ICCID number or `None` if no SIM card present.
+
 ### `gps`
 
 Provides the GPS functionality
