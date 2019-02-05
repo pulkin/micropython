@@ -33,6 +33,13 @@ Checks whether the SIM card is present and ICCID can be retrieved.
 Retrieves ICCID number of the inserted SIM card.
 **Returns**: a string with ICCID number or `None` if no SIM card present.
 
+* `sms_send(destination, message)`
+Sends SMS.
+**Args**:
+    * destination (str): telephone number;
+    * message (str): message contents;
+**Raises**: `ValueError` if failed to set up/send SMS.
+
 ### `gps`
 
 Provides the GPS functionality
