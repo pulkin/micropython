@@ -41,8 +41,8 @@ Sends SMS.
 
 **Args**:
 
-  - destination (str): telephone number;
-  - message (str): message contents;
+    * destination (str): telephone number;
+    * message (str): message contents;
 
 **Raises**: `ValueError` if failed to set up/send SMS.
 
