@@ -12,9 +12,9 @@ STATIC mp_obj_t get_imei(void) {
     // Returns:
     //     IMEI number as a string.
     // ========================================
-    uint8_t imei[16];
+    char imei[16];
     memset(imei,0,sizeof(imei));
-    INFO_GetIMEI(imei);
+    INFO_GetIMEI((uint8_t*)imei);
     return mp_obj_new_str(imei, strlen(imei));
 }
 
@@ -26,9 +26,9 @@ STATIC mp_obj_t is_sim_present(void) {
     // Returns:
     //     True if SIM present.
     // ========================================
-    uint8_t iccid[21];
+    char iccid[21];
     memset(iccid, 0, sizeof(iccid));
-    return mp_obj_new_bool(SIM_GetICCID(iccid));
+    return mp_obj_new_bool(SIM_GetICCID((uint8_t*)iccid));
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_sim_present_obj, is_sim_present);
@@ -39,9 +39,9 @@ STATIC mp_obj_t get_iccid(void) {
     // Returns:
     //     ICCID number as a string.
     // ========================================
-    uint8_t iccid[21];
+    char iccid[21];
     memset(iccid, 0, sizeof(iccid));
-    if (SIM_GetICCID(iccid))
+    if (SIM_GetICCID((uint8_t*)iccid))
         return mp_obj_new_str(iccid, strlen(iccid));
     else {
         return mp_const_none;
