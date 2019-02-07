@@ -62,6 +62,30 @@ STATIC mp_obj_t is_sim_present(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_sim_present_obj, is_sim_present);
 
+STATIC mp_obj_t is_network_registered(void) {
+    // ========================================
+    // Checks whether registered on the cellular network.
+    // Returns:
+    //     True if registered.
+    // ========================================
+    return mp_obj_new_bool(sim_status & NTW_REG_BIT);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_network_registered_obj, is_network_registered);
+
+STATIC mp_obj_t is_roaming(void) {
+    // ========================================
+    // Checks whether registered on the roaming network.
+    // Returns:
+    //     True if roaming.
+    // ========================================
+    REQUIRES_NETWORK_REGISTRATION
+
+    return mp_obj_new_bool(sim_status & NTW_ROAM_BIT);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_roaming_obj, is_roaming);
+
 STATIC mp_obj_t get_iccid(void) {
     // ========================================
     // Retrieves ICCID number.
@@ -137,6 +161,8 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&get_imei_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_sim_present), (mp_obj_t)&is_sim_present_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_is_network_registered), (mp_obj_t)&is_network_registered_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_is_roaming), (mp_obj_t)&is_roaming_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&get_iccid_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_sms_send), (mp_obj_t)&sms_send_obj },
 };
