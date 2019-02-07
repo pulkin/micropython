@@ -46,7 +46,9 @@ Checks whether registered on the roaming network.
 * `get_iccid()`
 Retrieves ICCID number of the inserted SIM card.
 
-**Returns**: a string with ICCID number or `None` if no SIM card present.
+**Returns**: a string with ICCID number.
+
+**Raises**: `ValueError` if no ICCID number can be retrieved.
 
 * `sms_send(destination, message)`
 Sends SMS.
