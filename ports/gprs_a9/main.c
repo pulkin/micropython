@@ -27,6 +27,7 @@
 #include "mpconfigport.h"
 #include "modcellular.h"
 #include "modgps.h"
+#include "modmachine.h"
 
 #define AppMain_TASK_STACK_SIZE    (2048 * 2)
 #define AppMain_TASK_PRIORITY      0
@@ -227,6 +228,7 @@ void EventDispatch(API_Event_t* pEvent)
     switch(pEvent->id)
     {
         case API_EVENT_ID_POWER_ON:
+            notify_power_on(pEvent);
             break;
         case API_EVENT_ID_NO_SIMCARD:
         {
