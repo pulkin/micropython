@@ -25,7 +25,7 @@ void notify_gps_update(API_Event_t* event) {
 // Methods
 // -------
 
-STATIC void on(void) {
+STATIC mp_obj_t on(void) {
     // ========================================
     // Turns GPS on.
     // Raises:
@@ -42,15 +42,17 @@ STATIC void on(void) {
         }
         OS_Sleep(1000);
     }
+    return mp_const_none;
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(on_obj, on);
 
-STATIC void off(void) {
+STATIC mp_obj_t off(void) {
     // ========================================
     // Turns GPS off.
     // ========================================
     GPS_Close();
+    return mp_const_none;
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(off_obj, off);
@@ -66,6 +68,7 @@ STATIC mp_obj_t get_firmware_version(void) {
     char buffer[300];
     if (!GPS_GetVersion(buffer,150)) {
         mp_raise_ValueError("Failed to get the firmware version: did you run gps.on()?");
+        return mp_const_none;
     }
     return mp_obj_new_str(buffer, strlen(buffer));
 }
