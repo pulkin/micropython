@@ -73,6 +73,7 @@ STATIC mp_obj_t get_iccid(void) {
     if (SIM_GetICCID((uint8_t*)iccid))
         return mp_obj_new_str(iccid, strlen(iccid));
     else {
+        mp_raise_ValueError("No ICCID data: is SIM card inserted?");
         return mp_const_none;
     }
 }
