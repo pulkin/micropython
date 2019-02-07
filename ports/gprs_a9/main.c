@@ -25,9 +25,8 @@
 
 #include "mphalport.h"
 #include "mpconfigport.h"
+#include "modcellular.h"
 #include "modgps.h"
-
-
 
 #define AppMain_TASK_STACK_SIZE    (2048 * 2)
 #define AppMain_TASK_PRIORITY      0
@@ -198,29 +197,20 @@ void EventDispatch(API_Event_t* pEvent)
         case API_EVENT_ID_POWER_ON:
             break;
         case API_EVENT_ID_NO_SIMCARD:
+        {
+            notify_no_sim(pEvent);
             break;
+        }
         case API_EVENT_ID_NETWORK_REGISTERED_HOME:
+        {
+            notify_registered_home(pEvent);
+            break;
+        }
         case API_EVENT_ID_NETWORK_REGISTERED_ROAMING:
         {
-            uint8_t status;
-            Trace(1,"network register success");
-            bool ret = Network_GetAttachStatus(&status);
-            if(!ret)
-                Trace(1,"get attach staus fail");
-            Trace(1,"attach status:%d",status);
-            if(status == 0)
-            {
-                ret = Network_StartAttach();
-                if(!ret)
-                {
-                    Trace(1,"network attach fail");
-                }
-            }
-            else
-            {
-            }
-        }
+            notify_registered_roaming(pEvent);
             break;
+        }
         case API_EVENT_ID_NETWORK_DETACHED:
             Trace(2,"network detached");
             break;

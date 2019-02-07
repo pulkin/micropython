@@ -1,3 +1,5 @@
+#include "modcellular.h"
+
 #include "py/nlr.h"
 #include "py/obj.h"
 #include "py/runtime.h"
@@ -7,6 +9,31 @@
 #include "api_sim.h"
 #include "api_sms.h"
 #include "api_os.h"
+
+#define NTW_REG_BIT 0x01
+#define NTW_ROAM_BIT 0x02
+
+// ------
+// Notify
+// ------
+
+int sim_status = 0;
+
+void notify_no_sim(API_Event_t* event) {
+    sim_status = 0;
+}
+
+void notify_registered_home(API_Event_t* event) {
+    sim_status = NTW_REG_BIT;
+}
+
+void notify_registered_roaming(API_Event_t* event) {
+    sim_status = NTW_REG_BIT | NTW_ROAM_BIT;
+}
+
+// -------
+// Methods
+// -------
 
 STATIC mp_obj_t get_imei(void) {
     // ========================================
@@ -59,6 +86,8 @@ STATIC mp_obj_t sms_send(mp_obj_t destination, mp_obj_t message) {
     //     destination (str): telephone number;
     //     message (str): message contents;
     // ========================================
+    REQUIRES_NETWORK_REGISTRATION
+
     const char* destination_c = mp_obj_str_get_str(destination);
     const char* message_c = mp_obj_str_get_str(message);
 
