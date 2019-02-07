@@ -36,21 +36,21 @@
 
 HANDLE mainTaskHandle  = NULL;
 HANDLE microPyTaskHandle = NULL;
-Buffer_t fifoBuffer;   //ringbuf
+Buffer_t fifoBuffer; // ringbuf
 uint8_t  fifoBufferData[UART_CIRCLE_FIFO_BUFFER_MAX_LENGTH];
 
 typedef enum
 {
     MICROPY_EVENT_ID_UART_RECEIVED = 1, //param1: length, param2:data(uint8_t*)
     MICROPY_EVENT_ID_UART_MAX
-}MicroPy_Event_ID_t;
+} MicroPy_Event_ID_t;
 
 typedef struct
 {
     MicroPy_Event_ID_t id;
     uint32_t param1;
     uint8_t* pParam1;
-}MicroPy_Event_t;
+} MicroPy_Event_t;
 
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
@@ -108,8 +108,40 @@ void ShowStackInfo()
     uint32_t last_bytes = (uint32_t)&j - info.stackTop;
     uint32_t all_bytes  = info.stackSize*4;
     char msg[32];
-    sprintf(msg, "Stack used: %d/%d\r\n", all_bytes - last_bytes, all_bytes);
+    snprintf(msg, sizeof(msg), "Stack used: %d/%d\r\n", all_bytes - last_bytes, all_bytes);
     mp_hal_stdout_tx_str(msg);
+
+    API_FS_INFO fsInfo;
+    if (API_FS_GetFSInfo(FS_DEVICE_NAME_FLASH, &fsInfo) != 0) {
+        mp_hal_stdout_tx_str("No flash info!\r\n");
+    } else {
+        snprintf(msg, sizeof(msg), "Flash used: %d/%d\r\n", (int)fsInfo.usedSize, (int)fsInfo.totalSize);
+        mp_hal_stdout_tx_str(msg);
+        
+        mp_hal_stdout_tx_str("Files:\r\n");
+        Dir_t* dir = API_FS_OpenDir("/");
+        Dirent_t* dirent;
+        while ((dirent = API_FS_ReadDir(dir))) {
+
+            snprintf(msg, sizeof(msg), "/%s", dirent->d_name);
+
+            mp_hal_stdout_tx_str(" ");
+            mp_hal_stdout_tx_str(msg);
+            mp_hal_stdout_tx_str(" ");
+
+            int32_t fd;
+
+            if ((fd = API_FS_Open(msg, FS_O_RDONLY, 0)) < 0) {
+                snprintf(msg, sizeof(msg), "[FAIL: %d]\r\n", fd);
+                mp_hal_stdout_tx_str(msg);
+            } else {
+                snprintf(msg, sizeof(msg), "%d\r\n", (int)API_FS_GetFileSize(fd));
+                API_FS_Close(fd);
+                mp_hal_stdout_tx_str(msg);
+            }
+        }
+        API_FS_CloseDir(dir);
+    }
 }
 
 bool mp_Init()
