@@ -31,6 +31,18 @@ Checks whether the SIM card is present and ICCID can be retrieved.
 
 **Returns**: True if SIM card is present.
 
+* `is_network_registered()`
+Checks whether registered on the cellular network.
+
+**Returns**: True if registered.
+
+* `is_roaming()`
+Checks whether registered on the roaming network.
+
+**Returns**: True if roaming.
+
+**Raises** `ValueError` if not registered ar all.
+
 * `get_iccid()`
 Retrieves ICCID number of the inserted SIM card.
 
