@@ -93,3 +93,29 @@ Retrieves the number of satellites visible.
 
 **Raises**: `ValueError` if the GPS module never responded.
 
+### `machine`
+
+Provides power-related functions.
+
+* `reset()`
+Hard-resets the module.
+
+* `off()`
+Powers the module down.
+**Note**: By fact, hard-resets the module, at least when USB-powered.
+
+* `idle()`
+Reduces clock rates of the module keeping functionality.
+
+* `get_input_voltage()`
+Retrieves the input voltage and the battery percentage.
+
+**Returns**: two numbers: the voltage in `mV` and the estimated percentage (Lithium battery discharge controller).
+**Note**: also works when USB-powered (the second number returned is irrelevant).
+
+* `power_on_cause()`
+Retrieves the reason for powering the module on.
+
+**Returns**: one of `POWER_ON_CAUSE_ALARM`, `POWER_ON_CAUSE_CHARGE`, `POWER_ON_CAUSE_EXCEPTION`, `POWER_ON_CAUSE_KEY`, `POWER_ON_CAUSE_MAX`, `POWER_ON_CAUSE_RESET`.
+**Note**: never saw anything except `POWER_ON_CAUSE_CHARGE` returned (needs further investigation).
+
