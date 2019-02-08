@@ -22,100 +22,116 @@ and burn the final lod file in the `hex` folder.
 Provides cellular functionality.
 
 * `get_imei()`
-Retrieves IMEI number.
 
-**Returns**: a string with IMEI number.
+  Retrieves IMEI number.
+
+  **Returns**: a string with IMEI number.
 
 * `is_sim_present()`
-Checks whether the SIM card is present and ICCID can be retrieved.
 
-**Returns**: True if SIM card is present.
+  Checks whether the SIM card is present and ICCID can be retrieved.
+
+  **Returns**: True if SIM card is present.
 
 * `is_network_registered()`
-Checks whether registered on the cellular network.
 
-**Returns**: True if registered.
+  Checks whether registered on the cellular network.
+
+  **Returns**: True if registered.
 
 * `is_roaming()`
-Checks whether registered on the roaming network.
 
-**Returns**: True if roaming.
+  Checks whether registered on the roaming network.
 
-**Raises** `ValueError` if not registered ar all.
+  **Returns**: True if roaming.
+
+  **Raises** `ValueError` if not registered ar all.
 
 * `get_iccid()`
-Retrieves ICCID number of the inserted SIM card.
 
-**Returns**: a string with ICCID number.
+  Retrieves ICCID number of the inserted SIM card.
 
-**Raises**: `ValueError` if no ICCID number can be retrieved.
+  **Returns**: a string with ICCID number.
+
+  **Raises**: `ValueError` if no ICCID number can be retrieved.
 
 * `sms_send(destination, message)`
-Sends SMS.
 
-**Args**:
+  Sends SMS.
+
+  **Args**:
 
     * destination (str): telephone number;
     * message (str): message contents;
 
-**Raises**: `ValueError` if failed to set up/send SMS.
+  **Raises**: `ValueError` if failed to set up/send SMS.
 
 ### `gps`
 
 Provides the GPS functionality
 
 * `on()`
-Turns the GPS on. Blocks until the GPS module responds.
 
-**Raises**: `ValueError` if the GPS module does not respond within 10 seconds.
+  Turns the GPS on. Blocks until the GPS module responds.
+
+  **Raises**: `ValueError` if the GPS module does not respond within 10 seconds.
 
 * `off()`
-Turns the GPS off.
+
+  Turns the GPS off.
 
 * `get_firmware_version()`
-Retrieves the firmware version.
 
-**Returns**: the firmware version as a string.
+  Retrieves the firmware version.
 
-**Raises**: `ValueError` if the GPS module fails to respond.
+  **Returns**: the firmware version as a string.
+
+  **Raises**: `ValueError` if the GPS module fails to respond.
 
 * `get_location()`
-Retrieves the current GPS location.
 
-**Returns**: latitude and longitude in degrees.
+  Retrieves the current GPS location.
 
-**Raises**: `ValueError` if the GPS module never responded.
+  **Returns**: latitude and longitude in degrees.
+
+  **Raises**: `ValueError` if the GPS module never responded.
 
 * `get_satellites()`
-Retrieves the number of satellites visible.
 
-**Returns**: the number of satellites tracked and the number of visible satellites.
+  Retrieves the number of satellites visible.
 
-**Raises**: `ValueError` if the GPS module never responded.
+  **Returns**: the number of satellites tracked and the number of visible satellites.
+
+  **Raises**: `ValueError` if the GPS module never responded.
 
 ### `machine`
 
 Provides power-related functions.
 
 * `reset()`
-Hard-resets the module.
+
+  Hard-resets the module.
 
 * `off()`
-Powers the module down.
-**Note**: By fact, hard-resets the module, at least when USB-powered.
+
+  Powers the module down.
+  **Note**: By fact, hard-resets the module, at least when USB-powered.
 
 * `idle()`
-Reduces clock rates of the module keeping functionality.
+
+  Reduces clock rates of the module keeping functionality.
 
 * `get_input_voltage()`
-Retrieves the input voltage and the battery percentage.
 
-**Returns**: two numbers: the voltage in `mV` and the estimated percentage (Lithium battery discharge controller).
-**Note**: also works when USB-powered (the second number returned is irrelevant).
+  Retrieves the input voltage and the battery percentage.
+
+  **Returns**: two numbers: the voltage in `mV` and the estimated percentage (Lithium battery discharge controller).
+  **Note**: also works when USB-powered (the second number returned is irrelevant).
 
 * `power_on_cause()`
-Retrieves the reason for powering the module on.
 
-**Returns**: one of `POWER_ON_CAUSE_ALARM`, `POWER_ON_CAUSE_CHARGE`, `POWER_ON_CAUSE_EXCEPTION`, `POWER_ON_CAUSE_KEY`, `POWER_ON_CAUSE_MAX`, `POWER_ON_CAUSE_RESET`.
-**Note**: never saw anything except `POWER_ON_CAUSE_CHARGE` returned (needs further investigation).
+  Retrieves the reason for powering the module on.
+
+  **Returns**: one of `POWER_ON_CAUSE_ALARM`, `POWER_ON_CAUSE_CHARGE`, `POWER_ON_CAUSE_EXCEPTION`, `POWER_ON_CAUSE_KEY`, `POWER_ON_CAUSE_MAX`, `POWER_ON_CAUSE_RESET`.
+  **Note**: never saw anything except `POWER_ON_CAUSE_CHARGE` returned (needs further investigation).
 
