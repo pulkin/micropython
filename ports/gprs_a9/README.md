@@ -23,9 +23,25 @@ Provides cellular functionality.
 
 * `get_imei()`
 
-  Retrieves IMEI number.
+  Retrieves the International Mobile Equipment Identity (IMEI) number.
 
   **Returns**: a string with IMEI number.
+
+* `get_iccid()`
+
+  Retrieves the Integrated Circuit Card ID (ICCID) number of the inserted SIM card.
+
+  **Returns**: a string with ICCID number.
+
+  **Raises**: `ValueError` if no ICCID number can be retrieved.
+
+* `get_imsi()`
+
+  Retrieves the International Mobile Subscriber Identity (IMSI) number of the inserted SIM card.
+
+  **Returns**: a string with IMSI number.
+
+  **Raises**: `ValueError` if no IMSI number can be retrieved.
 
 * `is_sim_present()`
 
@@ -46,14 +62,6 @@ Provides cellular functionality.
   **Returns**: True if roaming.
 
   **Raises** `ValueError` if not registered ar all.
-
-* `get_iccid()`
-
-  Retrieves ICCID number of the inserted SIM card.
-
-  **Returns**: a string with ICCID number.
-
-  **Raises**: `ValueError` if no ICCID number can be retrieved.
 
 * `sms_send(destination, message)`
 

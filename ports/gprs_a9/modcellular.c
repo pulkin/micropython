@@ -104,6 +104,24 @@ STATIC mp_obj_t get_iccid(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_iccid_obj, get_iccid);
 
+STATIC mp_obj_t get_imsi(void) {
+    // ========================================
+    // Retrieves IMSI number.
+    // Returns:
+    //     IMSI number as a string.
+    // ========================================
+    char imsi[21];
+    memset(imsi, 0, sizeof(imsi));
+    if (SIM_GetIMSI((uint8_t*)imsi))
+        return mp_obj_new_str(imsi, strlen(imsi));
+    else {
+        mp_raise_ValueError("No IMSI data: is SIM card inserted?");
+        return mp_const_none;
+    }
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_imsi_obj, get_imsi);
+
 STATIC mp_obj_t sms_send(mp_obj_t destination, mp_obj_t message) {
     // ========================================
     // Sends an SMS messsage.
@@ -164,6 +182,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_network_registered), (mp_obj_t)&is_network_registered_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_roaming), (mp_obj_t)&is_roaming_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&get_iccid_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_imsi), (mp_obj_t)&get_imsi_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_sms_send), (mp_obj_t)&sms_send_obj },
 };
 
