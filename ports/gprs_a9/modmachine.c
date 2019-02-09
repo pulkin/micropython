@@ -8,6 +8,7 @@
 
 #include "api_event.h"
 #include "api_hal_pm.h"
+#include "api_hal_watchdog.h"
 
 // ------
 // Notify
@@ -15,8 +16,8 @@
 
 Power_On_Cause_t powerOnCause = POWER_ON_CAUSE_MAX;
 
-void notify_power_on(API_Event_t* event) {
-    powerOnCause = event->param1;
+    void notify_power_on(API_Event_t* event) {
+        powerOnCause = event->param1;
 }
 
 // -------
@@ -106,6 +107,37 @@ STATIC mp_obj_t get_input_voltage(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_input_voltage_obj, get_input_voltage);
 
+STATIC mp_obj_t watchdog_on(mp_obj_t timeout) {
+    // ========================================
+    // Arms the hardware watchdog.
+    // Args:
+    //     timeout (int): timeout in seconds.
+    // ========================================
+    WatchDog_Open(WATCHDOG_SECOND_TO_TICK(mp_obj_get_int(timeout)));
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(watchdog_on_obj, watchdog_on);
+
+STATIC mp_obj_t watchdog_off(void) {
+    // ========================================
+    // Disarms the hardware watchdog.
+    // ========================================
+    WatchDog_Close();
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(watchdog_off_obj, watchdog_off);
+
+STATIC mp_obj_t watchdog_reset(void) {
+    // ========================================
+    // Resets the watchdog timeout.
+    // ========================================
+    WatchDog_KeepAlive();
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(watchdog_reset_obj, watchdog_reset);
 
 STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_umachine) },
@@ -115,6 +147,9 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_power_on_cause), (mp_obj_t)&power_on_cause_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&off_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_input_voltage), (mp_obj_t)&get_input_voltage_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_on), (mp_obj_t)&watchdog_on_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_off), (mp_obj_t)&watchdog_off_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_reset), (mp_obj_t)&watchdog_reset_obj },
 
     // Reset reasons
     { MP_ROM_QSTR(MP_QSTR_POWER_ON_CAUSE_KEY),       MP_ROM_INT(POWER_ON_CAUSE_KEY) },

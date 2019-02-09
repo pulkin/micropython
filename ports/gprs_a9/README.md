@@ -143,3 +143,19 @@ Provides power-related functions.
   **Returns**: one of `POWER_ON_CAUSE_ALARM`, `POWER_ON_CAUSE_CHARGE`, `POWER_ON_CAUSE_EXCEPTION`, `POWER_ON_CAUSE_KEY`, `POWER_ON_CAUSE_MAX`, `POWER_ON_CAUSE_RESET`.
   **Note**: never saw anything except `POWER_ON_CAUSE_CHARGE` returned (needs further investigation).
 
+* `watchdog_on(timeout)`
+
+  Arms the hardware watchdog.
+
+  **Args**:
+
+    * timeout (int): timeout in seconds;
+
+* `watchdog_off()`
+
+  Disarms the hardware watchdog.
+
+* `watchdog_reset()`
+
+  Resets the timer on the hardware watchdog.
+
