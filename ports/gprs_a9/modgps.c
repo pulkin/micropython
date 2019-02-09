@@ -75,13 +75,13 @@ STATIC mp_obj_t get_firmware_version(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_firmware_version_obj, get_firmware_version);
 
-STATIC mp_obj_t get_location(void) {
+STATIC mp_obj_t get_last_location(void) {
     // ========================================
-    // Retrieves GPS location.
+    // Retrieves the last GPS location.
     // Returns:
     //     Location reported by GPS: latitude and longitude (degrees).
     // ========================================
-    REQUIRES_VALID_GPS_INFO
+    REQUIRES_VALID_GPS_INFO;
 
     int temp = (int)(gpsInfo->rmc.latitude.value/gpsInfo->rmc.latitude.scale/100);
     double latitude = temp+(double)(gpsInfo->rmc.latitude.value - temp*gpsInfo->rmc.latitude.scale*100)/gpsInfo->rmc.latitude.scale/60.0;
@@ -94,6 +94,19 @@ STATIC mp_obj_t get_location(void) {
     return mp_obj_new_tuple(2, tuple);
 }
 
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_last_location_obj, get_last_location);
+
+STATIC mp_obj_t get_location(void) {
+    // ========================================
+    // Retrieves the current GPS location.
+    // Returns:
+    //     Location reported by GPS: latitude and longitude (degrees).
+    // ========================================
+    REQUIRES_GPS_ON;
+
+    return get_last_location();
+}
+
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_location_obj, get_location);
 
 STATIC mp_obj_t get_satellites(void) {
@@ -102,7 +115,7 @@ STATIC mp_obj_t get_satellites(void) {
     // Returns:
     //     The number of visible GPS satellites.
     // ========================================
-    REQUIRES_VALID_GPS_INFO
+    REQUIRES_VALID_GPS_INFO;
 
     mp_obj_t tuple[2] = {
         mp_obj_new_int(gpsInfo->gga.satellites_tracked),
@@ -119,6 +132,7 @@ STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&off_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_firmware_version), (mp_obj_t)&get_firmware_version_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_location), (mp_obj_t)&get_location_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_last_location), (mp_obj_t)&get_last_location_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_satellites), (mp_obj_t)&get_satellites_obj },
 };
 

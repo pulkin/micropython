@@ -102,6 +102,14 @@ Provides the GPS functionality
 
   **Returns**: latitude and longitude in degrees.
 
+  **Raises**: `ValueError` if the GPS module never responded or is off.
+
+* `get_last_location()`
+
+  Retrieves the last GPS location.
+
+  **Returns**: latitude and longitude in degrees.
+
   **Raises**: `ValueError` if the GPS module never responded.
 
 * `get_satellites()`
