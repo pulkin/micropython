@@ -63,6 +63,12 @@ Provides cellular functionality.
 
   **Raises** `ValueError` if not registered ar all.
 
+* `sms_list()`
+
+  Retrieves SMS from the SIM card.
+  
+  **Returns**: a list of SMS messages.
+
 * `sms_send(destination, message)`
 
   Sends SMS.
