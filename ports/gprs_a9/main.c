@@ -290,6 +290,9 @@ void EventDispatch(API_Event_t* pEvent)
         case API_EVENT_ID_GPS_UART_RECEIVED:
             notify_gps_update(pEvent);
             break;
+        case API_EVENT_ID_SMS_LIST_MESSAGE:
+            notify_sms_list(pEvent);
+            break;
         default:
             break;
     }
