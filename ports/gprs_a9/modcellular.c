@@ -62,55 +62,33 @@ typedef struct _sms_obj_t {
     mp_obj_t message;
 } sms_obj_t;
 
-//mp_obj_t sms_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+mp_obj_t sms_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
 
-    //enum { ARG_phone_number, ARG_message };
-    //static const mp_arg_t allowed_args[] = {
-        //{ MP_QSTR_phone_number, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-        //{ MP_QSTR_message, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
-    //};
+    enum { ARG_phone_number, ARG_message };
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_phone_number, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_message, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+    };
 
-    //mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    //mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all_kw_array(n_args, n_kw, all_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    //sms_obj_t *self = m_new_obj(sms_obj_t);
-    //self->base.type = type;
-    
-    //const char* phone_number = mp_obj_str_get_str(args[ARG_phone_number].u_obj);
-    //uint16_t phone_number_len = strlen(phone_number);
-    //if (phone_number_len > SMS_PHONE_NUMBER_MAX_LEN - 1) {
-        //char msg[64];
-        //snprintf(msg, sizeof(msg), "The length of the phone number %d exceeds the maximal value %d", phone_number_len, SMS_PHONE_NUMBER_MAX_LEN - 1);
-        //mp_raise_ValueError(msg);
-        //return mp_const_none;
-    //}
-    //memcpy(self->phone_number, phone_number, phone_number_len + 1);
-
-    //const char* message = mp_obj_str_get_str(args[ARG_message].u_obj);
-    //self->message_len = strlen(message) + 1;
-    //self->message = OS_Malloc(self->message_len);
-    //memcpy(self->message, message, self->message_len);
-    
-    //return MP_OBJ_FROM_PTR(self);
-//}
+    sms_obj_t *self = m_new_obj(sms_obj_t);
+    self->base.type = type;
+    self->index = 0;
+    self->status = 0;
+    // TODO: fix the following
+    self->phone_number_type = 0;
+    self->phone_number = args[ARG_phone_number].u_obj;
+    self->message = args[ARG_message].u_obj;
+    return MP_OBJ_FROM_PTR(self);
+}
 
 uint8_t bitsum(uint32_t i) {
      i = i - ((i >> 1) & 0x55555555);
      i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
      return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
-
-STATIC mp_obj_t sms___status__(mp_obj_t self_in) {
-    // ========================================
-    // SMS status.
-    // Returns:
-    //     Status as int.
-    // ========================================
-    sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    return mp_obj_new_int(self->status);
-}
-
-MP_DEFINE_CONST_FUN_OBJ_1(sms___status___obj, sms___status__);
 
 STATIC mp_obj_t sms_inbox(mp_obj_t self_in) {
     // ========================================
@@ -124,8 +102,6 @@ STATIC mp_obj_t sms_inbox(mp_obj_t self_in) {
     return mp_obj_new_bool(s & (SMS_STATUS_READ | SMS_STATUS_UNREAD));
 }
 
-MP_DEFINE_CONST_FUN_OBJ_1(sms_inbox_obj, sms_inbox);
-
 STATIC mp_obj_t sms_unread(mp_obj_t self_in) {
     // ========================================
     // Determines if SMS is unread.
@@ -137,8 +113,6 @@ STATIC mp_obj_t sms_unread(mp_obj_t self_in) {
     REQUIRES_VALID_SMS_STATUS(s);
     return mp_obj_new_bool(s & SMS_STATUS_UNREAD);
 }
-
-MP_DEFINE_CONST_FUN_OBJ_1(sms_unread_obj, sms_unread);
 
 STATIC mp_obj_t sms_sent(mp_obj_t self_in) {
     // ========================================
@@ -152,65 +126,117 @@ STATIC mp_obj_t sms_sent(mp_obj_t self_in) {
     return mp_obj_new_bool(!(s | SMS_STATUS_UNSENT));
 }
 
-MP_DEFINE_CONST_FUN_OBJ_1(sms_sent_obj, sms_sent);
+STATIC mp_obj_t sms_send(mp_obj_t self_in) {
+    // ========================================
+    // Sends an SMS messsage.
+    // ========================================
+    REQUIRES_NETWORK_REGISTRATION;
+
+    sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    if (self->status != 0) {
+        mp_raise_ValueError("A message with non-zero status cannot be sent");
+        return mp_const_none;
+    }
+
+    const char* destination_c = mp_obj_str_get_str(self->phone_number);
+    const char* message_c = mp_obj_str_get_str(self->message);
+
+    if (!SMS_SetFormat(SMS_FORMAT_TEXT, SIM0)) {
+        mp_raise_ValueError("Failed to set SMS format: is SIM card present?");
+        return mp_const_none;
+    }
+
+    SMS_Parameter_t smsParam = {
+        .fo = 17 , // stadard values
+        .vp = 167,
+        .pid= 0  ,
+        .dcs= 8  , // 0:English 7bit, 4:English 8 bit, 8:Unicode 2 Bytes
+    };
+
+    if (!SMS_SetParameter(&smsParam,SIM0)) {
+        mp_raise_ValueError("Failed to set SMS parameters");
+        return mp_const_none;
+    }
+
+    if (!SMS_SetNewMessageStorage(SMS_STORAGE_SIM_CARD)) {
+        mp_raise_ValueError("Failed to set SMS storage in the SIM card");
+        return mp_const_none;
+    }
+
+    uint8_t* unicode = NULL;
+    uint32_t unicodeLen;
+
+    if (!SMS_LocalLanguage2Unicode((uint8_t*)message_c, strlen(message_c), CHARSET_UTF_8, &unicode, &unicodeLen)) {
+        mp_raise_ValueError("Failed to convert to Unicode before sending SMS");
+        return mp_const_none;
+    }
+
+    if (!SMS_SendMessage(destination_c, unicode, unicodeLen, SIM0)) {
+        OS_Free(unicode);
+        mp_raise_ValueError("Failed to send SMS message");
+        return mp_const_none;
+    }
+    OS_Free(unicode);
+
+    return mp_const_none;
+}
+
+MP_DEFINE_CONST_FUN_OBJ_1(sms_send_obj, &sms_send);
+
+STATIC void sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
+    // ========================================
+    // SMS.[attr]
+    // ========================================
+    if (dest[0] != MP_OBJ_NULL) {
+    } else {
+        sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
+        // .telephone_number
+        if (attr == MP_QSTR_phone_number) {
+            dest[0] = self->phone_number;
+        // .message
+        } else if (attr == MP_QSTR_message) {
+            dest[0] = self->message;
+        // .status
+        } else if (attr == MP_QSTR_status) {
+            dest[0] = mp_obj_new_int(self->status);
+        // .inbox
+        } else if (attr == MP_QSTR_inbox) {
+            dest[0] = sms_inbox(self_in);
+        // .unread
+        } else if (attr == MP_QSTR_unread) {
+            dest[0] = sms_unread(self_in);
+        // .sent
+        } else if (attr == MP_QSTR_sent) {
+            dest[0] = sms_sent(self_in);
+        // .send
+        } else if (attr == MP_QSTR_send) {
+            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), MP_ROM_PTR(&sms_send_obj), dest);
+        }
+    }
+}
 
 STATIC void sms_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     // ========================================
     // SMS.__str__()
     // ========================================
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    mp_hal_stdout_tx_str("SMS(\"");
-    mp_hal_stdout_tx_str(mp_obj_str_get_str(self->phone_number));
-    mp_hal_stdout_tx_str("\"(");
-    switch (self->phone_number_type) {
-        case SMS_NUMBER_TYPE_UNKNOWN:
-            mp_hal_stdout_tx_str("unk");
-            break;
-        case SMS_NUMBER_TYPE_INTERNATIONAL:
-            mp_hal_stdout_tx_str("int");
-            break;
-        case SMS_NUMBER_TYPE_NATIONAL:
-            mp_hal_stdout_tx_str("loc");
-            break;
-        default: {
-            char msg[8];
-            snprintf(msg, sizeof(msg), "%d", self->phone_number_type);
-            mp_hal_stdout_tx_str(msg);
-            break;
-        }
-    }
-    mp_hal_stdout_tx_str("), \"");
-    mp_hal_stdout_tx_str(mp_obj_str_get_str(self->message));
-    mp_hal_stdout_tx_str("\", unread: ");
-    if (sms_unread(self_in)) {
-        mp_hal_stdout_tx_str("True");
-    } else {
-        mp_hal_stdout_tx_str("False");
-    }
-    mp_hal_stdout_tx_str(", sent: ");
-    if (sms_sent(self_in)) {
-        mp_hal_stdout_tx_str("True");
-    } else {
-        mp_hal_stdout_tx_str("False");
-    }
-    mp_hal_stdout_tx_str(")");
+    mp_printf(print, "SMS(\"%s\"(%s), \"%s\", 0x%02x)",
+            mp_obj_str_get_str(self->phone_number),
+            self->phone_number_type == SMS_NUMBER_TYPE_UNKNOWN ? "unk" :
+            self->phone_number_type == SMS_NUMBER_TYPE_INTERNATIONAL ? "int" :
+            self->phone_number_type == SMS_NUMBER_TYPE_NATIONAL ? "loc" : "???",
+            mp_obj_str_get_str(self->message),
+            self->status
+    );
 }
-
-STATIC const mp_rom_map_elem_t sms_locals_dict_table[] = {
-    { MP_ROM_QSTR(MP_QSTR___status__), MP_ROM_PTR(&sms___status___obj) },
-    { MP_ROM_QSTR(MP_QSTR_is_inbox), MP_ROM_PTR(&sms_inbox_obj) },
-    { MP_ROM_QSTR(MP_QSTR_is_unread), MP_ROM_PTR(&sms_unread_obj) },
-    { MP_ROM_QSTR(MP_QSTR_is_sent), MP_ROM_PTR(&sms_sent_obj) },
-};
-
-STATIC MP_DEFINE_CONST_DICT(sms_locals_dict, sms_locals_dict_table);
 
 const mp_obj_type_t sms_type = {
     { &mp_type_type },
     .name = MP_QSTR_SMS,
-    // .make_new = sms_make_new,
+    .make_new = sms_make_new,
     .print = sms_print,
-    .locals_dict = (mp_obj_dict_t*)&sms_locals_dict,
+    .attr = sms_attr,
 };
 
 // -------
@@ -229,7 +255,7 @@ STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record) {
     self->status = (uint8_t)record->status;
     self->phone_number_type = (uint8_t)record->phoneNumberType;
     // Is this an SDK bug?
-    self->phone_number = mp_obj_new_str(record->phoneNumber + 1, SMS_PHONE_NUMBER_MAX_LEN - 1);
+    self->phone_number = mp_obj_new_str(record->phoneNumber + 1, strlen(record->phoneNumber + 1));
     self->message = mp_obj_new_str(record->data, record->dataLen);
     return MP_OBJ_FROM_PTR(self);
 }
@@ -361,59 +387,6 @@ STATIC mp_obj_t sms_list(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(sms_list_obj, sms_list);
 
-STATIC mp_obj_t sms_send(mp_obj_t destination, mp_obj_t message) {
-    // ========================================
-    // Sends an SMS messsage.
-    // Args:
-    //     destination (str): telephone number;
-    //     message (str): message contents;
-    // ========================================
-    REQUIRES_NETWORK_REGISTRATION;
-
-    const char* destination_c = mp_obj_str_get_str(destination);
-    const char* message_c = mp_obj_str_get_str(message);
-
-    if (!SMS_SetFormat(SMS_FORMAT_TEXT, SIM0)) {
-        mp_raise_ValueError("Failed to set SMS format: is SIM card present?");
-        return mp_const_none;
-    }
-
-    SMS_Parameter_t smsParam = {
-        .fo = 17 , // stadard values
-        .vp = 167,
-        .pid= 0  ,
-        .dcs= 8  , // 0:English 7bit, 4:English 8 bit, 8:Unicode 2 Bytes
-    };
-    if (!SMS_SetParameter(&smsParam,SIM0)) {
-        mp_raise_ValueError("Failed to set SMS parameters");
-        return mp_const_none;
-    }
-
-    if (!SMS_SetNewMessageStorage(SMS_STORAGE_SIM_CARD)) {
-        mp_raise_ValueError("Failed to set SMS storage in the SIM card");
-        return mp_const_none;
-    }
-
-    uint8_t* unicode = NULL;
-    uint32_t unicodeLen;
-
-    if (!SMS_LocalLanguage2Unicode((uint8_t*)message_c, strlen(message_c), CHARSET_UTF_8, &unicode, &unicodeLen)) {
-        mp_raise_ValueError("Failed to convert to Unicode before sending SMS");
-        return mp_const_none;
-    }
-
-    if (!SMS_SendMessage(destination_c, unicode, unicodeLen, SIM0)) {
-        OS_Free(unicode);
-        mp_raise_ValueError("Failed to send SMS message");
-        return mp_const_none;
-    }
-    OS_Free(unicode);
-
-    return mp_const_none;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(sms_send_obj, sms_send);
-
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
@@ -426,7 +399,6 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&get_iccid_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imsi), (mp_obj_t)&get_imsi_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_sms_list), (mp_obj_t)&sms_list_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_send), (mp_obj_t)&sms_send_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);

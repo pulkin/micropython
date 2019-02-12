@@ -69,16 +69,23 @@ Provides cellular functionality.
   
   **Returns**: a list of SMS messages.
 
-* `sms_send(destination, message)`
+* `SMS(phone_number, message)`
 
-  Sends SMS.
+  A class for handling SMS.
 
-  **Args**:
+  **Attrs**:
 
-    * destination (str): telephone number;
+    * phone_number (str): phone number (sender or desstination);
     * message (str): message contents;
+    * status (int): an integer with status bits;
+    * inbox (bool): incoming message if `True`, outgoing message if `False` or unknown status if `None`;
+    * unread (bool): unread message if `True`, previously read message if `False` ir unknown status if `None`;
+    * sent (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
+    * `send()`
+    
+      Sends the message.
 
-  **Raises**: `ValueError` if failed to set up/send SMS.
+      **Raises**: `ValueError` if failed to set up/send SMS.
 
 ### `gps`
 
