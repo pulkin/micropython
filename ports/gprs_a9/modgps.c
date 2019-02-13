@@ -10,6 +10,7 @@
 #include "api_event.h"
 #include "gps_parse.h"
 #include "gps.h"
+#include "time.h"
 
 // ------
 // Notify
@@ -34,13 +35,15 @@ STATIC mp_obj_t on(void) {
     GPS_Init();
     GPS_Open(NULL);
     gpsInfo = Gps_GetInfo();
-    uint8_t attempts = 0;
-    while (gpsInfo->rmc.latitude.value == 0) {
-        attempts ++;
-        if (attempts == MAX_GPS_POLL_ATTEMPTS) {
-            mp_raise_ValueError("Failed to start GPS");
+    clock_t time = clock();
+    while (clock() - time < MAX_GPS_TIMEOUT * CLOCKS_PER_MSEC) {
+        if (gpsInfo->rmc.latitude.value != 0) {
+            break;
         }
-        OS_Sleep(1000);
+        OS_Sleep(100);
+    }
+    if (gpsInfo->rmc.latitude.value == 0) {
+        mp_raise_ValueError("Failed to start GPS");
     }
     return mp_const_none;
 }
@@ -66,7 +69,7 @@ STATIC mp_obj_t get_firmware_version(void) {
     //     ValueError if GPS was off.
     // ========================================
     char buffer[300];
-    if (!GPS_GetVersion(buffer,150)) {
+    if (!GPS_GetVersion(buffer, 150)) {
         mp_raise_ValueError("Failed to get the firmware version: did you run gps.on()?");
         return mp_const_none;
     }

@@ -10,6 +10,7 @@
 #include "api_sms.h"
 #include "api_os.h"
 #include "buffer.h"
+#include "time.h"
 
 #define NTW_REG_BIT 0x01
 #define NTW_ROAM_BIT 0x02
@@ -154,7 +155,7 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
         .dcs= 8  , // 0:English 7bit, 4:English 8 bit, 8:Unicode 2 Bytes
     };
 
-    if (!SMS_SetParameter(&smsParam,SIM0)) {
+    if (!SMS_SetParameter(&smsParam, SIM0)) {
         mp_raise_ValueError("Failed to set SMS parameters");
         return mp_const_none;
     }
@@ -221,13 +222,14 @@ STATIC void sms_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
     // SMS.__str__()
     // ========================================
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    mp_printf(print, "SMS(\"%s\"(%s), \"%s\", 0x%02x)",
+    mp_printf(print, "SMS(\"%s\"(%s), \"%s\", 0x%02x, #%d)",
             mp_obj_str_get_str(self->phone_number),
             self->phone_number_type == SMS_NUMBER_TYPE_UNKNOWN ? "unk" :
             self->phone_number_type == SMS_NUMBER_TYPE_INTERNATIONAL ? "int" :
             self->phone_number_type == SMS_NUMBER_TYPE_NATIONAL ? "loc" : "???",
             mp_obj_str_get_str(self->message),
-            self->status
+            self->status,
+            self->index
     );
 }
 
@@ -367,8 +369,8 @@ STATIC mp_obj_t sms_list(void) {
 
     SMS_ListMessageRequst(SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD);
     
-    uint8_t attempts = 0;
-    for (attempts = 0; attempts < MAX_SMS_LIST_ATTEMPTS; attempts++) {
+    clock_t time = clock();
+    while (clock() - time < MAX_SMS_LIST_TIMEOUT * CLOCKS_PER_MSEC) {
         OS_Sleep(100);
         if (sms_list_buffer_count == storage.used) break;
     }
