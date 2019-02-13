@@ -46,6 +46,8 @@ void notify_sms_list(API_Event_t* event) {
     if (sms_list_buffer && (sms_list_buffer->len > sms_list_buffer_count)) {
         sms_list_buffer->items[sms_list_buffer_count] = sms_from_record(messageInfo);
         sms_list_buffer_count ++;
+    } else {
+        mp_printf(&mp_plat_print, "WARN: SMS list element discarded");
     }
     OS_Free(messageInfo->data);
 }
@@ -55,7 +57,7 @@ void notify_sms_sent(API_Event_t* event) {
 }
 
 void notify_sms_error(API_Event_t* event) {
-    mp_printf(&mp_plat_print, "SMS Error %d", event->param1);
+    mp_printf(&mp_plat_print, "WARN: SMS Error %d", event->param1);
 }
 
 // -------
