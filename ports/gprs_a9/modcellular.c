@@ -50,6 +50,14 @@ void notify_sms_list(API_Event_t* event) {
     OS_Free(messageInfo->data);
 }
 
+void notify_sms_sent(API_Event_t* event) {
+    // mp_printf(&mp_plat_print, "SMS has been sent");
+}
+
+void notify_sms_error(API_Event_t* event) {
+    mp_printf(&mp_plat_print, "SMS Error %d", event->param1);
+}
+
 // -------
 // Classes
 // -------
@@ -146,7 +154,7 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
     if (!SMS_SetFormat(SMS_FORMAT_TEXT, SIM0)) {
         mp_raise_ValueError("Failed to set SMS format: is SIM card present?");
         return mp_const_none;
-    }
+    } 
 
     SMS_Parameter_t smsParam = {
         .fo = 17 , // stadard values
@@ -175,7 +183,7 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
 
     if (!SMS_SendMessage(destination_c, unicode, unicodeLen, SIM0)) {
         OS_Free(unicode);
-        mp_raise_ValueError("Failed to send SMS message");
+        mp_raise_ValueError("Failed to submit SMS message");
         return mp_const_none;
     }
     OS_Free(unicode);
@@ -212,7 +220,7 @@ STATIC void sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
             dest[0] = sms_sent(self_in);
         // .send
         } else if (attr == MP_QSTR_send) {
-            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), MP_ROM_PTR(&sms_send_obj), dest);
+            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&sms_send_obj), dest);
         }
     }
 }
@@ -233,7 +241,7 @@ STATIC void sms_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
     );
 }
 
-const mp_obj_type_t sms_type = {
+STATIC const mp_obj_type_t sms_type = {
     { &mp_type_type },
     .name = MP_QSTR_SMS,
     .make_new = sms_make_new,
@@ -257,8 +265,8 @@ STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record) {
     self->status = (uint8_t)record->status;
     self->phone_number_type = (uint8_t)record->phoneNumberType;
     // Is this an SDK bug?
-    self->phone_number = mp_obj_new_str(record->phoneNumber + 1, strlen(record->phoneNumber + 1));
-    self->message = mp_obj_new_str(record->data, record->dataLen);
+    self->phone_number = mp_obj_new_str((char*)record->phoneNumber + 1, strlen(record->phoneNumber + 1));
+    self->message = mp_obj_new_str((char*)record->data, record->dataLen);
     return MP_OBJ_FROM_PTR(self);
 }
 
@@ -370,9 +378,14 @@ STATIC mp_obj_t sms_list(void) {
     SMS_ListMessageRequst(SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD);
     
     clock_t time = clock();
+    uint8_t prev_count = 0;
     while (clock() - time < MAX_SMS_LIST_TIMEOUT * CLOCKS_PER_MSEC) {
         OS_Sleep(100);
         if (sms_list_buffer_count == storage.used) break;
+        if (prev_count != sms_list_buffer_count) {
+            prev_count = sms_list_buffer_count;
+            time = clock();
+        }
     }
     
     mp_obj_list_t *result = sms_list_buffer;

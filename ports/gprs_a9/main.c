@@ -230,21 +230,27 @@ void EventDispatch(API_Event_t* pEvent)
         case API_EVENT_ID_POWER_ON:
             notify_power_on(pEvent);
             break;
+
         case API_EVENT_ID_NO_SIMCARD:
-        {
             notify_no_sim(pEvent);
             break;
-        }
+
         case API_EVENT_ID_NETWORK_REGISTERED_HOME:
-        {
             notify_registered_home(pEvent);
             break;
-        }
+
         case API_EVENT_ID_NETWORK_REGISTERED_ROAMING:
-        {
             notify_registered_roaming(pEvent);
             break;
-        }
+
+        case API_EVENT_ID_SMS_SENT:
+            notify_sms_sent(pEvent);
+            break;
+
+        case API_EVENT_ID_SMS_ERROR:
+            notify_sms_error(pEvent);
+            break;
+
         case API_EVENT_ID_NETWORK_DETACHED:
             Trace(2,"network detached");
             break;
