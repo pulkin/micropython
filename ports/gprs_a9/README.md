@@ -87,6 +87,12 @@ Provides cellular functionality.
 
       **Raises**: `ValueError` if failed to set up/send SMS.
 
+    * `withdraw()`
+
+      Withdraws SMS from SIM storage. Resets status and index of this object to zero.
+
+      **Raises**: `ValueError` if failed to withdraw.
+
 ### `gps`
 
 Provides the GPS functionality

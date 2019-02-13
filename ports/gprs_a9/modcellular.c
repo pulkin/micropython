@@ -195,6 +195,30 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
 
 MP_DEFINE_CONST_FUN_OBJ_1(sms_send_obj, &sms_send);
 
+STATIC mp_obj_t sms_withdraw(mp_obj_t self_in) {
+    // ========================================
+    // Withdraws an SMS message from the SIM card.
+    // ========================================
+
+    sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    if (self->index == 0 || self->status == 0) {
+        mp_raise_ValueError("Cannot withdraw SMS with zero index/status");
+        return mp_const_none;
+    }
+
+    if (!SMS_DeleteMessage(self->index, SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD)) {
+        mp_raise_ValueError("Failed to withdraw SMS");
+        return mp_const_none;
+    }
+
+    self->status = 0;
+    self->index = 0;
+    return mp_const_none;
+}
+
+MP_DEFINE_CONST_FUN_OBJ_1(sms_withdraw_obj, &sms_withdraw);
+
 STATIC void sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     // ========================================
     // SMS.[attr]
@@ -223,6 +247,9 @@ STATIC void sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         // .send
         } else if (attr == MP_QSTR_send) {
             mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&sms_send_obj), dest);
+        // .withdraw
+        } else if (attr == MP_QSTR_withdraw) {
+            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&sms_withdraw_obj), dest);
         }
     }
 }
