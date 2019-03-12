@@ -15,40 +15,52 @@
 #define NTW_REG_BIT 0x01
 #define NTW_ROAM_BIT 0x02
 
+// --------------
+// Vars: statuses
+// --------------
+
+// Tracks SIM status on the network
+int sim_status = 0;
+uint8_t sim_status_updated = 0;
+
+// Count SMS recieved
+uint8_t sms_recieved_count = 0;
+
+// -------------------
+// Vars: SMS retrieval
+// -------------------
+
+// A buffer used for listing messages
+mp_obj_list_t* sms_list_buffer = NULL;
+uint8_t sms_list_buffer_count = 0;
+
+// SMS parsing
+STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record);
+STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
+
 void cellular_init0(void) {
-    // TODO: Implement
+    sim_status_updated = 0;
+    sms_recieved_count = 0;
 }
 
 // ------
 // Notify
 // ------
 
-// Tracks SIM status on the network
-int sim_status = 0;
-
-// A buffer used for listing messages
-mp_obj_list_t* sms_list_buffer = NULL;
-uint8_t sms_list_buffer_count = 0;
-
-// Count SMS recieved
-uint8_t sms_recieved_count = 0;
-
-// SMS parsing
-STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record);
-STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
-
 void notify_no_sim(API_Event_t* event) {
     sim_status = 0;
+    sim_status_updated = 1;
 }
 
 void notify_registered_home(API_Event_t* event) {
     sim_status = NTW_REG_BIT;
+    sim_status_updated = 1;
 }
 
 void notify_registered_roaming(API_Event_t* event) {
     sim_status = NTW_REG_BIT | NTW_ROAM_BIT;
+    sim_status_updated = 1;
 }
-
 
 void notify_sms_list(API_Event_t* event) {
     SMS_Message_Info_t* messageInfo = (SMS_Message_Info_t*)event->pParam1;
@@ -71,7 +83,7 @@ void notify_sms_error(API_Event_t* event) {
 }
 
 void notify_sms_receipt(API_Event_t* event) {
-    // TODO: Implement
+    sms_recieved_count ++;
 }
 
 void notify_signal(API_Event_t* event) {

@@ -1,8 +1,5 @@
 #include "api_event.h"
 
-extern int sim_status;
-extern uint8_t sms_recieved_count;
-
 void cellular_init0(void);
 
 void notify_no_sim(API_Event_t* event);
