@@ -85,7 +85,7 @@ void gc_collect(void) {
 
 
 void nlr_jump_fail(void *val) {
-    Assert(false,"nlr_jump_fail");
+    Assert(false, "nlr_jump_fail");
     while (1);//never reach here actully
 }
 
@@ -178,6 +178,7 @@ void soft_reset(void) {
     mp_hal_stdout_tx_str("PYB: soft reboot\r\n");
     mp_hal_delay_us(10000); // allow UART to flush output
     mp_Init();
+    cellular_init0();
 }
 
 
@@ -188,6 +189,7 @@ void MicroPyTask(void *pData)
     Buffer_Init(&fifoBuffer, fifoBufferData, sizeof(fifoBufferData));
     UartInit();
     mp_Init();
+    cellular_init0();
     
     uint8_t reset;
 soft_reset:
@@ -251,15 +253,16 @@ void EventDispatch(API_Event_t* pEvent)
             notify_sms_error(pEvent);
             break;
 
-        case API_EVENT_ID_NETWORK_DETACHED:
-            Trace(2,"network detached");
+        case API_EVENT_ID_SMS_LIST_MESSAGE:
+            notify_sms_list(pEvent);
             break;
-        case API_EVENT_ID_NETWORK_ATTACH_FAILED:
-            Trace(2,"network attach failed");
+
+        case API_EVENT_ID_SMS_RECEIVED:
+            notify_sms_receipt(pEvent);
             break;
-        case API_EVENT_ID_NETWORK_GOT_TIME:
-            Trace(2,"network got time");
-            break;
+
+        // UART
+        // ====
         case API_EVENT_ID_UART_RECEIVED:
             Trace(1,"UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
             if(pEvent->param1 == UART1)
@@ -290,15 +293,16 @@ void EventDispatch(API_Event_t* pEvent)
                 memset((void*)event,0,sizeof(MicroPy_Event_t));
                 event->id = MICROPY_EVENT_ID_UART_RECEIVED;
                 event->param1 = len;
-                OS_SendEvent(microPyTaskHandle,(void*)event,OS_TIME_OUT_WAIT_FOREVER,0);
+                OS_SendEvent(microPyTaskHandle, (void*)event, OS_TIME_OUT_WAIT_FOREVER, 0);
             }
             break;
+
+        // GPS
+        // ===
         case API_EVENT_ID_GPS_UART_RECEIVED:
             notify_gps_update(pEvent);
             break;
-        case API_EVENT_ID_SMS_LIST_MESSAGE:
-            notify_sms_list(pEvent);
-            break;
+
         default:
             break;
     }
@@ -311,8 +315,7 @@ void AppMainTask(void *pData)
     
     TIME_SetIsAutoUpdateRtcTime(true);
 
-    microPyTaskHandle = OS_CreateTask(MicroPyTask,
-                                    NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, "mpy Task");                                    
+    microPyTaskHandle = OS_CreateTask(MicroPyTask, NULL, NULL, MICROPYTHON_TASK_STACK_SIZE, MICROPYTHON_TASK_PRIORITY, 0, 0, "mpy Task");                                    
     while(1)
     {
         if(OS_WaitEvent(mainTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))
@@ -329,8 +332,7 @@ void AppMainTask(void *pData)
 }
 void _Main(void)
 {
-    mainTaskHandle = OS_CreateTask(AppMainTask ,
-                                   NULL, NULL, AppMain_TASK_STACK_SIZE, AppMain_TASK_PRIORITY, 0, 0, "main Task");
+    mainTaskHandle = OS_CreateTask(AppMainTask, NULL, NULL, AppMain_TASK_STACK_SIZE, AppMain_TASK_PRIORITY, 0, 0, "main Task");
     OS_SetUserMainHandle(&mainTaskHandle);
 }
 
@@ -338,7 +340,7 @@ void _Main(void)
 int mp_hal_stdin_rx_chr(void) {
     uint8_t c;
     for (;;) {
-        if(Buffer_Gets(&fifoBuffer,&c,1))
+        if (Buffer_Gets(&fifoBuffer, &c, 1))
             return c;
         MICROPY_EVENT_POLL_HOOK
         OS_Sleep(1);

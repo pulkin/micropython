@@ -15,6 +15,10 @@
 #define NTW_REG_BIT 0x01
 #define NTW_ROAM_BIT 0x02
 
+void cellular_init0(void) {
+    // TODO: Implement
+}
+
 // ------
 // Notify
 // ------
@@ -25,6 +29,13 @@ int sim_status = 0;
 // A buffer used for listing messages
 mp_obj_list_t* sms_list_buffer = NULL;
 uint8_t sms_list_buffer_count = 0;
+
+// Count SMS recieved
+uint8_t sms_recieved_count = 0;
+
+// SMS parsing
+STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record);
+STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
 
 void notify_no_sim(API_Event_t* event) {
     sim_status = 0;
@@ -38,7 +49,6 @@ void notify_registered_roaming(API_Event_t* event) {
     sim_status = NTW_REG_BIT | NTW_ROAM_BIT;
 }
 
-STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record);
 
 void notify_sms_list(API_Event_t* event) {
     SMS_Message_Info_t* messageInfo = (SMS_Message_Info_t*)event->pParam1;
@@ -47,17 +57,25 @@ void notify_sms_list(API_Event_t* event) {
         sms_list_buffer->items[sms_list_buffer_count] = sms_from_record(messageInfo);
         sms_list_buffer_count ++;
     } else {
-        mp_printf(&mp_plat_print, "WARN: SMS list element discarded");
+        mp_warning("SMS list element discarded");
     }
     OS_Free(messageInfo->data);
 }
 
 void notify_sms_sent(API_Event_t* event) {
-    // mp_printf(&mp_plat_print, "SMS has been sent");
+    mp_printf(&mp_plat_print, "SMS has been sent");
 }
 
 void notify_sms_error(API_Event_t* event) {
-    mp_printf(&mp_plat_print, "WARN: SMS Error %d", event->param1);
+    mp_warning("SMS Error %d", event->param1);
+}
+
+void notify_sms_receipt(API_Event_t* event) {
+    // TODO: Implement
+}
+
+void notify_signal(API_Event_t* event) {
+    // TODO: Implement
 }
 
 // -------
@@ -293,9 +311,41 @@ STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record) {
     self->index = record->index;
     self->status = (uint8_t)record->status;
     self->phone_number_type = (uint8_t)record->phoneNumberType;
-    // Is this an SDK bug?
-    self->phone_number = mp_obj_new_str((char*)record->phoneNumber + 1, strlen(record->phoneNumber + 1));
+    self->phone_number = mp_obj_new_str((char*)record->phoneNumber + 1, SMS_PHONE_NUMBER_MAX_LEN - 1);
     self->message = mp_obj_new_str((char*)record->data, record->dataLen);
+    return MP_OBJ_FROM_PTR(self);
+}
+
+STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length) {
+    // ========================================
+    // Prepares an SMS object from raw header and contents.
+    // Returns:
+    //     A new SMS object.
+    // ========================================
+
+    // TODO: This function is not tested / not used. Consider removing it.
+    if (header[0] != '"') {
+        return mp_const_none;
+    }
+
+    uint32_t i;
+    for (i=1; i<header_length; i++) {
+        if (header[i] == '"') {
+            break;
+        }
+    }
+
+    if (header[i] != '"') {
+        return mp_const_none;
+    }
+
+    sms_obj_t *self = m_new_obj_with_finaliser(sms_obj_t);
+    self->base.type = &sms_type;
+    self->index = 0;
+    self->status = 0;
+    self->phone_number_type = 0;
+    self->phone_number = mp_obj_new_str((char*)header + 1, i - 1);
+    self->message = mp_obj_new_str((char*)content, content_length);
     return MP_OBJ_FROM_PTR(self);
 }
 
