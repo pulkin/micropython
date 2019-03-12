@@ -19,9 +19,9 @@
 // Vars: statuses
 // --------------
 
-// Tracks SIM status on the network
-int sim_status = 0;
-uint8_t sim_status_updated = 0;
+// Tracks the status on the network
+int network_status = 0;
+uint8_t network_status_updated = 0;
 
 // Count SMS recieved
 uint8_t sms_recieved_count = 0;
@@ -39,7 +39,7 @@ STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record);
 STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
 
 void cellular_init0(void) {
-    sim_status_updated = 0;
+    network_status_updated = 0;
     sms_recieved_count = 0;
 }
 
@@ -48,18 +48,18 @@ void cellular_init0(void) {
 // ------
 
 void notify_no_sim(API_Event_t* event) {
-    sim_status = 0;
-    sim_status_updated = 1;
+    network_status = 0;
+    network_status_updated = 1;
 }
 
 void notify_registered_home(API_Event_t* event) {
-    sim_status = NTW_REG_BIT;
-    sim_status_updated = 1;
+    network_status = NTW_REG_BIT;
+    network_status_updated = 1;
 }
 
 void notify_registered_roaming(API_Event_t* event) {
-    sim_status = NTW_REG_BIT | NTW_ROAM_BIT;
-    sim_status_updated = 1;
+    network_status = NTW_REG_BIT | NTW_ROAM_BIT;
+    network_status_updated = 1;
 }
 
 void notify_sms_list(API_Event_t* event) {
@@ -392,13 +392,37 @@ STATIC mp_obj_t is_sim_present(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_sim_present_obj, is_sim_present);
 
+STATIC mp_obj_t network_status_changed(void) {
+    // ========================================
+    // Checks whether the network status was updated.
+    // Returns:
+    //     True if it was updated since the last check.
+    // ========================================
+    uint8_t result = network_status_updated;
+    network_status_updated = 0;
+    return mp_obj_new_bool(result);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(network_status_changed_obj, network_status_changed);
+
+STATIC mp_obj_t get_network_status(void) {
+    // ========================================
+    // Retrieves the network status.
+    // Returns:
+    //     Network status as an integer.
+    // ========================================
+    return mp_obj_new_int(network_status);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_network_status_obj, get_network_status);
+
 STATIC mp_obj_t is_network_registered(void) {
     // ========================================
     // Checks whether registered on the cellular network.
     // Returns:
     //     True if registered.
     // ========================================
-    return mp_obj_new_bool(sim_status & NTW_REG_BIT);
+    return mp_obj_new_bool(network_status & NTW_REG_BIT);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_network_registered_obj, is_network_registered);
@@ -411,7 +435,7 @@ STATIC mp_obj_t is_roaming(void) {
     // ========================================
     REQUIRES_NETWORK_REGISTRATION;
 
-    return mp_obj_new_bool(sim_status & NTW_ROAM_BIT);
+    return mp_obj_new_bool(network_status & NTW_ROAM_BIT);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_roaming_obj, is_roaming);
@@ -499,6 +523,8 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_SMS), MP_ROM_PTR(&sms_type) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&get_imei_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_network_status_changed), (mp_obj_t)&network_status_changed_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_status), (mp_obj_t)&get_network_status_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_sim_present), (mp_obj_t)&is_sim_present_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_network_registered), (mp_obj_t)&is_network_registered_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_roaming), (mp_obj_t)&is_roaming_obj },

@@ -14,5 +14,5 @@ void notify_signal(API_Event_t* event);
 
 #define MAX_SMS_LIST_TIMEOUT 1000
 #define MAX_SMS_SEND_TIMEOUT 10000
-#define REQUIRES_NETWORK_REGISTRATION do {if (!sim_status) {mp_raise_ValueError("Network is not available: is SIM card inserted?"); return mp_const_none;}} while(0)
+#define REQUIRES_NETWORK_REGISTRATION do {if (!network_status) {mp_raise_ValueError("Network is not available: is SIM card inserted?"); return mp_const_none;}} while(0)
 #define REQUIRES_VALID_SMS_STATUS(bits) do {if (bitsum(bits) != 1) {return mp_const_none;}} while(0)

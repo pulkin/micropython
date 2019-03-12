@@ -43,6 +43,20 @@ Provides cellular functionality.
 
   **Raises**: `ValueError` if no IMSI number can be retrieved.
 
+* `network_status_changed()`
+
+  Checks whether the netwrok status was changed since the last check.
+
+  **Returns**: `True` if it was changed.
+
+* `get_network_status()`
+
+  Retrieves the network status as an integer.
+
+  **Returns**: `int` representing cellular network status.
+
+  **TODO**: Provide bit-wise specs.
+
 * `is_sim_present()`
 
   Checks whether the SIM card is present and ICCID can be retrieved.
