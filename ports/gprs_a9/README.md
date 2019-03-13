@@ -20,6 +20,8 @@ and burn the final lod file in the `hex` folder.
 ### `cellular`
 
 Provides cellular functionality.
+As usual, the original API does not give access to radio-level and low-level functionality such as controlling the registration on the cellular network: these are performed in the background automatically.
+The purpose of this module is to have an access to high-level networking (SMS, GPRS, calls) as well as to read the status of various components of cellular networking.
 
 * `get_imei()`
 
@@ -45,7 +47,7 @@ Provides cellular functionality.
 
 * `network_status_changed()`
 
-  Checks whether the netwrok status was changed since the last check.
+  Checks whether the network status was changed since the last check.
 
   **Returns**: `True` if it was changed.
 
@@ -75,7 +77,7 @@ Provides cellular functionality.
 
   **Returns**: True if roaming.
 
-  **Raises** `ValueError` if not registered ar all.
+  **Raises** `ValueError` if not registered at all.
 
 * `sms_list()`
 
@@ -89,11 +91,11 @@ Provides cellular functionality.
 
   **Attrs**:
 
-    * phone_number (str): phone number (sender or desstination);
+    * phone_number (str): phone number (sender or destination);
     * message (str): message contents;
     * status (int): an integer with status bits;
     * inbox (bool): incoming message if `True`, outgoing message if `False` or unknown status if `None`;
-    * unread (bool): unread message if `True`, previously read message if `False` ir unknown status if `None`;
+    * unread (bool): unread message if `True`, previously read message if `False` or unknown status if `None`;
     * sent (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
     * `send()`
     
@@ -109,7 +111,8 @@ Provides cellular functionality.
 
 ### `gps`
 
-Provides the GPS functionality
+Provides the GPS functionality.
+This is only available in the A9G module where GPS is a separate chip connected via UART2.
 
 * `on()`
 
@@ -155,7 +158,7 @@ Provides the GPS functionality
 
 ### `machine`
 
-Provides power-related functions.
+Provides power-related functions: power, watchdogs.
 
 * `reset()`
 
