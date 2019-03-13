@@ -84,6 +84,13 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Raises** `ValueError` if not registered at all.
 
+* `get_signal_quality()`
+
+  Retrieves signal quality.
+
+  **Returns**: Two integers, the signal quality (0-31) and RXQUAL. These are replaced by `None` if no signal quality information is available.
+  **Note**: The RXQUAL output is always `None`. Its meaning is unknown.
+
 * `sms_list()`
 
   Retrieves SMS from the SIM card.

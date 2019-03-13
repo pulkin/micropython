@@ -233,6 +233,9 @@ void EventDispatch(API_Event_t* pEvent)
             notify_power_on(pEvent);
             break;
 
+        // Network
+        // =======
+
         case API_EVENT_ID_NO_SIMCARD:
             modcellular_notify_no_sim(pEvent);
             break;
@@ -275,6 +278,10 @@ void EventDispatch(API_Event_t* pEvent)
 
         case API_EVENT_ID_SMS_RECEIVED:
             modcellular_notify_sms_receipt(pEvent);
+            break;
+
+        case API_EVENT_ID_SIGNAL_QUALITY:
+            modcellular_notify_signal(pEvent);
             break;
 
         // UART

@@ -27,6 +27,8 @@
 uint8_t network_status = 0;
 uint8_t network_exception = 0;
 uint8_t network_status_updated = 0;
+uint8_t network_signal_quality = 0;
+uint8_t network_signal_rx_level = 0;
 
 // Count SMS recieved
 uint8_t sms_recieved_count = 0;
@@ -116,7 +118,8 @@ void modcellular_notify_sms_receipt(API_Event_t* event) {
 }
 
 void modcellular_notify_signal(API_Event_t* event) {
-    // TODO: Implement
+    network_signal_quality = event->param1;
+    network_signal_rx_level = event->param2;
 }
 
 // -------
@@ -394,6 +397,21 @@ STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* c
 // Methods
 // -------
 
+STATIC mp_obj_t get_signal_quality(void) {
+    // ========================================
+    // Retrieves the network signal quality.
+    // Returns:
+    //     Two integers: quality
+    // ========================================
+    mp_obj_t tuple[2] = {
+        network_signal_quality == 99 ? mp_const_none : mp_obj_new_int(network_signal_quality),
+        network_signal_rx_level == 99 ? mp_const_none : mp_obj_new_int(network_signal_rx_level),
+    };
+    return mp_obj_new_tuple(2, tuple);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_signal_quality_obj, get_signal_quality);
+
 STATIC mp_obj_t get_imei(void) {
     // ========================================
     // Retrieves IMEI number.
@@ -565,6 +583,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_SMS), MP_ROM_PTR(&sms_type) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&get_imei_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_signal_quality), (mp_obj_t)&get_signal_quality_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_network_status_changed), (mp_obj_t)&network_status_changed_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_exception), (mp_obj_t)&get_network_exception_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_status), (mp_obj_t)&get_network_status_obj },
