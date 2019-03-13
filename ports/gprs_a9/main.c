@@ -234,31 +234,47 @@ void EventDispatch(API_Event_t* pEvent)
             break;
 
         case API_EVENT_ID_NO_SIMCARD:
-            notify_no_sim(pEvent);
+            modcellular_notify_no_sim(pEvent);
             break;
 
         case API_EVENT_ID_NETWORK_REGISTERED_HOME:
-            notify_registered_home(pEvent);
+            modcellular_notify_reg_home(pEvent);
             break;
 
         case API_EVENT_ID_NETWORK_REGISTERED_ROAMING:
-            notify_registered_roaming(pEvent);
+            modcellular_notify_reg_roaming(pEvent);
+            break;
+
+        case API_EVENT_ID_NETWORK_REGISTER_SEARCHING:
+            modcellular_notify_reg_searching(pEvent);
+            break;
+
+        case API_EVENT_ID_NETWORK_REGISTER_DENIED:
+            modcellular_notify_reg_denied(pEvent);
+            break;
+
+        case API_EVENT_ID_NETWORK_REGISTER_NO:
+            // TODO: WTF is this?
+            break;
+
+        case API_EVENT_ID_NETWORK_DEREGISTER:
+            modcellular_notify_dereg(pEvent);
             break;
 
         case API_EVENT_ID_SMS_SENT:
-            notify_sms_sent(pEvent);
+            modcellular_notify_sms_sent(pEvent);
             break;
 
         case API_EVENT_ID_SMS_ERROR:
-            notify_sms_error(pEvent);
+            modcellular_notify_sms_error(pEvent);
             break;
 
         case API_EVENT_ID_SMS_LIST_MESSAGE:
-            notify_sms_list(pEvent);
+            modcellular_notify_sms_list(pEvent);
             break;
 
         case API_EVENT_ID_SMS_RECEIVED:
-            notify_sms_receipt(pEvent);
+            modcellular_notify_sms_receipt(pEvent);
             break;
 
         // UART

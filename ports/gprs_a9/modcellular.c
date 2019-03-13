@@ -14,13 +14,18 @@
 
 #define NTW_REG_BIT 0x01
 #define NTW_ROAM_BIT 0x02
+#define NTW_REG_PROGRESS_BIT 0x04
+
+#define NTW_EXC_NOSIM 0x01
+#define NTW_EXC_REG_DENIED 0x02
 
 // --------------
 // Vars: statuses
 // --------------
 
 // Tracks the status on the network
-int network_status = 0;
+uint8_t network_status = 0;
+uint8_t network_exception = 0;
 uint8_t network_status_updated = 0;
 
 // Count SMS recieved
@@ -40,6 +45,7 @@ STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* c
 
 void cellular_init0(void) {
     network_status_updated = 0;
+    network_exception = 0;
     sms_recieved_count = 0;
 }
 
@@ -47,22 +53,45 @@ void cellular_init0(void) {
 // Notify
 // ------
 
-void notify_no_sim(API_Event_t* event) {
+void modcellular_notify_no_sim(API_Event_t* event) {
     network_status = 0;
     network_status_updated = 1;
+
+    network_exception = NTW_EXC_NOSIM;
 }
 
-void notify_registered_home(API_Event_t* event) {
+// Register
+
+void modcellular_notify_reg_home(API_Event_t* event) {
     network_status = NTW_REG_BIT;
     network_status_updated = 1;
 }
 
-void notify_registered_roaming(API_Event_t* event) {
+void modcellular_notify_reg_roaming(API_Event_t* event) {
     network_status = NTW_REG_BIT | NTW_ROAM_BIT;
     network_status_updated = 1;
 }
 
-void notify_sms_list(API_Event_t* event) {
+void modcellular_notify_reg_searching(API_Event_t* event) {
+    network_status = NTW_REG_PROGRESS_BIT;
+    network_status_updated = 1;
+}
+
+void modcellular_notify_reg_denied(API_Event_t* event) {
+    network_status = 0;
+    network_status_updated = 1;
+
+    network_exception = NTW_EXC_REG_DENIED;
+}
+
+void modcellular_notify_dereg(API_Event_t* event) {
+    network_status = 0;
+    network_status_updated = 1;
+}
+
+// SMS
+
+void modcellular_notify_sms_list(API_Event_t* event) {
     SMS_Message_Info_t* messageInfo = (SMS_Message_Info_t*)event->pParam1;
 
     if (sms_list_buffer && (sms_list_buffer->len > sms_list_buffer_count)) {
@@ -74,19 +103,19 @@ void notify_sms_list(API_Event_t* event) {
     OS_Free(messageInfo->data);
 }
 
-void notify_sms_sent(API_Event_t* event) {
+void modcellular_notify_sms_sent(API_Event_t* event) {
     mp_printf(&mp_plat_print, "SMS has been sent");
 }
 
-void notify_sms_error(API_Event_t* event) {
+void modcellular_notify_sms_error(API_Event_t* event) {
     mp_warning("SMS Error %d", event->param1);
 }
 
-void notify_sms_receipt(API_Event_t* event) {
+void modcellular_notify_sms_receipt(API_Event_t* event) {
     sms_recieved_count ++;
 }
 
-void notify_signal(API_Event_t* event) {
+void modcellular_notify_signal(API_Event_t* event) {
     // TODO: Implement
 }
 
@@ -405,6 +434,19 @@ STATIC mp_obj_t network_status_changed(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(network_status_changed_obj, network_status_changed);
 
+STATIC mp_obj_t get_network_exception(void) {
+    // ========================================
+    // Checks whether network exception occurred since the last check.
+    // Returns:
+    //    An integer representing network exception.
+    // ========================================
+    uint8_t result = network_exception;
+    network_exception = 0;
+    return mp_obj_new_bool(result);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_network_exception_obj, get_network_exception);
+
 STATIC mp_obj_t get_network_status(void) {
     // ========================================
     // Retrieves the network status.
@@ -524,6 +566,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&get_imei_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_network_status_changed), (mp_obj_t)&network_status_changed_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_exception), (mp_obj_t)&get_network_exception_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_status), (mp_obj_t)&get_network_status_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_sim_present), (mp_obj_t)&is_sim_present_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_network_registered), (mp_obj_t)&is_network_registered_obj },

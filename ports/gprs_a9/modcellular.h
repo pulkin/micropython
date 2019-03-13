@@ -2,15 +2,18 @@
 
 void cellular_init0(void);
 
-void notify_no_sim(API_Event_t* event);
-void notify_registered_home(API_Event_t* event);
-void notify_registered_roaming(API_Event_t* event);
+void modcellular_notify_no_sim(API_Event_t* event);
+void modcellular_notify_reg_home(API_Event_t* event);
+void modcellular_notify_reg_roaming(API_Event_t* event);
+void modcellular_notify_reg_searching(API_Event_t* event);
+void modcellular_notify_reg_denied(API_Event_t* event);
+void modcellular_notify_dereg(API_Event_t* event);
 
-void notify_sms_list(API_Event_t* event);
-void notify_sms_sent(API_Event_t* event);
-void notify_sms_error(API_Event_t* event);
-void notify_sms_receipt(API_Event_t* event);
-void notify_signal(API_Event_t* event);
+void modcellular_notify_sms_list(API_Event_t* event);
+void modcellular_notify_sms_sent(API_Event_t* event);
+void modcellular_notify_sms_error(API_Event_t* event);
+void modcellular_notify_sms_receipt(API_Event_t* event);
+void modcellular_notify_signal(API_Event_t* event);
 
 #define MAX_SMS_LIST_TIMEOUT 1000
 #define MAX_SMS_SEND_TIMEOUT 10000

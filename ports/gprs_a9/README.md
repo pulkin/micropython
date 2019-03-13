@@ -58,6 +58,12 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **TODO**: Provide bit-wise specs.
 
+* `get_network_exception()`
+
+  Retrieves the network exception.
+
+  **Returns**: `int` representing the last network exception. Returns zero if no exception occurred since the last check.
+
 * `is_sim_present()`
 
   Checks whether the SIM card is present and ICCID can be retrieved.
