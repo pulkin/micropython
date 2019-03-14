@@ -18,6 +18,7 @@
 
 #define NTW_EXC_NOSIM 0x01
 #define NTW_EXC_REG_DENIED 0x02
+#define NTW_EXC_SMS_SEND 0x03
 
 // --------------
 // Vars: statuses
@@ -110,7 +111,7 @@ void modcellular_notify_sms_sent(API_Event_t* event) {
 }
 
 void modcellular_notify_sms_error(API_Event_t* event) {
-    mp_warning("SMS Error %d", event->param1);
+    network_exception = NTW_EXC_SMS_SEND;
 }
 
 void modcellular_notify_sms_receipt(API_Event_t* event) {
