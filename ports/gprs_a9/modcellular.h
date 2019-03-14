@@ -1,4 +1,7 @@
 #include "api_event.h"
+#include "py/obj.h"
+
+extern const mp_obj_type_t mp_type_CellularError;
 
 void cellular_init0(void);
 
@@ -19,3 +22,4 @@ void modcellular_notify_signal(API_Event_t* event);
 #define MAX_SMS_SEND_TIMEOUT 10000
 #define REQUIRES_NETWORK_REGISTRATION do {if (!network_status) {mp_raise_ValueError("Network is not available: is SIM card inserted?"); return mp_const_none;}} while(0)
 #define REQUIRES_VALID_SMS_STATUS(bits) do {if (bitsum(bits) != 1) {return mp_const_none;}} while(0)
+
