@@ -608,6 +608,9 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
     { MP_ROM_QSTR(MP_QSTR_CellularError), MP_ROM_PTR(&mp_type_CellularError) },
+    { MP_ROM_QSTR(MP_QSTR_CellularRegistrationError), MP_ROM_PTR(&mp_type_CellularRegistrationError) },
+    { MP_ROM_QSTR(MP_QSTR_SMSError), MP_ROM_PTR(&mp_type_SMSError) },
+    { MP_ROM_QSTR(MP_QSTR_NoSIMError), MP_ROM_PTR(&mp_type_NoSIMError) },
 
     { MP_ROM_QSTR(MP_QSTR_SMS), MP_ROM_PTR(&sms_type) },
 
