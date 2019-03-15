@@ -22,6 +22,38 @@ Provides cellular functionality.
 As usual, the original API does not give access to radio-level and low-level functionality such as controlling the registration on the cellular network: these are performed in the background automatically.
 The purpose of this module is to have an access to high-level networking (SMS, GPRS, calls) as well as to read the status of various components of cellular networking.
 
+#### Classes ####
+
+* `SMS(phone_number, message)`
+
+  A class for handling SMS.
+
+  **Attrs**:
+
+    * phone_number (str): phone number (sender or destination);
+    * message (str): message contents;
+    * status (int): an integer with status bits;
+    * inbox (bool): incoming message if `True`, outgoing message if `False` or unknown status if `None`;
+    * unread (bool): unread message if `True`, previously read message if `False` or unknown status if `None`;
+    * sent (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
+    * `send()`
+    
+      Sends the message.
+
+      **Raises**: `CelularError` if not registered on the network or failed to set up/send SMS.
+
+    * `withdraw()`
+
+      Withdraws SMS from SIM storage. Resets status and index of this object to zero.
+
+      **Raises**: `CellularError` if failed to withdraw.
+
+#### Exception classes ####
+
+* `CellularError(message)`
+
+#### Methods ####
+
 * `get_imei()`
 
   Retrieves the International Mobile Equipment Identity (IMEI) number.
@@ -34,7 +66,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: a string with ICCID number.
 
-  **Raises**: `ValueError` if no ICCID number can be retrieved.
+  **Raises**: `CellularError` if no ICCID number can be retrieved.
 
 * `get_imsi()`
 
@@ -42,7 +74,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: a string with IMSI number.
 
-  **Raises**: `ValueError` if no IMSI number can be retrieved.
+  **Raises**: `CellularError` if no IMSI number can be retrieved.
 
 * `network_status_changed()`
 
@@ -82,7 +114,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: True if roaming.
 
-  **Raises** `ValueError` if not registered at all.
+  **Raises** `CellularError` if not registered on the network.
 
 * `get_signal_quality()`
 
@@ -97,34 +129,14 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   
   **Returns**: a list of SMS messages.
 
-* `SMS(phone_number, message)`
-
-  A class for handling SMS.
-
-  **Attrs**:
-
-    * phone_number (str): phone number (sender or destination);
-    * message (str): message contents;
-    * status (int): an integer with status bits;
-    * inbox (bool): incoming message if `True`, outgoing message if `False` or unknown status if `None`;
-    * unread (bool): unread message if `True`, previously read message if `False` or unknown status if `None`;
-    * sent (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
-    * `send()`
-    
-      Sends the message.
-
-      **Raises**: `ValueError` if failed to set up/send SMS.
-
-    * `withdraw()`
-
-      Withdraws SMS from SIM storage. Resets status and index of this object to zero.
-
-      **Raises**: `ValueError` if failed to withdraw.
+  **Raises**: `CellularError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
 
 ### `gps`
 
 Provides the GPS functionality.
 This is only available in the A9G module where GPS is a separate chip connected via UART2.
+
+#### Methods ####
 
 * `on()`
 
@@ -171,6 +183,8 @@ This is only available in the A9G module where GPS is a separate chip connected 
 ### `machine`
 
 Provides power-related functions: power, watchdogs.
+
+#### Methods ####
 
 * `reset()`
 
