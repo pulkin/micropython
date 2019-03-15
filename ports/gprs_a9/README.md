@@ -139,13 +139,17 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 Provides the GPS functionality.
 This is only available in the A9G module where GPS is a separate chip connected via UART2.
 
+#### Exception classes ####
+
+* `GPSError(message)`
+
 #### Methods ####
 
 * `on()`
 
   Turns the GPS on. Blocks until the GPS module responds.
 
-  **Raises**: `ValueError` if the GPS module does not respond within 10 seconds.
+  **Raises**: `GPSError` if the GPS module does not respond within 10 seconds.
 
 * `off()`
 
@@ -157,7 +161,7 @@ This is only available in the A9G module where GPS is a separate chip connected 
 
   **Returns**: the firmware version as a string.
 
-  **Raises**: `ValueError` if the GPS module fails to respond.
+  **Raises**: `GPSError` if the GPS module fails to respond.
 
 * `get_location()`
 
@@ -165,7 +169,7 @@ This is only available in the A9G module where GPS is a separate chip connected 
 
   **Returns**: latitude and longitude in degrees.
 
-  **Raises**: `ValueError` if the GPS module never responded or is off.
+  **Raises**: `GPSError` if the GPS module never responded or is off.
 
 * `get_last_location()`
 
@@ -173,7 +177,7 @@ This is only available in the A9G module where GPS is a separate chip connected 
 
   **Returns**: latitude and longitude in degrees.
 
-  **Raises**: `ValueError` if the GPS module never responded.
+  **Raises**: `GPSError` if the GPS module never responded.
 
 * `get_satellites()`
 
@@ -181,7 +185,7 @@ This is only available in the A9G module where GPS is a separate chip connected 
 
   **Returns**: the number of satellites tracked and the number of visible satellites.
 
-  **Raises**: `ValueError` if the GPS module never responded.
+  **Raises**: `GPSError` if the GPS module is off.
 
 ### `machine`
 

@@ -323,7 +323,7 @@ void EventDispatch(API_Event_t* pEvent)
         // GPS
         // ===
         case API_EVENT_ID_GPS_UART_RECEIVED:
-            notify_gps_update(pEvent);
+            modgps_notify_gps_update(pEvent);
             break;
 
         default:

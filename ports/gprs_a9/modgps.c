@@ -4,6 +4,7 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "py/binary.h"
+#include "py/objexcept.h"
 
 #include "api_gps.h"
 #include "api_os.h"
@@ -18,8 +19,18 @@
 
 GPS_Info_t* gpsInfo = NULL;
 
-void notify_gps_update(API_Event_t* event) {
+void modgps_notify_gps_update(API_Event_t* event) {
     GPS_Update(event->pParam1,event->param1);
+}
+
+// ----------
+// Exceptions
+// ----------
+
+MP_DEFINE_EXCEPTION(GPSError, OSError)
+
+NORETURN void mp_raise_GPSError(const char *msg) {
+    mp_raise_msg(&mp_type_GPSError, msg);
 }
 
 // -------
@@ -43,7 +54,7 @@ STATIC mp_obj_t on(void) {
         OS_Sleep(100);
     }
     if (gpsInfo->rmc.latitude.value == 0) {
-        mp_raise_ValueError("Failed to start GPS");
+        mp_raise_GPSError("Failed to start GPS");
     }
     return mp_const_none;
 }
@@ -70,7 +81,7 @@ STATIC mp_obj_t get_firmware_version(void) {
     // ========================================
     char buffer[300];
     if (!GPS_GetVersion(buffer, 150)) {
-        mp_raise_ValueError("Failed to get the firmware version: did you run gps.on()?");
+        mp_raise_GPSError("Failed to get the firmware version: did you run gps.on()?");
         return mp_const_none;
     }
     return mp_obj_new_str(buffer, strlen(buffer));
@@ -118,7 +129,7 @@ STATIC mp_obj_t get_satellites(void) {
     // Returns:
     //     The number of visible GPS satellites.
     // ========================================
-    REQUIRES_VALID_GPS_INFO;
+    REQUIRES_GPS_ON;
 
     mp_obj_t tuple[2] = {
         mp_obj_new_int(gpsInfo->gga.satellites_tracked),
@@ -130,7 +141,10 @@ STATIC mp_obj_t get_satellites(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_satellites_obj, get_satellites);
 
 STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
-    { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_gps) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR___name__i), MP_OBJ_NEW_QSTR(MP_QSTR_gps) },
+
+    { MP_ROM_QSTR(MP_QSTR_GPSError), MP_ROM_PTR(&mp_type_GPSError) },
+
     { MP_OBJ_NEW_QSTR(MP_QSTR_on), (mp_obj_t)&on_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&off_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_firmware_version), (mp_obj_t)&get_firmware_version_obj },
