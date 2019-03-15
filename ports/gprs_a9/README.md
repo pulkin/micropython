@@ -194,6 +194,7 @@ Provides power-related functions: power, watchdogs.
 
   Powers the module down.
   **Note**: By fact, hard-resets the module, at least when USB-powered.
+  **TODO**: Needs further investigation.
 
 * `idle()`
 
@@ -211,7 +212,8 @@ Provides power-related functions: power, watchdogs.
   Retrieves the reason for powering the module on.
 
   **Returns**: one of `POWER_ON_CAUSE_ALARM`, `POWER_ON_CAUSE_CHARGE`, `POWER_ON_CAUSE_EXCEPTION`, `POWER_ON_CAUSE_KEY`, `POWER_ON_CAUSE_MAX`, `POWER_ON_CAUSE_RESET`.
-  **Note**: never saw anything except `POWER_ON_CAUSE_CHARGE` returned (needs further investigation).
+  **Note**: never saw anything except `POWER_ON_CAUSE_CHARGE` returned.
+  **TODO**: needs further investigation.
 
 * `watchdog_on(timeout)`
 
