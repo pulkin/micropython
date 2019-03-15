@@ -240,6 +240,10 @@ void EventDispatch(API_Event_t* pEvent)
             modcellular_notify_no_sim(pEvent);
             break;
 
+        case API_EVENT_ID_SIMCARD_DROP:
+            modcellular_notify_sim_drop(pEvent);
+            break;
+
         case API_EVENT_ID_NETWORK_REGISTERED_HOME:
             modcellular_notify_reg_home(pEvent);
             break;

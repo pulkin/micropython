@@ -9,6 +9,7 @@ extern const mp_obj_type_t mp_type_NoSIMError;
 void cellular_init0(void);
 
 void modcellular_notify_no_sim(API_Event_t* event);
+void modcellular_notify_sim_drop(API_Event_t* event);
 void modcellular_notify_reg_home(API_Event_t* event);
 void modcellular_notify_reg_roaming(API_Event_t* event);
 void modcellular_notify_reg_searching(API_Event_t* event);

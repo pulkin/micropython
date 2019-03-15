@@ -20,6 +20,7 @@
 #define NTW_EXC_NOSIM 0x01
 #define NTW_EXC_REG_DENIED 0x02
 #define NTW_EXC_SMS_SEND 0x03
+#define NTW_EXC_SIM_DROP 0x04
 
 // --------------
 // Vars: statuses
@@ -85,8 +86,13 @@ NORETURN void mp_raise_NoSIMError(const char *msg) {
 void modcellular_notify_no_sim(API_Event_t* event) {
     network_status = 0;
     network_status_updated = 1;
-
     network_exception = NTW_EXC_NOSIM;
+}
+
+void modcellular_notify_sim_drop(API_Event_t* event) {
+    network_status = 0;
+    network_status_updated = 1;
+    network_exception = NTW_EXC_SIM_DROP;
 }
 
 // Register
@@ -498,6 +504,10 @@ STATIC mp_obj_t poll_network_exception(void) {
         case NTW_EXC_SMS_SEND:
             mp_raise_SMSError("SMS was not sent");
             break;
+
+        case NTW_EXC_SIM_DROP:
+            mp_raise_NoSIMError("SIM card dropped");
+            break;
     }
     network_exception = 0;
     return mp_const_none;
@@ -620,12 +630,12 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(sms_list_obj, sms_list);
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
-    { MP_ROM_QSTR(MP_QSTR_CellularError), MP_ROM_PTR(&mp_type_CellularError) },
-    { MP_ROM_QSTR(MP_QSTR_CellularRegistrationError), MP_ROM_PTR(&mp_type_CellularRegistrationError) },
-    { MP_ROM_QSTR(MP_QSTR_SMSError), MP_ROM_PTR(&mp_type_SMSError) },
-    { MP_ROM_QSTR(MP_QSTR_NoSIMError), MP_ROM_PTR(&mp_type_NoSIMError) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_CellularError), (mp_obj_t)MP_ROM_PTR(&mp_type_CellularError) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_CellularRegistrationError), (mp_obj_t)MP_ROM_PTR(&mp_type_CellularRegistrationError) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_SMSError), (mp_obj_t)MP_ROM_PTR(&mp_type_SMSError) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_NoSIMError), (mp_obj_t)MP_ROM_PTR(&mp_type_NoSIMError) },
 
-    { MP_ROM_QSTR(MP_QSTR_SMS), MP_ROM_PTR(&sms_type) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_SMS), (mp_obj_t)MP_ROM_PTR(&sms_type) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&get_imei_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_signal_quality), (mp_obj_t)&get_signal_quality_obj },
