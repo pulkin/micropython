@@ -479,18 +479,31 @@ STATIC mp_obj_t network_status_changed(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(network_status_changed_obj, network_status_changed);
 
-STATIC mp_obj_t get_network_exception(void) {
+STATIC mp_obj_t poll_network_exception(void) {
     // ========================================
     // Checks whether network exception occurred since the last check.
     // Returns:
     //    An integer representing network exception.
     // ========================================
-    uint8_t result = network_exception;
+    switch (network_exception) {
+
+        case NTW_EXC_NOSIM:
+            mp_raise_NoSIMError("No SIM card inserted");
+            break;
+
+        case NTW_EXC_REG_DENIED:
+            mp_raise_CellularRegistrationError("Failed to register on the cellular network");
+            break;
+
+        case NTW_EXC_SMS_SEND:
+            mp_raise_SMSError("SMS was not sent");
+            break;
+    }
     network_exception = 0;
-    return mp_obj_new_bool(result);
+    return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_network_exception_obj, get_network_exception);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(poll_network_exception_obj, poll_network_exception);
 
 STATIC mp_obj_t get_network_status(void) {
     // ========================================
@@ -617,7 +630,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&get_imei_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_signal_quality), (mp_obj_t)&get_signal_quality_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_network_status_changed), (mp_obj_t)&network_status_changed_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_exception), (mp_obj_t)&get_network_exception_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_poll_network_exception), (mp_obj_t)&poll_network_exception_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_status), (mp_obj_t)&get_network_status_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_sim_present), (mp_obj_t)&is_sim_present_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_network_registered), (mp_obj_t)&is_network_registered_obj },

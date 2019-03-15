@@ -93,11 +93,11 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **TODO**: Provide bit-wise specs.
 
-* `get_network_exception()`
+* `poll_network_exception()`
 
-  Retrieves the network exception.
+  Retrieves the network exception and raises it, if any.
 
-  **Returns**: `int` representing the last network exception. Returns zero if no exception occurred since the last check.
+  **Raises**: One of `CellularError`s occurred during the operation in the background.
 
 * `is_sim_present()`
 
