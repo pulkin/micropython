@@ -58,9 +58,24 @@ void cellular_init0(void) {
 // ----------
 
 MP_DEFINE_EXCEPTION(CellularError, OSError)
+MP_DEFINE_EXCEPTION(CellularRegistrationError, CellularError)
+MP_DEFINE_EXCEPTION(SMSError, CellularError)
+MP_DEFINE_EXCEPTION(NoSIMError, CellularError)
 
 NORETURN void mp_raise_CellularError(const char *msg) {
     mp_raise_msg(&mp_type_CellularError, msg);
+}
+
+NORETURN void mp_raise_CellularRegistrationError(const char *msg) {
+    mp_raise_msg(&mp_type_CellularRegistrationError, msg);
+}
+
+NORETURN void mp_raise_SMSError(const char *msg) {
+    mp_raise_msg(&mp_type_SMSError, msg);
+}
+
+NORETURN void mp_raise_NoSIMError(const char *msg) {
+    mp_raise_msg(&mp_type_NoSIMError, msg);
 }
 
 // ------
@@ -220,7 +235,7 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
     if (self->status != 0) {
-        mp_raise_CellularError("A message with non-zero status cannot be sent");
+        mp_raise_SMSError("A message with non-zero status cannot be sent");
         return mp_const_none;
     }
 
@@ -228,7 +243,7 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
     const char* message_c = mp_obj_str_get_str(self->message);
 
     if (!SMS_SetFormat(SMS_FORMAT_TEXT, SIM0)) {
-        mp_raise_CellularError("Failed to set SMS format: is SIM card present?");
+        mp_raise_SMSError("Failed to set SMS format");
         return mp_const_none;
     } 
 
@@ -240,12 +255,12 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
     };
 
     if (!SMS_SetParameter(&smsParam, SIM0)) {
-        mp_raise_CellularError("Failed to set SMS parameters");
+        mp_raise_SMSError("Failed to set SMS parameters");
         return mp_const_none;
     }
 
     if (!SMS_SetNewMessageStorage(SMS_STORAGE_SIM_CARD)) {
-        mp_raise_CellularError("Failed to set SMS storage in the SIM card");
+        mp_raise_SMSError("Failed to set SMS storage in the SIM card");
         return mp_const_none;
     }
 
@@ -253,13 +268,13 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
     uint32_t unicodeLen;
 
     if (!SMS_LocalLanguage2Unicode((uint8_t*)message_c, strlen(message_c), CHARSET_UTF_8, &unicode, &unicodeLen)) {
-        mp_raise_CellularError("Failed to convert to Unicode before sending SMS");
+        mp_raise_SMSError("Failed to convert to Unicode before sending SMS");
         return mp_const_none;
     }
 
     if (!SMS_SendMessage(destination_c, unicode, unicodeLen, SIM0)) {
         OS_Free(unicode);
-        mp_raise_CellularError("Failed to submit SMS message for sending");
+        mp_raise_SMSError("Failed to submit SMS message for sending");
         return mp_const_none;
     }
     OS_Free(unicode);
@@ -277,12 +292,12 @@ STATIC mp_obj_t sms_withdraw(mp_obj_t self_in) {
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
     if (self->index == 0 || self->status == 0) {
-        mp_raise_CellularError("Cannot withdraw SMS with zero index/status");
+        mp_raise_SMSError("Cannot withdraw SMS with zero index/status");
         return mp_const_none;
     }
 
     if (!SMS_DeleteMessage(self->index, SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD)) {
-        mp_raise_CellularError("Failed to withdraw SMS");
+        mp_raise_SMSError("Failed to withdraw SMS");
         return mp_const_none;
     }
 
@@ -523,7 +538,7 @@ STATIC mp_obj_t get_iccid(void) {
     if (SIM_GetICCID((uint8_t*)iccid))
         return mp_obj_new_str(iccid, strlen(iccid));
     else {
-        mp_raise_CellularError("No ICCID data: is SIM card inserted?");
+        mp_raise_NoSIMError("No ICCID data available");
         return mp_const_none;
     }
 }
@@ -541,7 +556,7 @@ STATIC mp_obj_t get_imsi(void) {
     if (SIM_GetIMSI((uint8_t*)imsi))
         return mp_obj_new_str(imsi, strlen(imsi));
     else {
-        mp_raise_CellularError("No IMSI data: is SIM card inserted?");
+        mp_raise_NoSIMError("No IMSI data available");
         return mp_const_none;
     }
 }

@@ -40,17 +40,20 @@ The purpose of this module is to have an access to high-level networking (SMS, G
     
       Sends the message.
 
-      **Raises**: `CelularError` if not registered on the network or failed to set up/send SMS.
+      **Raises**: `CelularRegistrationError` if not registered on the network or `SMSError` if failed to set up/send SMS.
 
     * `withdraw()`
 
       Withdraws SMS from SIM storage. Resets status and index of this object to zero.
 
-      **Raises**: `CellularError` if failed to withdraw.
+      **Raises**: `SMSError` if failed to withdraw.
 
 #### Exception classes ####
 
 * `CellularError(message)`
+* `CellularRegistrationError(message)`
+* `SMSError(message)`
+* `NoSIMError(message)`
 
 #### Methods ####
 
@@ -66,7 +69,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: a string with ICCID number.
 
-  **Raises**: `CellularError` if no ICCID number can be retrieved.
+  **Raises**: `NoSIMError` if no ICCID number can be retrieved.
 
 * `get_imsi()`
 
@@ -74,7 +77,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: a string with IMSI number.
 
-  **Raises**: `CellularError` if no IMSI number can be retrieved.
+  **Raises**: `NoSIMError` if no IMSI number can be retrieved.
 
 * `network_status_changed()`
 
@@ -114,7 +117,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: True if roaming.
 
-  **Raises** `CellularError` if not registered on the network.
+  **Raises** `CellularRegistrationError` if not registered on the network.
 
 * `get_signal_quality()`
 
@@ -129,7 +132,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   
   **Returns**: a list of SMS messages.
 
-  **Raises**: `CellularError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
+  **Raises**: `CellularRegistrationError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
 
 ### `gps`
 
