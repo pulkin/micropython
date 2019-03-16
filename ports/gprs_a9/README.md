@@ -134,6 +134,44 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Raises**: `CellularRegistrationError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
 
+* `gprs_attach()`
+
+  Attaches to the network. This is required for activating the GPRS context. If already attached, does nothing.
+
+  **Raises**: `CellularRegistrationError` if not registered on the network or `CellularAttachmentError` if the attachment process failed at any stage.
+
+  **Note**: There may be no need to run this as, after a hard reset, the module attempts to attach automatically.
+
+  **TODO**: Consider getting rid of this function.
+
+* `gprs_detach()`
+
+  Detaches from the network. Does nothing if already detached.
+
+  **Raises**: `CellularRegistrationError` if not registered on the network or `CellularAttachmentError` if the detachment process failed at any stage.
+
+  **TODO**: Consider getting rid of this function.
+
+* `gprs_activate(apn, user, name)`
+
+  Activates the GPRS context. Does nothing if already activated even if different credentials were provided previously.
+
+  **Args**:
+
+    * apn (str): access point name (APN);
+    * user (str): username;
+    * pass (str): password;
+
+  **Raises**: `CellularRegistrationError` if not registered on the network or `CellularActivationError` if the activation process failed at any stage.
+
+  **Note**: there is no way to check whether the credentials supplied are valid.
+
+* `gprs_deactivate()`
+
+  Deactivates the GPRS context. Does nothing if already deactivated.
+
+  **Raises**: `CellularRegistrationError` if not registered on the network or `CellularActivationError` if the deactivation process failed at any stage.
+
 ### `gps`
 
 Provides the GPS functionality.

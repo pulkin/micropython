@@ -262,11 +262,39 @@ void EventDispatch(API_Event_t* pEvent)
 
         case API_EVENT_ID_NETWORK_REGISTER_NO:
             // TODO: WTF is this?
+            modcellular_notify_reg_denied(pEvent);
             break;
 
         case API_EVENT_ID_NETWORK_DEREGISTER:
             modcellular_notify_dereg(pEvent);
             break;
+
+        case API_EVENT_ID_NETWORK_DETACHED:
+            modcellular_notify_det(pEvent);
+            break;
+
+        case API_EVENT_ID_NETWORK_ATTACH_FAILED:
+            modcellular_notify_att_failed(pEvent);
+            break;
+
+        case API_EVENT_ID_NETWORK_ATTACHED:
+            modcellular_notify_att(pEvent);
+            break;
+
+        case API_EVENT_ID_NETWORK_DEACTIVED:
+            modcellular_notify_deact(pEvent);
+            break;
+
+        case API_EVENT_ID_NETWORK_ACTIVATE_FAILED:
+            modcellular_notify_act_failed(pEvent);
+            break;
+
+        case API_EVENT_ID_NETWORK_ACTIVATED:
+            modcellular_notify_act(pEvent);
+            break;
+
+        // SMS
+        // ===
 
         case API_EVENT_ID_SMS_SENT:
             modcellular_notify_sms_sent(pEvent);
@@ -283,6 +311,9 @@ void EventDispatch(API_Event_t* pEvent)
         case API_EVENT_ID_SMS_RECEIVED:
             modcellular_notify_sms_receipt(pEvent);
             break;
+
+        // Signal
+        // ======
 
         case API_EVENT_ID_SIGNAL_QUALITY:
             modcellular_notify_signal(pEvent);

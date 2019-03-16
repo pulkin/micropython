@@ -10,17 +10,24 @@
 #include "api_sim.h"
 #include "api_sms.h"
 #include "api_os.h"
+#include "api_network.h"
 #include "buffer.h"
 #include "time.h"
 
 #define NTW_REG_BIT 0x01
 #define NTW_ROAM_BIT 0x02
 #define NTW_REG_PROGRESS_BIT 0x04
+#define NTW_ATT_BIT 0x08
+#define NTW_ACT_BIT 0x10
 
+#define NTW_NO_EXC 0
 #define NTW_EXC_NOSIM 0x01
 #define NTW_EXC_REG_DENIED 0x02
 #define NTW_EXC_SMS_SEND 0x03
 #define NTW_EXC_SIM_DROP 0x04
+#define NTW_EXC_ATT_FAILED 0x05
+#define NTW_EXC_ACT_FAILED 0x06
+#define NTW_EXC_SMS_DROP 0x07
 
 // --------------
 // Vars: statuses
@@ -35,6 +42,9 @@ uint8_t network_signal_rx_level = 0;
 
 // Count SMS recieved
 uint8_t sms_recieved_count = 0;
+
+// SMS send flag
+uint8_t sms_send_flag = 0;
 
 // -------------------
 // Vars: SMS retrieval
@@ -62,6 +72,8 @@ MP_DEFINE_EXCEPTION(CellularError, OSError)
 MP_DEFINE_EXCEPTION(CellularRegistrationError, CellularError)
 MP_DEFINE_EXCEPTION(SMSError, CellularError)
 MP_DEFINE_EXCEPTION(NoSIMError, CellularError)
+MP_DEFINE_EXCEPTION(CellularAttachmentError, CellularError)
+MP_DEFINE_EXCEPTION(CellularActivationError, CellularError)
 
 NORETURN void mp_raise_CellularError(const char *msg) {
     mp_raise_msg(&mp_type_CellularError, msg);
@@ -77,6 +89,14 @@ NORETURN void mp_raise_SMSError(const char *msg) {
 
 NORETURN void mp_raise_NoSIMError(const char *msg) {
     mp_raise_msg(&mp_type_NoSIMError, msg);
+}
+
+NORETURN void mp_raise_CellularAttachmentError(const char *msg) {
+    mp_raise_msg(&mp_type_CellularAttachmentError, msg);
+}
+
+NORETURN void mp_raise_CellularActivationError(const char *msg) {
+    mp_raise_msg(&mp_type_CellularActivationError, msg);
 }
 
 // ------
@@ -124,6 +144,44 @@ void modcellular_notify_dereg(API_Event_t* event) {
     network_status_updated = 1;
 }
 
+// Attach
+
+void modcellular_notify_det(API_Event_t* event) {
+    network_status &= ~NTW_ATT_BIT;
+    network_status_updated = 1;
+}
+
+void modcellular_notify_att_failed(API_Event_t* event) {
+    network_status &= ~NTW_ATT_BIT;
+    network_status_updated = 1;
+
+    network_exception = NTW_EXC_ATT_FAILED;
+}
+
+void modcellular_notify_att(API_Event_t* event) {
+    network_status |= NTW_ATT_BIT;
+    network_status_updated = 1;
+}
+
+// Activate
+
+void modcellular_notify_deact(API_Event_t* event) {
+    network_status &= ~NTW_ACT_BIT;
+    network_status_updated = 1;
+}
+
+void modcellular_notify_act_failed(API_Event_t* event) {
+    network_status &= ~NTW_ACT_BIT;
+    network_status_updated = 1;
+
+    network_exception = NTW_EXC_ACT_FAILED;
+}
+
+void modcellular_notify_act(API_Event_t* event) {
+    network_status |= NTW_ACT_BIT;
+    network_status_updated = 1;
+}
+
 // SMS
 
 void modcellular_notify_sms_list(API_Event_t* event) {
@@ -133,13 +191,13 @@ void modcellular_notify_sms_list(API_Event_t* event) {
         sms_list_buffer->items[sms_list_buffer_count] = sms_from_record(messageInfo);
         sms_list_buffer_count ++;
     } else {
-        mp_warning("SMS list element discarded");
+        network_exception = NTW_EXC_SMS_DROP;
     }
     OS_Free(messageInfo->data);
 }
 
 void modcellular_notify_sms_sent(API_Event_t* event) {
-    mp_printf(&mp_plat_print, "SMS has been sent");
+    sms_send_flag = 1;
 }
 
 void modcellular_notify_sms_error(API_Event_t* event) {
@@ -278,12 +336,25 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
         return mp_const_none;
     }
 
+    sms_send_flag = 0;
     if (!SMS_SendMessage(destination_c, unicode, unicodeLen, SIM0)) {
         OS_Free(unicode);
         mp_raise_SMSError("Failed to submit SMS message for sending");
         return mp_const_none;
     }
     OS_Free(unicode);
+
+    clock_t time = clock();
+    while (clock() - time < MAX_SMS_SEND_TIMEOUT * CLOCKS_PER_MSEC && !sms_send_flag) {
+        OS_Sleep(100);
+    }
+
+    if (!sms_send_flag) {
+        mp_raise_SMSError("SMS send timeout. The module will still attempt to send SMS but this may interfer with other cellular activities");
+        return mp_const_none;
+    }
+
+    sms_send_flag = 0;
 
     return mp_const_none;
 }
@@ -508,6 +579,26 @@ STATIC mp_obj_t poll_network_exception(void) {
         case NTW_EXC_SIM_DROP:
             mp_raise_NoSIMError("SIM card dropped");
             break;
+
+        case NTW_EXC_ATT_FAILED:
+            mp_raise_CellularAttachmentError("Failed to attach to the cellular network");
+            break;
+
+        case NTW_EXC_ACT_FAILED:
+            mp_raise_CellularActivationError("Failed to activate the cellular network");
+            break;
+
+        case NTW_EXC_SMS_DROP:
+            mp_raise_SMSError("SMS message was discarded due to a timeout or a wrong SMS storage information");
+            break;
+
+        case NTW_NO_EXC:
+            break;
+
+        default:
+            mp_raise_msg(&mp_type_RuntimeError, "Unknown network exception occurred");
+            break;
+
     }
     network_exception = 0;
     return mp_const_none;
@@ -627,6 +718,167 @@ STATIC mp_obj_t sms_list(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(sms_list_obj, sms_list);
 
+STATIC mp_obj_t gprs_attach() {
+    // ========================================
+    // Attaches to the GPRS network.
+    // ========================================
+    REQUIRES_NETWORK_REGISTRATION;
+
+    uint8_t status;
+
+    // Attach
+    if (!Network_GetAttachStatus(&status)) {
+        mp_raise_CellularAttachmentError("Cannot retrieve attach status");
+        return mp_const_none;
+    }
+
+    if (!status) {
+
+        if (!Network_StartAttach()) {
+            mp_raise_CellularAttachmentError("Cannot initiate attachment");
+            return mp_const_none;
+        }
+
+        clock_t time = clock();
+        while (clock() - time < MAX_ATT_TIMEOUT * CLOCKS_PER_MSEC && !(network_status & NTW_ATT_BIT)) {
+            OS_Sleep(100);
+        }
+
+        if (!(network_status & NTW_ATT_BIT)) {
+            mp_raise_CellularAttachmentError("Network attachment timeout");
+            return mp_const_none;
+        }
+    }
+
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(gprs_attach_obj, gprs_attach);
+
+STATIC mp_obj_t gprs_detach() {
+    // ========================================
+    // Detaches from the GPRS network.
+    // ========================================
+    REQUIRES_NETWORK_REGISTRATION;
+
+    uint8_t status;
+
+    // Attach
+    if (!Network_GetAttachStatus(&status)) {
+        mp_raise_CellularAttachmentError("Cannot retrieve attach status");
+        return mp_const_none;
+    }
+
+    if (status) {
+
+        if (!Network_StartDetach()) {
+            mp_raise_CellularAttachmentError("Cannot initiate detachment");
+            return mp_const_none;
+        }
+
+        clock_t time = clock();
+        while (clock() - time < MAX_ATT_TIMEOUT * CLOCKS_PER_MSEC && (network_status & NTW_ATT_BIT)) {
+            OS_Sleep(100);
+        }
+
+        if (network_status & NTW_ATT_BIT) {
+            mp_raise_CellularAttachmentError("Network detach timeout");
+            return mp_const_none;
+        }
+    }
+
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(gprs_detach_obj, gprs_detach);
+
+STATIC mp_obj_t gprs_activate(mp_obj_t apn, mp_obj_t user, mp_obj_t pass) {
+    // ========================================
+    // Activates the GPRS network.
+    // Args:
+    //     apn (str): access point name (APN);
+    //     user (str): username;
+    //     pass (str): password;
+    // ========================================
+    REQUIRES_NETWORK_REGISTRATION;
+
+    const char* c_apn = mp_obj_str_get_str(apn);
+    const char* c_user = mp_obj_str_get_str(user);
+    const char* c_pass = mp_obj_str_get_str(pass);
+
+    uint8_t status;
+
+    // Attach
+    if (!Network_GetActiveStatus(&status)) {
+        mp_raise_CellularActivationError("Cannot retrieve context activation status");
+        return mp_const_none;
+    }
+
+    if (!status) {
+
+        Network_PDP_Context_t context;
+        memcpy(context.apn, c_apn, MIN(strlen(c_apn) + 1, sizeof(context.apn)));
+        memcpy(context.userName, c_user, MIN(strlen(c_user) + 1, sizeof(context.userName)));
+        memcpy(context.userPasswd, c_pass, MIN(strlen(c_pass) + 1, sizeof(context.userPasswd)));
+
+        if (!Network_StartActive(context)) {
+            mp_raise_CellularActivationError("Cannot initiate context activation");
+            return mp_const_none;
+        }
+
+        clock_t time = clock();
+        while (clock() - time < MAX_ACT_TIMEOUT * CLOCKS_PER_MSEC && !(network_status & NTW_ACT_BIT)) {
+            OS_Sleep(100);
+        }
+
+        if (!(network_status & NTW_ACT_BIT)) {
+            mp_raise_CellularActivationError("Network context activation timeout");
+            return mp_const_none;
+        }
+    }
+
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(gprs_activate_obj, gprs_activate);
+
+STATIC mp_obj_t gprs_deactivate() {
+    // ========================================
+    // Deactivates the GPRS network.
+    // ========================================
+    REQUIRES_NETWORK_REGISTRATION;
+
+    uint8_t status;
+
+    // Attach
+    if (!Network_GetActiveStatus(&status)) {
+        mp_raise_CellularActivationError("Cannot retrieve context activation status");
+        return mp_const_none;
+    }
+
+    if (status) {
+
+        if (!Network_StartDeactive(1)) {
+            mp_raise_CellularActivationError("Cannot initiate context deactivation");
+            return mp_const_none;
+        }
+
+        clock_t time = clock();
+        while (clock() - time < MAX_ACT_TIMEOUT * CLOCKS_PER_MSEC && (network_status & NTW_ACT_BIT)) {
+            OS_Sleep(100);
+        }
+
+        if (network_status & NTW_ACT_BIT) {
+            mp_raise_CellularActivationError("Network context deactivation timeout");
+            return mp_const_none;
+        }
+    }
+
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(gprs_deactivate_obj, gprs_deactivate);
+
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
@@ -648,6 +900,10 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&get_iccid_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imsi), (mp_obj_t)&get_imsi_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_sms_list), (mp_obj_t)&sms_list_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_attach), (mp_obj_t)&gprs_attach_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_detach), (mp_obj_t)&gprs_detach_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_activate), (mp_obj_t)&gprs_activate_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_deactivate), (mp_obj_t)&gprs_deactivate_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);
