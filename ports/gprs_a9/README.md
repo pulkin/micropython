@@ -187,7 +187,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   Resolves the domain name.
 
-  **Returns**: IP address the domain name belongs to.
+  **Returns**: The IP address the domain name belongs to as a string.
 
   **Raises**: `NetworkError` if failed to resolve.
 
