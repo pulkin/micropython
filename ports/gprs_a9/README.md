@@ -60,6 +60,8 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
 #### Methods ####
 
+##### Status and information #####
+
 * `get_imei()`
 
   Retrieves the International Mobile Equipment Identity (IMEI) number.
@@ -129,6 +131,8 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   **Returns**: Two integers, the signal quality (0-31) and RXQUAL. These are replaced by `None` if no signal quality information is available.
   **Note**: The RXQUAL output is always `None`. Its meaning is unknown.
 
+##### SMS #####
+
 * `sms_list()`
 
   Retrieves SMS from the SIM card.
@@ -136,6 +140,8 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   **Returns**: a list of SMS messages.
 
   **Raises**: `CellularRegistrationError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
+
+##### GPRS #####
 
 * `gprs_attach()`
 
