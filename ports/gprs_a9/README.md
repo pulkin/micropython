@@ -175,6 +175,14 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Raises**: `CellularRegistrationError` if not registered on the network or `CellularActivationError` if the deactivation process failed at any stage.
 
+* `get_local_ip()`
+
+  Retrieves the local IP address.
+
+  **Returns**: The local IP address as a string.
+
+  **Raises**: `NetworkError` if no address was assigned.
+
 * `dns_resolve(name)`
 
   Resolves the domain name.

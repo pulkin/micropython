@@ -888,6 +888,22 @@ STATIC mp_obj_t gprs_deactivate() {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(gprs_deactivate_obj, gprs_deactivate);
 
+STATIC mp_obj_t get_local_ip(void) {
+    // ========================================
+    // Retrieves the local IP address.
+    // Returns:
+    //     A string with the assigned IP address.
+    // ========================================
+    char ip[16];
+    if (!Network_GetIp(ip, sizeof(ip))) {
+        mp_raise_NetworkError("Failed to retrieve the local IP address");
+        return mp_const_none;
+    }
+    return mp_obj_new_str(ip, strlen(ip));
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_local_ip_obj, get_local_ip);
+
 STATIC mp_obj_t dns_resolve(mp_obj_t name) {
     // ========================================
     // Resolve a domain name.
@@ -937,6 +953,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_detach), (mp_obj_t)&gprs_detach_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_activate), (mp_obj_t)&gprs_activate_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_deactivate), (mp_obj_t)&gprs_deactivate_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_local_ip), (mp_obj_t)&get_local_ip_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_dns_resolve), (mp_obj_t)&dns_resolve_obj },
 };
 
