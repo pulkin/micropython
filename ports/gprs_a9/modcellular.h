@@ -5,6 +5,9 @@ extern const mp_obj_type_t mp_type_CellularError;
 extern const mp_obj_type_t mp_type_CellularRegistrationError;
 extern const mp_obj_type_t mp_type_SMSError;
 extern const mp_obj_type_t mp_type_NoSIMError;
+extern const mp_obj_type_t mp_type_CellularAttachmentError;
+extern const mp_obj_type_t mp_type_CellularActivationError;
+extern const mp_obj_type_t mp_type_NetworkError;
 
 void cellular_init0(void);
 

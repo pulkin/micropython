@@ -11,8 +11,11 @@
 #include "api_sms.h"
 #include "api_os.h"
 #include "api_network.h"
+#include "api_socket.h"
+
 #include "buffer.h"
 #include "time.h"
+#include "stdio.h"
 
 #define NTW_REG_BIT 0x01
 #define NTW_ROAM_BIT 0x02
@@ -75,6 +78,8 @@ MP_DEFINE_EXCEPTION(NoSIMError, CellularError)
 MP_DEFINE_EXCEPTION(CellularAttachmentError, CellularError)
 MP_DEFINE_EXCEPTION(CellularActivationError, CellularError)
 
+MP_DEFINE_EXCEPTION(NetworkError, OSError)
+
 NORETURN void mp_raise_CellularError(const char *msg) {
     mp_raise_msg(&mp_type_CellularError, msg);
 }
@@ -97,6 +102,10 @@ NORETURN void mp_raise_CellularAttachmentError(const char *msg) {
 
 NORETURN void mp_raise_CellularActivationError(const char *msg) {
     mp_raise_msg(&mp_type_CellularActivationError, msg);
+}
+
+NORETURN void mp_raise_NetworkError(const char *msg) {
+    mp_raise_msg(&mp_type_NetworkError, msg);
 }
 
 // ------
@@ -879,6 +888,30 @@ STATIC mp_obj_t gprs_deactivate() {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(gprs_deactivate_obj, gprs_deactivate);
 
+STATIC mp_obj_t dns_resolve(mp_obj_t name) {
+    // ========================================
+    // Resolve a domain name.
+    // Args:
+    //     name (str): the domain name;
+    // Returns:
+    //     A string with an IP address the name belongs to.
+    // ========================================
+    const char* c_name = mp_obj_str_get_str(name);
+    char ip[16];
+    uint8_t status;
+
+    if ((status = DNS_GetHostByName2((uint8_t*)c_name, (uint8_t*)ip)) != 0) {
+        char msg[64];
+        snprintf(msg, sizeof(msg), "Failed to resolve domain name: error=%d", status);
+        mp_raise_NetworkError(msg);
+        return mp_const_none;
+    }
+
+    return mp_obj_new_str(ip, strlen(ip));
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(dns_resolve_obj, dns_resolve);
+
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
@@ -904,6 +937,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_detach), (mp_obj_t)&gprs_detach_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_activate), (mp_obj_t)&gprs_activate_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_deactivate), (mp_obj_t)&gprs_deactivate_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_dns_resolve), (mp_obj_t)&dns_resolve_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);

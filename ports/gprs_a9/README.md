@@ -54,6 +54,9 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `CellularRegistrationError(message)`
 * `SMSError(message)`
 * `NoSIMError(message)`
+* `CellularAttachmentError(message)`
+* `CellularActivationError(message)`
+* `NetworkError(message)`
 
 #### Methods ####
 
@@ -171,6 +174,14 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   Deactivates the GPRS context. Does nothing if already deactivated.
 
   **Raises**: `CellularRegistrationError` if not registered on the network or `CellularActivationError` if the deactivation process failed at any stage.
+
+* `dns_resolve(name)`
+
+  Resolves the domain name.
+
+  **Returns**: IP address the domain name belongs to.
+
+  **Raises**: `NetworkError` if failed to resolve.
 
 ### `gps`
 
