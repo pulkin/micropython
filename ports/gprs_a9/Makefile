@@ -123,7 +123,8 @@ SRC_C = \
 	modchip.c \
 	file_io.c \
 	modcellular.c \
-	modgps.c
+	modgps.c \
+	modusocket.c
 
 
 LIB_SRC_C = $(addprefix lib/,\

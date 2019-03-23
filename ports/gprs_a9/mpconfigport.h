@@ -201,6 +201,7 @@ extern const struct _mp_obj_module_t utime_module;
 extern const struct _mp_obj_module_t chip_module;
 extern const struct _mp_obj_module_t cellular_module;
 extern const struct _mp_obj_module_t gps_module;
+extern const struct _mp_obj_module_t usocket_module;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&mp_module_machine }, \
@@ -209,6 +210,7 @@ extern const struct _mp_obj_module_t gps_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_chip), (mp_obj_t)&chip_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_cellular), (mp_obj_t)&cellular_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_gps), (mp_obj_t)&gps_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&usocket_module }, \
 
 #define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \

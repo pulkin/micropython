@@ -181,6 +181,22 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Raises**: `CellularRegistrationError` if not registered on the network or `CellularActivationError` if the deactivation process failed at any stage.
 
+### `usocket` ###
+
+TCP/IP stack based on lwIP.
+See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.html) for details.
+
+#### Classes ####
+
+* `socket(af, type, proto)`
+
+    * `close()`
+    * `connect(address)`
+    * `send(bytes)`
+    * `recv(bufsize)`
+
+#### Methods ####
+
 * `get_local_ip()`
 
   Retrieves the local IP address.

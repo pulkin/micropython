@@ -143,7 +143,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_satellites_obj, get_satellites);
 STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__i), MP_OBJ_NEW_QSTR(MP_QSTR_gps) },
 
-    { MP_ROM_QSTR(MP_QSTR_GPSError), MP_ROM_PTR(&mp_type_GPSError) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_GPSError), (mp_obj_t)MP_ROM_PTR(&mp_type_GPSError) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_on), (mp_obj_t)&on_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&off_obj },
