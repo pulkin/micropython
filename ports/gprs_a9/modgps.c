@@ -37,17 +37,28 @@ NORETURN void mp_raise_GPSError(const char *msg) {
 // Methods
 // -------
 
-STATIC mp_obj_t on(void) {
+STATIC mp_obj_t modgps_on(size_t n_args, const mp_obj_t *arg) {
     // ========================================
     // Turns GPS on.
+    // Args:
+    //     timeout (int): timeout in seconds;
     // Raises:
     //     ValueError if failed to turn GPS on.
     // ========================================
+    uint32_t timeout = 0;
+    if (n_args == 0) {
+        timeout = DEFAULT_GPS_TIMEOUT;
+    } else {
+        timeout = mp_obj_get_int(arg[0]);
+    }
+    timeout *= 1000 * CLOCKS_PER_MSEC;
+    gpsInfo = Gps_GetInfo();
+    gpsInfo->rmc.latitude.value = 0;
+    gpsInfo->rmc.longitude.value = 0;
     GPS_Init();
     GPS_Open(NULL);
-    gpsInfo = Gps_GetInfo();
     clock_t time = clock();
-    while (clock() - time < MAX_GPS_TIMEOUT * CLOCKS_PER_MSEC) {
+    while (clock() - time < timeout) {
         if (gpsInfo->rmc.latitude.value != 0) {
             break;
         }
@@ -59,9 +70,9 @@ STATIC mp_obj_t on(void) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(on_obj, on);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modgps_on_obj, 0, 1, modgps_on);
 
-STATIC mp_obj_t off(void) {
+STATIC mp_obj_t modgps_off(void) {
     // ========================================
     // Turns GPS off.
     // ========================================
@@ -69,9 +80,9 @@ STATIC mp_obj_t off(void) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(off_obj, off);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modgps_off_obj, modgps_off);
 
-STATIC mp_obj_t get_firmware_version(void) {
+STATIC mp_obj_t modgps_get_firmware_version(void) {
     // ========================================
     // Retrieves firmware version.
     // Returns:
@@ -87,9 +98,9 @@ STATIC mp_obj_t get_firmware_version(void) {
     return mp_obj_new_str(buffer, strlen(buffer));
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_firmware_version_obj, get_firmware_version);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modgps_get_firmware_version_obj, modgps_get_firmware_version);
 
-STATIC mp_obj_t get_last_location(void) {
+STATIC mp_obj_t modgps_get_last_location(void) {
     // ========================================
     // Retrieves the last GPS location.
     // Returns:
@@ -108,9 +119,9 @@ STATIC mp_obj_t get_last_location(void) {
     return mp_obj_new_tuple(2, tuple);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_last_location_obj, get_last_location);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modgps_get_last_location_obj, modgps_get_last_location);
 
-STATIC mp_obj_t get_location(void) {
+STATIC mp_obj_t modgps_get_location(void) {
     // ========================================
     // Retrieves the current GPS location.
     // Returns:
@@ -118,12 +129,12 @@ STATIC mp_obj_t get_location(void) {
     // ========================================
     REQUIRES_GPS_ON;
 
-    return get_last_location();
+    return modgps_get_last_location();
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_location_obj, get_location);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modgps_get_location_obj, modgps_get_location);
 
-STATIC mp_obj_t get_satellites(void) {
+STATIC mp_obj_t modgps_get_satellites(void) {
     // ========================================
     // Retrieves the number of visible GPS satellites.
     // Returns:
@@ -138,19 +149,19 @@ STATIC mp_obj_t get_satellites(void) {
     return mp_obj_new_tuple(2, tuple);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_satellites_obj, get_satellites);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modgps_get_satellites_obj, modgps_get_satellites);
 
 STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__i), MP_OBJ_NEW_QSTR(MP_QSTR_gps) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_GPSError), (mp_obj_t)MP_ROM_PTR(&mp_type_GPSError) },
 
-    { MP_OBJ_NEW_QSTR(MP_QSTR_on), (mp_obj_t)&on_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&off_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_firmware_version), (mp_obj_t)&get_firmware_version_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_location), (mp_obj_t)&get_location_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_last_location), (mp_obj_t)&get_last_location_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_satellites), (mp_obj_t)&get_satellites_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_on), (mp_obj_t)&modgps_on_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&modgps_off_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_firmware_version), (mp_obj_t)&modgps_get_firmware_version_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_location), (mp_obj_t)&modgps_get_location_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_last_location), (mp_obj_t)&modgps_get_last_location_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_satellites), (mp_obj_t)&modgps_get_satellites_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_gps_globals, mp_module_gps_globals_table);
