@@ -262,7 +262,7 @@ void EventDispatch(API_Event_t* pEvent)
     switch(pEvent->id)
     {
         case API_EVENT_ID_POWER_ON:
-            notify_power_on(pEvent);
+            modmachine_notify_power_on(pEvent);
             break;
 
         // Network

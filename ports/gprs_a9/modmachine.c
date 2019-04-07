@@ -45,7 +45,7 @@
 
 Power_On_Cause_t powerOnCause = POWER_ON_CAUSE_MAX;
 
-void notify_power_on(API_Event_t* event) {
+void modmachine_notify_power_on(API_Event_t* event) {
     powerOnCause = event->param1;
 }
 
@@ -53,7 +53,7 @@ void notify_power_on(API_Event_t* event) {
 // Methods
 // -------
 
-STATIC mp_obj_t reset(void) {
+STATIC mp_obj_t modmachine_reset(void) {
     // ========================================
     // Resets the module.
     // ========================================
@@ -61,9 +61,9 @@ STATIC mp_obj_t reset(void) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(reset_obj, reset);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_reset_obj, modmachine_reset);
 
-STATIC mp_obj_t idle(void) {
+STATIC mp_obj_t modmachine_idle(void) {
     // ========================================
     // Puts the module into low-power mode.
     // The execution continues.
@@ -72,9 +72,9 @@ STATIC mp_obj_t idle(void) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(idle_obj, idle);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_idle_obj, modmachine_idle);
 
-STATIC mp_obj_t power_on_cause(void) {
+STATIC mp_obj_t modmachine_power_on_cause(void) {
     // ========================================
     // Retrieves the last reason for the power on.
     // Returns:
@@ -105,9 +105,9 @@ STATIC mp_obj_t power_on_cause(void) {
     }
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(power_on_cause_obj, power_on_cause);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_power_on_cause_obj, modmachine_power_on_cause);
 
-STATIC mp_obj_t off(void) {
+STATIC mp_obj_t modmachine_off(void) {
     // ========================================
     // Turns off the module.
     // ========================================
@@ -115,9 +115,9 @@ STATIC mp_obj_t off(void) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(off_obj, off);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_off_obj, modmachine_off);
 
-STATIC mp_obj_t get_input_voltage(void) {
+STATIC mp_obj_t modmachine_get_input_voltage(void) {
     // ========================================
     // Retrieves the input voltage and the
     // estimated battery capacity in percents.
@@ -134,9 +134,9 @@ STATIC mp_obj_t get_input_voltage(void) {
     return mp_obj_new_tuple(2, tuple);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_input_voltage_obj, get_input_voltage);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_get_input_voltage_obj, modmachine_get_input_voltage);
 
-STATIC mp_obj_t watchdog_on(mp_obj_t timeout) {
+STATIC mp_obj_t modmachine_watchdog_on(mp_obj_t timeout) {
     // ========================================
     // Arms the hardware watchdog.
     // Args:
@@ -146,9 +146,9 @@ STATIC mp_obj_t watchdog_on(mp_obj_t timeout) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(watchdog_on_obj, watchdog_on);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modmachine_watchdog_on_obj, modmachine_watchdog_on);
 
-STATIC mp_obj_t watchdog_off(void) {
+STATIC mp_obj_t modmachine_watchdog_off(void) {
     // ========================================
     // Disarms the hardware watchdog.
     // ========================================
@@ -156,9 +156,9 @@ STATIC mp_obj_t watchdog_off(void) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(watchdog_off_obj, watchdog_off);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_watchdog_off_obj, modmachine_watchdog_off);
 
-STATIC mp_obj_t watchdog_reset(void) {
+STATIC mp_obj_t modmachine_watchdog_reset(void) {
     // ========================================
     // Resets the watchdog timeout.
     // ========================================
@@ -166,19 +166,19 @@ STATIC mp_obj_t watchdog_reset(void) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(watchdog_reset_obj, watchdog_reset);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_watchdog_reset_obj, modmachine_watchdog_reset);
 
 STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_umachine) },
     { MP_ROM_QSTR(MP_QSTR_Pin), MP_ROM_PTR(&machine_pin_type) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&reset_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_idle), (mp_obj_t)&idle_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_power_on_cause), (mp_obj_t)&power_on_cause_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&off_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_input_voltage), (mp_obj_t)&get_input_voltage_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_on), (mp_obj_t)&watchdog_on_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_off), (mp_obj_t)&watchdog_off_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_reset), (mp_obj_t)&watchdog_reset_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modmachine_reset_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_idle), (mp_obj_t)&modmachine_idle_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_power_on_cause), (mp_obj_t)&modmachine_power_on_cause_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&modmachine_off_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_input_voltage), (mp_obj_t)&modmachine_get_input_voltage_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_on), (mp_obj_t)&modmachine_watchdog_on_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_off), (mp_obj_t)&modmachine_watchdog_off_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_reset), (mp_obj_t)&modmachine_watchdog_reset_obj },
 
     // Reset reasons
     { MP_ROM_QSTR(MP_QSTR_POWER_ON_CAUSE_KEY),       MP_ROM_INT(POWER_ON_CAUSE_KEY) },

@@ -36,7 +36,7 @@
 extern const mp_obj_type_t machine_pin_type;
 extern Power_On_Cause_t powerOnCause;
 
-void notify_power_on(API_Event_t* event);
+void modmachine_notify_power_on(API_Event_t* event);
 
 #endif
 
