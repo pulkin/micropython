@@ -45,8 +45,8 @@
 
 Power_On_Cause_t powerOnCause = POWER_ON_CAUSE_MAX;
 
-    void notify_power_on(API_Event_t* event) {
-        powerOnCause = event->param1;
+void notify_power_on(API_Event_t* event) {
+    powerOnCause = event->param1;
 }
 
 // -------
