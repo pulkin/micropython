@@ -37,7 +37,7 @@
 #include "api_hal_flash.h"
 
 
-STATIC mp_obj_t chip_flash_read(mp_obj_t offset_in, mp_obj_t buf_in) {
+STATIC mp_obj_t modchip_chip_flash_read(mp_obj_t offset_in, mp_obj_t buf_in) {
     mp_int_t offset = mp_obj_get_int(offset_in);
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(buf_in, &bufinfo, MP_BUFFER_WRITE);
@@ -52,9 +52,9 @@ STATIC mp_obj_t chip_flash_read(mp_obj_t offset_in, mp_obj_t buf_in) {
     }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(chip_flash_read_obj, chip_flash_read);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(modchip_chip_flash_read_obj, modchip_chip_flash_read);
 
-STATIC mp_obj_t chip_flash_write(mp_obj_t offset_in, mp_obj_t buf_in) {
+STATIC mp_obj_t modchip_chip_flash_write(mp_obj_t offset_in, mp_obj_t buf_in) {
     mp_int_t offset = mp_obj_get_int(offset_in);
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(buf_in, &bufinfo, MP_BUFFER_READ);
@@ -65,9 +65,9 @@ STATIC mp_obj_t chip_flash_write(mp_obj_t offset_in, mp_obj_t buf_in) {
     }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(chip_flash_write_obj, chip_flash_write);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(modchip_chip_flash_write_obj, modchip_chip_flash_write);
 
-STATIC mp_obj_t chip_flash_erase(mp_obj_t sector_in) {
+STATIC mp_obj_t modchip_chip_flash_erase(mp_obj_t sector_in) {
     mp_int_t sector = mp_obj_get_int(sector_in);
     bool ret = hal_SpiFlashErase(sector*4096,4096);
     Trace(1,"flash erase 0x%x, ret:%d",sector*4096,ret);
@@ -76,26 +76,26 @@ STATIC mp_obj_t chip_flash_erase(mp_obj_t sector_in) {
     }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(chip_flash_erase_obj, chip_flash_erase);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modchip_chip_flash_erase_obj, modchip_chip_flash_erase);
 
-STATIC mp_obj_t chip_flash_size(void) {
+STATIC mp_obj_t modchip_chip_flash_size(void) {
     return mp_obj_new_int_from_uint(hal_SpiFlashGetSize());
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(chip_flash_size_obj, chip_flash_size);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modchip_chip_flash_size_obj, modchip_chip_flash_size);
 
-STATIC mp_obj_t chip_flash_user_start(void) {
+STATIC mp_obj_t modchip_chip_flash_user_start(void) {
     return MP_OBJ_NEW_SMALL_INT(0x390000);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(chip_flash_user_start_obj, chip_flash_user_start);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modchip_chip_flash_user_start_obj, modchip_chip_flash_user_start);
 
 STATIC const mp_rom_map_elem_t chip_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_chip) },
 
-    { MP_ROM_QSTR(MP_QSTR_flash_read), MP_ROM_PTR(&chip_flash_read_obj) },
-    { MP_ROM_QSTR(MP_QSTR_flash_write), MP_ROM_PTR(&chip_flash_write_obj) },
-    { MP_ROM_QSTR(MP_QSTR_flash_erase), MP_ROM_PTR(&chip_flash_erase_obj) },
-    { MP_ROM_QSTR(MP_QSTR_flash_size), MP_ROM_PTR(&chip_flash_size_obj) },
-    { MP_ROM_QSTR(MP_QSTR_flash_user_start), MP_ROM_PTR(&chip_flash_user_start_obj) },
+    { MP_ROM_QSTR(MP_QSTR_flash_read), MP_ROM_PTR(&modchip_chip_flash_read_obj) },
+    { MP_ROM_QSTR(MP_QSTR_flash_write), MP_ROM_PTR(&modchip_chip_flash_write_obj) },
+    { MP_ROM_QSTR(MP_QSTR_flash_erase), MP_ROM_PTR(&modchip_chip_flash_erase_obj) },
+    { MP_ROM_QSTR(MP_QSTR_flash_size), MP_ROM_PTR(&modchip_chip_flash_size_obj) },
+    { MP_ROM_QSTR(MP_QSTR_flash_user_start), MP_ROM_PTR(&modchip_chip_flash_user_start_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(chip_module_globals, chip_module_globals_table);
