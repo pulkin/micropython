@@ -41,8 +41,8 @@ uint8_t network_status_updated = 0;
 uint8_t network_signal_quality = 0;
 uint8_t network_signal_rx_level = 0;
 
-// Count SMS recieved
-uint8_t sms_recieved_count = 0;
+// Count SMS received
+uint8_t sms_received_count = 0;
 
 // SMS send flag
 uint8_t sms_send_flag = 0;
@@ -62,7 +62,7 @@ STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* c
 void cellular_init0(void) {
     network_status_updated = 0;
     network_exception = 0;
-    sms_recieved_count = 0;
+    sms_received_count = 0;
 }
 
 // ----------
@@ -206,7 +206,7 @@ void modcellular_notify_sms_error(API_Event_t* event) {
 }
 
 void modcellular_notify_sms_receipt(API_Event_t* event) {
-    sms_recieved_count ++;
+    sms_received_count ++;
 }
 
 void modcellular_notify_signal(API_Event_t* event) {
@@ -678,18 +678,18 @@ STATIC mp_obj_t get_imsi(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_imsi_obj, get_imsi);
 
-STATIC mp_obj_t sms_recieved(void) {
+STATIC mp_obj_t sms_received(void) {
     // ========================================
-    // Retrieves the number of SMS recieved since last poll.
+    // Retrieves the number of SMS received since last poll.
     // Returns:
-    //     The number of SMS recieved.
+    //     The number of SMS received.
     // ========================================
-    mp_obj_t result = mp_obj_new_int(sms_recieved_count);
-    sms_recieved_count = 0;
+    mp_obj_t result = mp_obj_new_int(sms_received_count);
+    sms_received_count = 0;
     return result;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(sms_recieved_obj, sms_recieved);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(sms_received_obj, sms_received);
 
 STATIC mp_obj_t sms_list(void) {
     // ========================================
@@ -913,7 +913,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_roaming), (mp_obj_t)&is_roaming_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&get_iccid_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imsi), (mp_obj_t)&get_imsi_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_recieved), (mp_obj_t)&sms_recieved_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_received), (mp_obj_t)&sms_received_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_sms_list), (mp_obj_t)&sms_list_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_attach), (mp_obj_t)&gprs_attach_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_detach), (mp_obj_t)&gprs_detach_obj },

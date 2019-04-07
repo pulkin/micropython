@@ -95,8 +95,8 @@ if sim_present:
     print("SMS")
     print("----------------")
 
-    sms_recieved = cel.sms_recieved()
-    print("SMS recieved count:", sms_recieved)
+    sms_received = cel.sms_received()
+    print("SMS received count:", sms_received)
 
     sms_list = cel.sms_list()
     print("SMS:", sms_list)
@@ -116,6 +116,7 @@ if sim_present:
     cel.gprs_deactivate()
     cel.gprs_detach()
     cel.network_status_changed()
+    time.sleep(2)
 
     cel.gprs_attach()
     # LEBARA NL credentials
