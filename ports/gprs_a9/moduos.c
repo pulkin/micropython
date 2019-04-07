@@ -219,10 +219,11 @@ mp_obj_t mp_vfs_stat(mp_obj_t path_in) {
     int32_t ret = API_FS_GetFSInfo(path,&info);
     if(ret != 0)
         mp_raise_OSError(MP_EIO);
-    mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
-    t->items[0] = mp_obj_new_int(info.totalSize);
-    t->items[1] = mp_obj_new_int(info.usedSize);
-    return MP_OBJ_FROM_PTR(t);
+    mp_obj_t tuple[2] = {
+        mp_obj_new_int(info.totalSize),
+        mp_obj_new_int(info.usedSize),
+    };
+    return mp_obj_new_tuple(2, tuple);
 }
 MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_stat_obj, mp_vfs_stat);
 
@@ -232,10 +233,11 @@ mp_obj_t mp_vfs_statvfs(mp_obj_t path_in) {
     int32_t ret = API_FS_GetFSInfo(path,&info);
     if(ret != 0)
         mp_raise_OSError(MP_EIO);
-    mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
-    t->items[0] = mp_obj_new_int(info.totalSize);
-    t->items[1] = mp_obj_new_int(info.usedSize);
-    return MP_OBJ_FROM_PTR(t);
+    mp_obj_t tuple[2] = {
+        mp_obj_new_int(info.totalSize),
+        mp_obj_new_int(info.usedSize),
+    };
+    return mp_obj_new_tuple(2, tuple);
 }
 MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_statvfs_obj, mp_vfs_statvfs);
 
