@@ -77,10 +77,6 @@ if sim_present:
     # TODO: check here after implementing constants
     assert status != 0
 
-    cb = cel.network_status_changed()
-    print("Status changed:", cb)
-    assert cb
-
     imei = cel.get_imei()
     print("IMEI:", imei)
     assert len(imei) == 15
@@ -114,9 +110,18 @@ if sim_present:
     print("GPRS")
     print("----------------")
 
+    cel.gprs_deactivate()
+    cel.gprs_detach()
+    cel.network_status_changed()
+
     cel.gprs_attach()
     # LEBARA NL credentials
     cel.gprs_activate("internet", "", "")
+
+    cb = cel.network_status_changed()
+    print("Status changed:", cb, "->", cel.get_network_status())
+    assert cb
+
     import usocket as sock
     loc_ip = sock.get_local_ip()
     print("Local IP:", loc_ip)
@@ -151,4 +156,7 @@ if sim_present:
     print("Socket(ip) rcvd:", response)
     assert response == response_expected
     s.close()
+
+    cel.gprs_deactivate()
+    cel.gprs_detach()
 
