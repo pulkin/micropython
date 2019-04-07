@@ -27,8 +27,9 @@
  * THE SOFTWARE.
  */
 
-#include <string.h>
+#include "moduos.h"
 
+#include <string.h>
 
 #include "py/objstr.h"
 #include "py/runtime.h"
@@ -43,6 +44,10 @@
 #include "api_fs.h"
 
 extern const mp_obj_type_t mp_fat_vfs_type;
+
+void moduos_init0() {
+    API_FS_ChangeDir("/");
+}
 
 STATIC const qstr os_uname_info_fields[] = {
     MP_QSTR_sysname, MP_QSTR_nodename,

@@ -52,6 +52,7 @@
 #include "time.h"
 #include "api_fs.h"
 
+#include "moduos.h"
 #include "mphalport.h"
 #include "mpconfigport.h"
 #include "modcellular.h"
@@ -207,6 +208,7 @@ void soft_reset(void) {
     mp_hal_stdout_tx_str("PYB: soft reboot\r\n");
     mp_hal_delay_us(10000); // allow UART to flush output
     mp_Init();
+    moduos_init0();
     modcellular_init0();
 }
 
@@ -218,6 +220,7 @@ void MicroPyTask(void *pData)
     Buffer_Init(&fifoBuffer, fifoBufferData, sizeof(fifoBufferData));
     UartInit();
     mp_Init();
+    moduos_init0();
     modcellular_init0();
     
     uint8_t reset;
