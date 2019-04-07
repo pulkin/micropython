@@ -133,11 +133,11 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
 ##### SMS #####
 
-* `sms_recieved()`
+* `sms_received()`
 
-  Retrieves the number of SMS recieved since the last check.
+  Retrieves the number of SMS received since the last check.
 
-  **Returns**: the number of SMS recieved.
+  **Returns**: the number of SMS received.
 
 * `sms_list()`
 
