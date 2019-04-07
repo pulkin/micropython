@@ -8,7 +8,7 @@ extern const mp_obj_type_t mp_type_NoSIMError;
 extern const mp_obj_type_t mp_type_CellularAttachmentError;
 extern const mp_obj_type_t mp_type_CellularActivationError;
 
-void cellular_init0(void);
+void modcellular_init0(void);
 
 void modcellular_notify_no_sim(API_Event_t* event);
 void modcellular_notify_sim_drop(API_Event_t* event);

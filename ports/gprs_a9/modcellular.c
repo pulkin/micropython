@@ -56,10 +56,10 @@ mp_obj_list_t* sms_list_buffer = NULL;
 uint8_t sms_list_buffer_count = 0;
 
 // SMS parsing
-STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record);
-STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
+STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record);
+STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
 
-void cellular_init0(void) {
+void modcellular_init0(void) {
     network_status_updated = 0;
     network_exception = 0;
     sms_received_count = 0;
@@ -189,7 +189,7 @@ void modcellular_notify_sms_list(API_Event_t* event) {
     SMS_Message_Info_t* messageInfo = (SMS_Message_Info_t*)event->pParam1;
 
     if (sms_list_buffer && (sms_list_buffer->len > sms_list_buffer_count)) {
-        sms_list_buffer->items[sms_list_buffer_count] = sms_from_record(messageInfo);
+        sms_list_buffer->items[sms_list_buffer_count] = modcellular_sms_from_record(messageInfo);
         sms_list_buffer_count ++;
     } else {
         network_exception = NTW_EXC_SMS_DROP;
@@ -227,7 +227,7 @@ typedef struct _sms_obj_t {
     mp_obj_t message;
 } sms_obj_t;
 
-mp_obj_t sms_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+mp_obj_t modcellular_sms_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
 
     enum { ARG_phone_number, ARG_message };
     static const mp_arg_t allowed_args[] = {
@@ -255,7 +255,7 @@ uint8_t bitsum(uint32_t i) {
      return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
-STATIC mp_obj_t sms_inbox(mp_obj_t self_in) {
+STATIC mp_obj_t modcellular_sms_inbox(mp_obj_t self_in) {
     // ========================================
     // Determines if SMS is inbox or outbox.
     // Returns:
@@ -267,7 +267,7 @@ STATIC mp_obj_t sms_inbox(mp_obj_t self_in) {
     return mp_obj_new_bool(s & (SMS_STATUS_READ | SMS_STATUS_UNREAD));
 }
 
-STATIC mp_obj_t sms_unread(mp_obj_t self_in) {
+STATIC mp_obj_t modcellular_sms_unread(mp_obj_t self_in) {
     // ========================================
     // Determines if SMS is unread.
     // Returns:
@@ -279,7 +279,7 @@ STATIC mp_obj_t sms_unread(mp_obj_t self_in) {
     return mp_obj_new_bool(s & SMS_STATUS_UNREAD);
 }
 
-STATIC mp_obj_t sms_sent(mp_obj_t self_in) {
+STATIC mp_obj_t modcellular_sms_sent(mp_obj_t self_in) {
     // ========================================
     // Determines if SMS was sent.
     // Returns:
@@ -291,7 +291,7 @@ STATIC mp_obj_t sms_sent(mp_obj_t self_in) {
     return mp_obj_new_bool(!(s | SMS_STATUS_UNSENT));
 }
 
-STATIC mp_obj_t sms_send(mp_obj_t self_in) {
+STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
     // ========================================
     // Sends an SMS messsage.
     // ========================================
@@ -360,9 +360,9 @@ STATIC mp_obj_t sms_send(mp_obj_t self_in) {
     return mp_const_none;
 }
 
-MP_DEFINE_CONST_FUN_OBJ_1(sms_send_obj, &sms_send);
+MP_DEFINE_CONST_FUN_OBJ_1(modcellular_sms_send_obj, &modcellular_sms_send);
 
-STATIC mp_obj_t sms_withdraw(mp_obj_t self_in) {
+STATIC mp_obj_t modcellular_sms_withdraw(mp_obj_t self_in) {
     // ========================================
     // Withdraws an SMS message from the SIM card.
     // ========================================
@@ -384,9 +384,9 @@ STATIC mp_obj_t sms_withdraw(mp_obj_t self_in) {
     return mp_const_none;
 }
 
-MP_DEFINE_CONST_FUN_OBJ_1(sms_withdraw_obj, &sms_withdraw);
+MP_DEFINE_CONST_FUN_OBJ_1(modcellular_sms_withdraw_obj, &modcellular_sms_withdraw);
 
-STATIC void sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
+STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     // ========================================
     // SMS.[attr]
     // ========================================
@@ -404,24 +404,24 @@ STATIC void sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
             dest[0] = mp_obj_new_int(self->status);
         // .inbox
         } else if (attr == MP_QSTR_inbox) {
-            dest[0] = sms_inbox(self_in);
+            dest[0] = modcellular_sms_inbox(self_in);
         // .unread
         } else if (attr == MP_QSTR_unread) {
-            dest[0] = sms_unread(self_in);
+            dest[0] = modcellular_sms_unread(self_in);
         // .sent
         } else if (attr == MP_QSTR_sent) {
-            dest[0] = sms_sent(self_in);
+            dest[0] = modcellular_sms_sent(self_in);
         // .send
         } else if (attr == MP_QSTR_send) {
-            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&sms_send_obj), dest);
+            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_send_obj), dest);
         // .withdraw
         } else if (attr == MP_QSTR_withdraw) {
-            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&sms_withdraw_obj), dest);
+            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_withdraw_obj), dest);
         }
     }
 }
 
-STATIC void sms_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+STATIC void modcellular_sms_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     // ========================================
     // SMS.__str__()
     // ========================================
@@ -437,26 +437,26 @@ STATIC void sms_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
     );
 }
 
-STATIC const mp_obj_type_t sms_type = {
+STATIC const mp_obj_type_t modcellular_sms_type = {
     { &mp_type_type },
     .name = MP_QSTR_SMS,
-    .make_new = sms_make_new,
-    .print = sms_print,
-    .attr = sms_attr,
+    .make_new = modcellular_sms_make_new,
+    .print = modcellular_sms_print,
+    .attr = modcellular_sms_attr,
 };
 
 // -------
 // Private
 // -------
 
-STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record) {
+STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record) {
     // ========================================
     // Prepares an SMS object from the record.
     // Returns:
     //     A new SMS object.
     // ========================================
     sms_obj_t *self = m_new_obj_with_finaliser(sms_obj_t);
-    self->base.type = &sms_type;
+    self->base.type = &modcellular_sms_type;
     self->index = record->index;
     self->status = (uint8_t)record->status;
     self->phone_number_type = (uint8_t)record->phoneNumberType;
@@ -465,7 +465,7 @@ STATIC mp_obj_t sms_from_record(SMS_Message_Info_t* record) {
     return MP_OBJ_FROM_PTR(self);
 }
 
-STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length) {
+STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length) {
     // ========================================
     // Prepares an SMS object from raw header and contents.
     // Returns:
@@ -489,7 +489,7 @@ STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* c
     }
 
     sms_obj_t *self = m_new_obj_with_finaliser(sms_obj_t);
-    self->base.type = &sms_type;
+    self->base.type = &modcellular_sms_type;
     self->index = 0;
     self->status = 0;
     self->phone_number_type = 0;
@@ -502,7 +502,7 @@ STATIC mp_obj_t sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* c
 // Methods
 // -------
 
-STATIC mp_obj_t get_signal_quality(void) {
+STATIC mp_obj_t modcellular_get_signal_quality(void) {
     // ========================================
     // Retrieves the network signal quality.
     // Returns:
@@ -515,9 +515,9 @@ STATIC mp_obj_t get_signal_quality(void) {
     return mp_obj_new_tuple(2, tuple);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_signal_quality_obj, get_signal_quality);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_get_signal_quality_obj, modcellular_get_signal_quality);
 
-STATIC mp_obj_t get_imei(void) {
+STATIC mp_obj_t modcellular_get_imei(void) {
     // ========================================
     // Retrieves IMEI number.
     // Returns:
@@ -529,9 +529,9 @@ STATIC mp_obj_t get_imei(void) {
     return mp_obj_new_str(imei, strlen(imei));
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_imei_obj, get_imei);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_get_imei_obj, modcellular_get_imei);
 
-STATIC mp_obj_t is_sim_present(void) {
+STATIC mp_obj_t modcellular_is_sim_present(void) {
     // ========================================
     // Checks whether the SIM card is inserted and ICCID can be retrieved.
     // Returns:
@@ -542,9 +542,9 @@ STATIC mp_obj_t is_sim_present(void) {
     return mp_obj_new_bool(SIM_GetICCID((uint8_t*)iccid));
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_sim_present_obj, is_sim_present);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_is_sim_present_obj, modcellular_is_sim_present);
 
-STATIC mp_obj_t network_status_changed(void) {
+STATIC mp_obj_t modcellular_network_status_changed(void) {
     // ========================================
     // Checks whether the network status was updated.
     // Returns:
@@ -555,9 +555,9 @@ STATIC mp_obj_t network_status_changed(void) {
     return mp_obj_new_bool(result);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(network_status_changed_obj, network_status_changed);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_network_status_changed_obj, modcellular_network_status_changed);
 
-STATIC mp_obj_t poll_network_exception(void) {
+STATIC mp_obj_t modcellular_poll_network_exception(void) {
     // ========================================
     // Checks whether network exception occurred since the last check.
     // Returns:
@@ -605,9 +605,9 @@ STATIC mp_obj_t poll_network_exception(void) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(poll_network_exception_obj, poll_network_exception);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_poll_network_exception_obj, modcellular_poll_network_exception);
 
-STATIC mp_obj_t get_network_status(void) {
+STATIC mp_obj_t modcellular_get_network_status(void) {
     // ========================================
     // Retrieves the network status.
     // Returns:
@@ -616,9 +616,9 @@ STATIC mp_obj_t get_network_status(void) {
     return mp_obj_new_int(network_status);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_network_status_obj, get_network_status);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_get_network_status_obj, modcellular_get_network_status);
 
-STATIC mp_obj_t is_network_registered(void) {
+STATIC mp_obj_t modcellular_is_network_registered(void) {
     // ========================================
     // Checks whether registered on the cellular network.
     // Returns:
@@ -627,9 +627,9 @@ STATIC mp_obj_t is_network_registered(void) {
     return mp_obj_new_bool(network_status & NTW_REG_BIT);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_network_registered_obj, is_network_registered);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_is_network_registered_obj, modcellular_is_network_registered);
 
-STATIC mp_obj_t is_roaming(void) {
+STATIC mp_obj_t modcellular_is_roaming(void) {
     // ========================================
     // Checks whether registered on the roaming network.
     // Returns:
@@ -640,9 +640,9 @@ STATIC mp_obj_t is_roaming(void) {
     return mp_obj_new_bool(network_status & NTW_ROAM_BIT);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(is_roaming_obj, is_roaming);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_is_roaming_obj, modcellular_is_roaming);
 
-STATIC mp_obj_t get_iccid(void) {
+STATIC mp_obj_t modcellular_get_iccid(void) {
     // ========================================
     // Retrieves ICCID number.
     // Returns:
@@ -658,9 +658,9 @@ STATIC mp_obj_t get_iccid(void) {
     }
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_iccid_obj, get_iccid);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_get_iccid_obj, modcellular_get_iccid);
 
-STATIC mp_obj_t get_imsi(void) {
+STATIC mp_obj_t modcellular_get_imsi(void) {
     // ========================================
     // Retrieves IMSI number.
     // Returns:
@@ -676,9 +676,9 @@ STATIC mp_obj_t get_imsi(void) {
     }
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_imsi_obj, get_imsi);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_get_imsi_obj, modcellular_get_imsi);
 
-STATIC mp_obj_t sms_received(void) {
+STATIC mp_obj_t modcellular_sms_received(void) {
     // ========================================
     // Retrieves the number of SMS received since last poll.
     // Returns:
@@ -689,9 +689,9 @@ STATIC mp_obj_t sms_received(void) {
     return result;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(sms_received_obj, sms_received);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_received_obj, modcellular_sms_received);
 
-STATIC mp_obj_t sms_list(void) {
+STATIC mp_obj_t modcellular_sms_list(void) {
     // ========================================
     // Lists SMS messages.
     // Returns:
@@ -730,9 +730,9 @@ STATIC mp_obj_t sms_list(void) {
     return (mp_obj_t)result;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(sms_list_obj, sms_list);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_list_obj, modcellular_sms_list);
 
-STATIC mp_obj_t gprs_attach() {
+STATIC mp_obj_t modcellular_gprs_attach() {
     // ========================================
     // Attaches to the GPRS network.
     // ========================================
@@ -767,9 +767,9 @@ STATIC mp_obj_t gprs_attach() {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(gprs_attach_obj, gprs_attach);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_gprs_attach_obj, modcellular_gprs_attach);
 
-STATIC mp_obj_t gprs_detach() {
+STATIC mp_obj_t modcellular_gprs_detach() {
     // ========================================
     // Detaches from the GPRS network.
     // ========================================
@@ -804,9 +804,9 @@ STATIC mp_obj_t gprs_detach() {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(gprs_detach_obj, gprs_detach);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_gprs_detach_obj, modcellular_gprs_detach);
 
-STATIC mp_obj_t gprs_activate(mp_obj_t apn, mp_obj_t user, mp_obj_t pass) {
+STATIC mp_obj_t modcellular_gprs_activate(mp_obj_t apn, mp_obj_t user, mp_obj_t pass) {
     // ========================================
     // Activates the GPRS network.
     // Args:
@@ -854,9 +854,9 @@ STATIC mp_obj_t gprs_activate(mp_obj_t apn, mp_obj_t user, mp_obj_t pass) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(gprs_activate_obj, gprs_activate);
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(modcellular_gprs_activate_obj, modcellular_gprs_activate);
 
-STATIC mp_obj_t gprs_deactivate() {
+STATIC mp_obj_t modcellular_gprs_deactivate() {
     // ========================================
     // Deactivates the GPRS network.
     // ========================================
@@ -891,7 +891,7 @@ STATIC mp_obj_t gprs_deactivate() {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(gprs_deactivate_obj, gprs_deactivate);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_gprs_deactivate_obj, modcellular_gprs_deactivate);
 
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
@@ -901,24 +901,24 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_SMSError), (mp_obj_t)MP_ROM_PTR(&mp_type_SMSError) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_NoSIMError), (mp_obj_t)MP_ROM_PTR(&mp_type_NoSIMError) },
 
-    { MP_OBJ_NEW_QSTR(MP_QSTR_SMS), (mp_obj_t)MP_ROM_PTR(&sms_type) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_SMS), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_type) },
 
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&get_imei_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_signal_quality), (mp_obj_t)&get_signal_quality_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_network_status_changed), (mp_obj_t)&network_status_changed_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_poll_network_exception), (mp_obj_t)&poll_network_exception_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_status), (mp_obj_t)&get_network_status_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_is_sim_present), (mp_obj_t)&is_sim_present_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_is_network_registered), (mp_obj_t)&is_network_registered_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_is_roaming), (mp_obj_t)&is_roaming_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&get_iccid_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_get_imsi), (mp_obj_t)&get_imsi_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_received), (mp_obj_t)&sms_received_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_list), (mp_obj_t)&sms_list_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_attach), (mp_obj_t)&gprs_attach_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_detach), (mp_obj_t)&gprs_detach_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_activate), (mp_obj_t)&gprs_activate_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_deactivate), (mp_obj_t)&gprs_deactivate_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&modcellular_get_imei_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_signal_quality), (mp_obj_t)&modcellular_get_signal_quality_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_network_status_changed), (mp_obj_t)&modcellular_network_status_changed_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_poll_network_exception), (mp_obj_t)&modcellular_poll_network_exception_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_status), (mp_obj_t)&modcellular_get_network_status_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_is_sim_present), (mp_obj_t)&modcellular_is_sim_present_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_is_network_registered), (mp_obj_t)&modcellular_is_network_registered_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_is_roaming), (mp_obj_t)&modcellular_is_roaming_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&modcellular_get_iccid_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_imsi), (mp_obj_t)&modcellular_get_imsi_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_received), (mp_obj_t)&modcellular_sms_received_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_list), (mp_obj_t)&modcellular_sms_list_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_attach), (mp_obj_t)&modcellular_gprs_attach_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_detach), (mp_obj_t)&modcellular_gprs_detach_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_activate), (mp_obj_t)&modcellular_gprs_activate_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_deactivate), (mp_obj_t)&modcellular_gprs_deactivate_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);
