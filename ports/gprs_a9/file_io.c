@@ -120,20 +120,17 @@ STATIC const mp_arg_t file_open_args[] = {
 STATIC mp_obj_t file_open(const char* file_name, const mp_obj_type_t *type, mp_arg_val_t *args) {
     const char *mode_s = mp_obj_str_get_str(args[1].u_obj);
     uint32_t mode = 0;
-    // TODO make sure only one of r, w, x, a, and b, t are specified
+    // TODO make sure only one of r, w, a, and b, t are specified
     while (*mode_s) {
         switch (*mode_s++) {
             case 'r':
                 mode |= FS_O_RDONLY;
                 break;
             case 'w':
-                mode |= FS_O_RDWR | FS_O_CREAT;
-                break;
-            case 'x':
-                mode |= FS_O_RDWR | FS_O_CREAT | FS_O_TRUNC;
+                mode |= FS_O_WRONLY | FS_O_CREAT | FS_O_TRUNC;
                 break;
             case 'a':
-                mode |= FS_O_RDWR | FS_O_APPEND;
+                mode |= FS_O_WRONLY | FS_O_CREAT | FS_O_APPEND;
                 break;
             case '+':
                 mode |= FS_O_RDWR;
@@ -142,10 +139,10 @@ STATIC mp_obj_t file_open(const char* file_name, const mp_obj_type_t *type, mp_a
             case 'b':
                 type = &mp_type_vfs_fat_fileio;
                 break;
-            #endif
             case 't':
                 type = &mp_type_vfs_fat_textio;
                 break;
+            #endif
         }
     }
     pyb_file_obj_t *o = m_new_obj_with_finaliser(pyb_file_obj_t);
