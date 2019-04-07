@@ -678,6 +678,19 @@ STATIC mp_obj_t get_imsi(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_imsi_obj, get_imsi);
 
+STATIC mp_obj_t sms_recieved(void) {
+    // ========================================
+    // Retrieves the number of SMS recieved since last poll.
+    // Returns:
+    //     The number of SMS recieved.
+    // ========================================
+    mp_obj_t result = mp_obj_new_int(sms_recieved_count);
+    sms_recieved_count = 0;
+    return result;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(sms_recieved_obj, sms_recieved);
+
 STATIC mp_obj_t sms_list(void) {
     // ========================================
     // Lists SMS messages.
@@ -900,6 +913,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_roaming), (mp_obj_t)&is_roaming_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&get_iccid_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imsi), (mp_obj_t)&get_imsi_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_recieved), (mp_obj_t)&sms_recieved_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_sms_list), (mp_obj_t)&sms_list_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_attach), (mp_obj_t)&gprs_attach_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_detach), (mp_obj_t)&gprs_detach_obj },

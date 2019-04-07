@@ -95,6 +95,9 @@ if sim_present:
     print("SMS")
     print("----------------")
 
+    sms_recieved = cel.sms_recieved()
+    print("SMS recieved count:", sms_recieved)
+
     sms_list = cel.sms_list()
     print("SMS:", sms_list)
     assert len(sms_list) > 0
