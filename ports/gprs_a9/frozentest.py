@@ -274,3 +274,23 @@ if sim_present:
     cel.gprs_deactivate()
     cel.gprs_detach()
 
+print("================")
+print("machine")
+print("================")
+
+import machine
+
+machine.idle()
+
+cause = machine.power_on_cause()
+print("Power on cause:", cause)
+
+v, percent = machine.get_input_voltage()
+print("Voltage:", 1e-3 * v, percent, "%")
+assert 3 < 1e-3 * v < 5
+assert 10 < percent < 100
+
+print("Resetting ...")
+machine.reset()
+raise RuntimeError("Failed to reset the module")
+
