@@ -131,65 +131,27 @@ void MP_WEAK __assert_func(const char *file, int line, const char *func, const c
 }
 #endif
 
-void ShowStackInfo()
-{
-    OS_Task_Info_t info;
-    OS_GetTaskInfo(microPyTaskHandle,&info);
-    volatile uint32_t j = 0;
-    uint32_t last_bytes = (uint32_t)&j - info.stackTop;
-    uint32_t all_bytes  = info.stackSize*4;
-    char msg[32];
-    snprintf(msg, sizeof(msg), "Stack used: %d/%d\r\n", all_bytes - last_bytes, all_bytes);
-    mp_hal_stdout_tx_str(msg);
+void MicroPyTask(void *pData) {
+    // The primary event-driven UART loop
 
-    API_FS_INFO fsInfo;
-    if (API_FS_GetFSInfo(FS_DEVICE_NAME_FLASH, &fsInfo) != 0) {
-        mp_hal_stdout_tx_str("No flash info!\r\n");
-    } else {
-        snprintf(msg, sizeof(msg), "Flash used: %d/%d\r\n", (int)fsInfo.usedSize, (int)fsInfo.totalSize);
-        mp_hal_stdout_tx_str(msg);
-        
-        mp_hal_stdout_tx_str("Files:\r\n");
-        Dir_t* dir = API_FS_OpenDir("/");
-        Dirent_t* dirent;
-        while ((dirent = API_FS_ReadDir(dir))) {
-
-            snprintf(msg, sizeof(msg), "/%s", dirent->d_name);
-
-            mp_hal_stdout_tx_str(" ");
-            mp_hal_stdout_tx_str(msg);
-            mp_hal_stdout_tx_str(" ");
-
-            int32_t fd;
-
-            if ((fd = API_FS_Open(msg, FS_O_RDONLY, 0)) < 0) {
-                snprintf(msg, sizeof(msg), "[FAIL: %d]\r\n", fd);
-                mp_hal_stdout_tx_str(msg);
-            } else {
-                snprintf(msg, sizeof(msg), "%d\r\n", (int)API_FS_GetFileSize(fd));
-                API_FS_Close(fd);
-                mp_hal_stdout_tx_str(msg);
-            }
-        }
-        API_FS_CloseDir(dir);
-    }
-}
-
-bool mp_Init()
-{   
-    //stack check info
     OS_Task_Info_t info;
     OS_GetTaskInfo(microPyTaskHandle, &info);
-    mp_stack_ctrl_init();
-    mp_stack_set_top((void *)(info.stackTop+info.stackSize*4));
-    mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE*4 - 1024);
-    ShowStackInfo();
+    MicroPy_Event_t* event;
+    Buffer_Init(&fifoBuffer, fifoBufferData, sizeof(fifoBufferData));
+    UartInit();
 
+soft_reset:
+    mp_stack_ctrl_init();
+    mp_stack_set_top((void *)(info.stackTop + info.stackSize * 4));
+    mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE * 4 - 1024);
+    // TODO: gc_init(?, ?);
     mp_init();
+    moduos_init0();
+    modcellular_init0();
 
     // Startup scripts
-    int file_descriptor;
     pyexec_frozen_module("_boot.py");
+    int file_descriptor;
     if ((file_descriptor = API_FS_Open("boot.py", FS_O_RDONLY, 0)) > 0) {
         API_FS_Close(file_descriptor);
         pyexec_file("boot.py");
@@ -198,34 +160,13 @@ bool mp_Init()
         API_FS_Close(file_descriptor);
         pyexec_file("main.py");
     }
-
+    // pyexec_file("boot.py");
+    // if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
+    //     pyexec_file("main.py");
+    // }
     pyexec_event_repl_init();
-    return true;
-}
-
-
-void soft_reset(void) {
-    mp_hal_stdout_tx_str("PYB: soft reboot\r\n");
-    mp_hal_delay_us(10000); // allow UART to flush output
-    mp_Init();
-    moduos_init0();
-    modcellular_init0();
-}
-
-
-void MicroPyTask(void *pData)
-{
-    MicroPy_Event_t* event;
-
-    Buffer_Init(&fifoBuffer, fifoBufferData, sizeof(fifoBufferData));
-    UartInit();
-    mp_Init();
-    moduos_init0();
-    modcellular_init0();
     
-    uint8_t reset;
-soft_reset:
-    reset = 0;
+    uint8_t reset = 0;
     while (1) if (OS_WaitEvent(microPyTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER)) {
 
         Trace(1,"microPy task received event:%d",event->id);
@@ -252,7 +193,12 @@ soft_reset:
         if (reset) break;
         // PM_SetSysMinFreq(PM_SYS_FREQ_32K);
     }
-    soft_reset();
+
+    // TODO: gc_sweep_all();
+    mp_deinit();
+    mp_hal_stdout_tx_str("PYB: soft reboot\r\n");
+    mp_hal_delay_us(10000); // allow UART to flush output
+
     goto soft_reset;
 }
 
