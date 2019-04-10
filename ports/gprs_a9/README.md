@@ -197,9 +197,23 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
 * `socket(af, type, proto)`
 
     * `close()`
+    * `bind(address)` *not implemented*
+    * `listen([backlog])` *not implemented*
+    * `accept()` *not implemented*
     * `connect(address)`
     * `send(bytes)`
+    * `sendall(bytes)` *not implemented*
     * `recv(bufsize)`
+    * `sendto(bytes, address)` *not implemented*
+    * `recvfrom(bufsize)` *not implemented*
+    * `setsockopt(level, optname, value)` *not implemented*
+    * `settimeout(value)` *not implemented*
+    * `setblocking(flag)` *not implemented*
+    * `makefile(mode, buffering)` *not implemented*
+    * `read([size])` *not implemented*
+    * `readinto(buf[, nbytes])` *not implemented*
+    * `readline()` *not implemented*
+    * `write(buf)` *not implemented*
 
 #### Methods ####
 
