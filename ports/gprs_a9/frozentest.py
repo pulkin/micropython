@@ -156,7 +156,7 @@ gps.off()
 del gps
 
 print("================")
-print("Network status")
+print("Network")
 print("================")
 
 import cellular as cel
@@ -241,35 +241,39 @@ if sim_present:
     print("Local IP:", loc_ip)
     assert len(loc_ip.split(".")) == 4
 
+    assert sock.get_num_open() == 0
+
     host = "httpstat.us"
-    host_ip = sock.dns_resolve(host)
-    print("Resolved:", host, "->", host_ip)
-    assert len(host_ip.split(".")) == 4
 
     s = sock.socket()
     s.connect((host, 80))
+    assert sock.get_num_open() == 1
+
     message = "GET /200 HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n"
-    response_expected = b"HTTP/1.1 200 OK"
+    response_expected = b"HTTP/1.1 200 OK\r\n"
     message_f = message.format(host)
-    bytes_sent = s.send(message_f)
-    print("Socket(name) sent:", bytes_sent)
+    bytes_sent = s.send(message_f[:10])
+    bytes_sent += s.write(message_f[10:])
+    print("Socket sent:", bytes_sent)
     assert bytes_sent == len(message_f)
 
-    response = s.recv(len(response_expected))
-    print("Socket(name) rcvd:", response)
+    # Chunk 1: recv
+    response = s.recv(3)
+    # Chunk 2: read
+    response += s.read(3)
+    # Chunk 3: readinto
+    chunk3 = bytearray(len(response_expected) - 6)
+    s.readinto(chunk3)
+    response += chunk3
+    print("Socket rcvd:", response)
     assert response == response_expected
-    s.close()
 
-    s = sock.socket()
-    s.connect((host_ip, 80))
-    bytes_sent = s.send(message_f)
-    print("Socket(ip) sent:", bytes_sent)
-    assert bytes_sent == len(message_f)
+    line = s.readline()
+    print("... rcvd:", line)
+    assert len(line) > 0
 
-    response = s.recv(len(response_expected))
-    print("Socket(ip) rcvd:", response)
-    assert response == response_expected
     s.close()
+    assert sock.get_num_open() == 0
 
     cel.gprs_deactivate()
     cel.gprs_detach()

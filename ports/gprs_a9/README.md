@@ -210,10 +210,10 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
     * `settimeout(value)` *not implemented*
     * `setblocking(flag)` *not implemented*
     * `makefile(mode, buffering)` *not implemented*
-    * `read([size])` *not implemented*
-    * `readinto(buf[, nbytes])` *not implemented*
-    * `readline()` *not implemented*
-    * `write(buf)` *not implemented*
+    * `read([size])`
+    * `readinto(buf[, nbytes])`
+    * `readline()`
+    * `write(buf)`
 
 #### Methods ####
 
@@ -225,13 +225,54 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
 
   **Raises**: `NetworkError` if no address was assigned.
 
-* `dns_resolve(name)`
+* `getaddrinfo(host, port, af=0, type=0, proto=0, flags=0)`
 
-  Resolves the domain name.
+  *Not implemented*
 
-  **Returns**: The IP address the domain name belongs to as a string.
+  Translates host/port into arguments to socket constructor.
 
-  **Raises**: `NetworkError` if failed to resolve.
+  **Args**:
+
+    * host (str): host name;
+    * port (int): port number;
+    * af (int): address family: `AF_INET` or `AF_INET6`;
+    * type: (int): future socket type: `SOCK_STREAM` or `SOCK_DGRAM`;
+    * proto (int): future protocol: `IPPROTO_TCP` or `IPPROTO_UDP`;
+    * flag (int): additional socket flags;
+
+  **Returns**: a tuple with arguments.
+
+* `inet_ntop(af, bin_addr)`
+
+  *Not implemented*
+
+  Converts a binary address into textual representation.
+
+  **Args**:
+  
+    * af (int): address family: `AF_INET` or `AF_INET6`;
+    * bin_addr (bytearray): binary address;
+
+  **Returns**: a string with the address.
+
+* `inet_pton(af, txt_addr)`
+
+  *Not implemented*
+
+  Converts a text address into binary representation.
+
+  **Args**:
+
+    * af (int): address family: `AF_INET` or `AF_INET6`;
+    * txt_addr (str): address as text;
+
+  **Returns**: a bytearray address.
+
+* `get_num_open()`
+
+  Retrieves the number of open sockets.
+
+  **Returns**: The number of open sockets.
 
 ### `gps`
 

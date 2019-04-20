@@ -27,6 +27,7 @@
  * THE SOFTWARE.
  */
 
+#include "modusocket.h"
 #include "modcellular.h"
 #include "errno.h"
 
@@ -40,13 +41,12 @@
 #include "py/stream.h"
 
 #include "api_network.h"
-#include "api_socket.h"
-#include "sdk_init.h"
 
 #include "stdio.h"
 
 #define SOCKET_POLL_US (100000)
-#define ERRNO (g_InterfaceVtbl->Socket_GetLastError())
+
+uint8_t num_sockets_open = 0;
 
 // -------
 // Classes
@@ -58,6 +58,10 @@ NORETURN static void exception_from_errno(int _errno) {
         _errno = MP_EINPROGRESS;
     }
     mp_raise_OSError(_errno);
+}
+
+static inline void check_for_exceptions(void) {
+    mp_handle_pending();
 }
 
 typedef struct _socket_obj_t {
@@ -81,9 +85,9 @@ void _socket_settimeout(socket_obj_t *sock, uint64_t timeout_ms) {
         .tv_sec = 0,
         .tv_usec = timeout_ms ? SOCKET_POLL_US : 0
     };
-    setsockopt(sock->fd, SOL_SOCKET, SO_SNDTIMEO, (const void *)&timeout, sizeof(timeout));
-    setsockopt(sock->fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout));
-    fcntl(sock->fd, F_SETFL, timeout_ms ? 0 : O_NONBLOCK);
+    LWIP_SETSOCKOPT(sock->fd, SOL_SOCKET, SO_SNDTIMEO, (const void *)&timeout, sizeof(timeout));
+    LWIP_SETSOCKOPT(sock->fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&timeout, sizeof(timeout));
+    LWIP_FCNTL(sock->fd, F_SETFL, timeout_ms ? 0 : O_NONBLOCK);
 }
 
 static int _socket_getaddrinfo2(const mp_obj_t host, const mp_obj_t port, struct sockaddr_in *resp) {
@@ -103,10 +107,10 @@ static int _socket_getaddrinfo2(const mp_obj_t host, const mp_obj_t port, struct
 
     memset(resp, 0, sizeof(*resp));
     resp->sin_family = AF_INET;
-    resp->sin_port = htons(port_int);
+    resp->sin_port = LWIP_HTONS(port_int);
 
     MP_THREAD_GIL_EXIT();
-    int res = inet_pton(AF_INET, address, &resp->sin_addr);
+    int res = LWIP_IP4ADDR_ATON(address, (ip4_addr_t*)&resp->sin_addr);
     MP_THREAD_GIL_ENTER();
 
     return res;
@@ -172,31 +176,15 @@ mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
             return mp_const_none;
     }
 
-    self->fd = socket(self->domain, self->type, self->proto);
+    self->fd = LWIP_SOCKET(self->domain, self->type, self->proto);
     if (self->fd < 0) {
         mp_raise_NotImplementedError("Failed to create the socket but the error is unknown");
     }
+    num_sockets_open ++;
     _socket_settimeout(self, UINT64_MAX);
 
     return MP_OBJ_FROM_PTR(self);
 }
-
-STATIC mp_obj_t socket_close(mp_obj_t self_in) {
-    // ========================================
-    // Closes the socket.
-    // ========================================
-    socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
-
-    int r = close(self->fd);
-
-    if (r < 0) {
-        exception_from_errno(ERRNO);
-    }
-
-    return mp_const_none;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_close_obj, &socket_close);
 
 STATIC mp_obj_t socket_bind(mp_obj_t self_in, mp_obj_t address) {
     // ========================================
@@ -245,11 +233,11 @@ STATIC mp_obj_t socket_connect(mp_obj_t self_in, mp_obj_t ipv4) {
     _socket_getaddrinfo(ipv4, &res);
 
     MP_THREAD_GIL_EXIT();
-    int r = connect(self->fd, (struct sockaddr*)&res, sizeof(struct sockaddr_in));
+    int r = LWIP_CONNECT(self->fd, (struct sockaddr*)&res, sizeof(struct sockaddr_in));
     MP_THREAD_GIL_ENTER();
 
     if (r < 0) {
-        exception_from_errno(ERRNO);
+        exception_from_errno(LWIP_ERRNO());
     }
 
     return mp_const_none;
@@ -262,12 +250,13 @@ int _socket_send(socket_obj_t *sock, const char *data, size_t datalen) {
     for (int i=0; i<=sock->retries && sentlen < datalen; i++) {
 
         MP_THREAD_GIL_EXIT();
-        int r = write(sock->fd, data + sentlen, datalen - sentlen);
+        int r = LWIP_WRITE(sock->fd, data + sentlen, datalen - sentlen);
         MP_THREAD_GIL_ENTER();
 
-        if (r < 0 && ERRNO != EWOULDBLOCK) exception_from_errno(ERRNO);
+        int errno = LWIP_ERRNO();
+        if (r < 0 && errno != EWOULDBLOCK) exception_from_errno(errno);
         if (r > 0) sentlen += r;
-        // check_for_exceptions();
+        check_for_exceptions();
     }
     if (sentlen == 0) mp_raise_OSError(MP_ETIMEDOUT);
     return sentlen;
@@ -321,16 +310,17 @@ STATIC mp_uint_t _socket_read_data(mp_obj_t self_in, void *buf, size_t size,
     for (int i = 0; i <= sock->retries; ++i) {
 
         MP_THREAD_GIL_EXIT();
-        int r = recvfrom(sock->fd, buf, size, 0, from, from_len);
+        int r = LWIP_RECVFROM(sock->fd, buf, size, 0, from, from_len);
         MP_THREAD_GIL_ENTER();
 
         if (r == 0) sock->peer_closed = true;
         if (r >= 0) return r;
-        if (ERRNO != EWOULDBLOCK) {
-            *errcode = ERRNO;
+        int errno = LWIP_ERRNO();
+        if (errno != EWOULDBLOCK) {
+            *errcode = errno;
             return MP_STREAM_ERROR;
         }
-        // check_for_exceptions();
+        check_for_exceptions();
     }
 
     *errcode = sock->retries == 0 ? MP_EWOULDBLOCK : MP_ETIMEDOUT;
@@ -440,55 +430,76 @@ STATIC mp_obj_t socket_makefile(size_t n_args, const mp_obj_t *args) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(socket_makefile_obj, 1, 3, socket_makefile);
 
-STATIC mp_obj_t socket_read(size_t n_args, const mp_obj_t *args) {
+STATIC mp_uint_t socket_stream_read(mp_obj_t self_in, void *buf, mp_uint_t size, int *errcode) {
     // ========================================
-    // Reads data from the socket up to `size` or until EOF.
-    // Args:
-    //     size (int): the size of the data to read;
+    // Stream: read.
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
-    return mp_const_none;
+    return _socket_read_data(self_in, buf, size, NULL, NULL, errcode); 
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(socket_read_obj, 1, 2, socket_read);
-
-STATIC mp_obj_t socket_readinto(size_t n_args, const mp_obj_t *args) {
+STATIC mp_uint_t socket_stream_write(mp_obj_t self_in, const void *buf, mp_uint_t size, int *errcode) {
     // ========================================
-    // Reads data from the socket into the buffer up to `size` or until EOF.
-    // Args:
-    //     buf (bytearray): the buffer to write into;
-    //     size (int): the size of the data to read;
+    // Stream: write.
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
-    return mp_const_none;
+    socket_obj_t *sock = self_in;
+    for (int i=0; i<=sock->retries; i++) {
+        MP_THREAD_GIL_EXIT();
+        int r = LWIP_WRITE(sock->fd, buf, size);
+        MP_THREAD_GIL_ENTER();
+        if (r > 0) return r;
+        int errno = LWIP_ERRNO();
+        if (r < 0 && errno != EWOULDBLOCK) { *errcode = errno; return MP_STREAM_ERROR; }
+        check_for_exceptions();
+    }
+    *errcode = sock->retries == 0 ? MP_EWOULDBLOCK : MP_ETIMEDOUT;
+    return MP_STREAM_ERROR;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(socket_readinto_obj, 2, 3, socket_readinto);
+STATIC mp_uint_t socket_stream_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
+    // ========================================
+    // Stream: IO control.
+    // ========================================
+    socket_obj_t * socket = self_in;
+    if (request == MP_STREAM_POLL) {
+        fd_set rfds; FD_ZERO(&rfds);
+        fd_set wfds; FD_ZERO(&wfds);
+        fd_set efds; FD_ZERO(&efds);
+        struct timeval timeout = { .tv_sec = 0, .tv_usec = 0 };
+        if (arg & MP_STREAM_POLL_RD) FD_SET(socket->fd, &rfds);
+        if (arg & MP_STREAM_POLL_WR) FD_SET(socket->fd, &wfds);
+        if (arg & MP_STREAM_POLL_HUP) FD_SET(socket->fd, &efds);
 
-STATIC mp_obj_t socket_readline(mp_obj_t self_in) {
-    // ========================================
-    // Reads a line of text.
-    // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
-    return mp_const_none;
+        int r = LWIP_SELECT((socket->fd)+1, &rfds, &wfds, &efds, &timeout);
+        if (r < 0) {
+            *errcode = MP_EIO;
+            return MP_STREAM_ERROR;
+        }
+
+        mp_uint_t ret = 0;
+        if (FD_ISSET(socket->fd, &rfds)) ret |= MP_STREAM_POLL_RD;
+        if (FD_ISSET(socket->fd, &wfds)) ret |= MP_STREAM_POLL_WR;
+        if (FD_ISSET(socket->fd, &efds)) ret |= MP_STREAM_POLL_HUP;
+        return ret;
+    } else if (request == MP_STREAM_CLOSE) {
+        if (socket->fd >= 0) {
+            int ret = LWIP_CLOSE(socket->fd);
+            mp_warning("Close: %d", ret);
+            if (ret != 0) {
+                *errcode = LWIP_ERRNO();
+                return MP_STREAM_ERROR;
+            }
+            socket->fd = -1;
+            num_sockets_open --;
+        }
+        return 0;
+    }
+    *errcode = MP_EINVAL;
+    return MP_STREAM_ERROR;
 }
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_readline_obj, &socket_readline);
-
-STATIC mp_obj_t socket_write(mp_obj_t self_in, mp_obj_t buf) {
-    // ========================================
-    // Writes all data into the socket.
-    // Args:
-    //     buf (bytearray, str): data to write;
-    // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
-    return mp_const_none;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_write_obj, &socket_write);
 
 STATIC const mp_rom_map_elem_t socket_locals_dict_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_close), MP_ROM_PTR(&socket_close_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mp_stream_close_obj) },
+    { MP_ROM_QSTR(MP_QSTR_close), MP_ROM_PTR(&mp_stream_close_obj) },
     { MP_ROM_QSTR(MP_QSTR_bind), MP_ROM_PTR(&socket_bind_obj) },
     { MP_ROM_QSTR(MP_QSTR_listen), MP_ROM_PTR(&socket_listen_obj) },
     { MP_ROM_QSTR(MP_QSTR_accept), MP_ROM_PTR(&socket_accept_obj) },
@@ -503,18 +514,25 @@ STATIC const mp_rom_map_elem_t socket_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_setblocking), MP_ROM_PTR(&socket_setblocking_obj) },
     { MP_ROM_QSTR(MP_QSTR_makefile), MP_ROM_PTR(&socket_makefile_obj) },
 
-    { MP_ROM_QSTR(MP_QSTR_read), MP_ROM_PTR(&socket_read_obj) },
-    { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&socket_readinto_obj) },
-    { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&socket_readline_obj) },
-    { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&socket_write_obj) },
+    { MP_ROM_QSTR(MP_QSTR_read), MP_ROM_PTR(&mp_stream_read_obj) },
+    { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&mp_stream_readinto_obj) },
+    { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&mp_stream_unbuffered_readline_obj) },
+    { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&mp_stream_write_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(socket_locals_dict, socket_locals_dict_table);
+
+STATIC const mp_stream_p_t socket_stream_p = {
+    .read = socket_stream_read,
+    .write = socket_stream_write,
+    .ioctl = socket_stream_ioctl,
+};
 
 STATIC const mp_obj_type_t socket_type = {
     { &mp_type_type },
     .name = MP_QSTR_socket,
     .make_new = socket_make_new,
+    .protocol = &socket_stream_p,
     .locals_dict = (mp_obj_dict_t*)&socket_locals_dict,
 };
 
@@ -542,7 +560,7 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *args) {
     // ========================================
     // Translates host/port into arguments to socket constructor.
     // Args:
-    //     host (str): the host name;
+    //     host (str): host name;
     //     port (int): port number;
     //     af (int): address family: AF_INET or AF_INET6;
     //     type: (int): future socket type: SOCK_STREAM or SOCK_DGRAM;
@@ -587,6 +605,17 @@ STATIC mp_obj_t modusocket_inet_pton(mp_obj_t af, mp_obj_t txt_addr) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(modusocket_inet_pton_obj, modusocket_inet_pton);
 
+STATIC mp_obj_t modusocket_get_num_open(void) {
+    // ========================================
+    // Retrieves the number of open sockets.
+    // Returns:
+    //     The number of sockets open.
+    // ========================================
+    return mp_obj_new_int(num_sockets_open);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modusocket_get_num_open_obj, modusocket_get_num_open);
+
 STATIC const mp_map_elem_t mp_module_usocket_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_usocket) },
 
@@ -594,8 +623,10 @@ STATIC const mp_map_elem_t mp_module_usocket_globals_table[] = {
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_local_ip), (mp_obj_t)&get_local_ip_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_getaddrinfo), (mp_obj_t)&getaddrinfo_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_inet_ntop), (mp_obj_t)&modusocket_inet_ntop },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_inet_pton), (mp_obj_t)&modusocket_inet_pton },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_inet_ntop), (mp_obj_t)&modusocket_inet_ntop_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_inet_pton), (mp_obj_t)&modusocket_inet_pton_obj },
+
+    { MP_OBJ_NEW_QSTR(MP_QSTR_get_num_open), (mp_obj_t)&modusocket_get_num_open_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_usocket_globals, mp_module_usocket_globals_table);
