@@ -538,30 +538,6 @@ STATIC mp_obj_t get_local_ip(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_local_ip_obj, get_local_ip);
 
-STATIC mp_obj_t dns_resolve(mp_obj_t name) {
-    // ========================================
-    // Resolve a domain name.
-    // Args:
-    //     name (str): the domain name;
-    // Returns:
-    //     A string with an IP address the name belongs to.
-    // ========================================
-    const char* c_name = mp_obj_str_get_str(name);
-    char ip[16];
-    uint8_t status;
-
-    if ((status = DNS_GetHostByName2((uint8_t*)c_name, (uint8_t*)ip)) != 0) {
-        char msg[64];
-        snprintf(msg, sizeof(msg), "Failed to resolve domain name: error=%d", status);
-        mp_raise_ValueError(msg);
-        return mp_const_none;
-    }
-
-    return mp_obj_new_str(ip, strlen(ip));
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(dns_resolve_obj, dns_resolve);
-
 STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *args) {
     // ========================================
     // Translates host/port into arguments to socket constructor.
@@ -617,7 +593,6 @@ STATIC const mp_map_elem_t mp_module_usocket_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)MP_ROM_PTR(&socket_type) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_local_ip), (mp_obj_t)&get_local_ip_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_dns_resolve), (mp_obj_t)&dns_resolve_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_getaddrinfo), (mp_obj_t)&getaddrinfo_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_inet_ntop), (mp_obj_t)&modusocket_inet_ntop },
     { MP_OBJ_NEW_QSTR(MP_QSTR_inet_pton), (mp_obj_t)&modusocket_inet_pton },
