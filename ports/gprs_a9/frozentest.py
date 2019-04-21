@@ -248,14 +248,16 @@ if sim_present:
     s = sock.socket()
     s.connect((host, 80))
     assert sock.get_num_open() == 1
+    assert s.makefile() == s
 
     message = "GET /200 HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n"
     response_expected = b"HTTP/1.1 200 OK\r\n"
     message_f = message.format(host)
     bytes_sent = s.send(message_f[:10])
-    bytes_sent += s.write(message_f[10:])
+    bytes_sent += s.write(message_f[10:-5])
     print("Socket sent:", bytes_sent)
-    assert bytes_sent == len(message_f)
+    assert bytes_sent == len(message_f) - 5
+    s.sendall(message_f[-5:])
 
     # Chunk 1: recv
     response = s.recv(3)

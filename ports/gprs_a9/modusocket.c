@@ -270,9 +270,9 @@ STATIC mp_obj_t socket_send(mp_obj_t self_in, mp_obj_t bytes) {
     // ========================================
     socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
-    mp_uint_t data_len;
-    const char* data = mp_obj_str_get_data(bytes, &data_len);
-    int r = _socket_send(self, data, data_len);
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(bytes, &bufinfo, MP_BUFFER_READ);
+    int r = _socket_send(self, bufinfo.buf, bufinfo.len);
 
     return mp_obj_new_int(r);
 }
@@ -285,7 +285,12 @@ STATIC mp_obj_t socket_sendall(mp_obj_t self_in, mp_obj_t bytes) {
     // Args:
     //     bytes (str, bytearray): bytes to send;
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
+    socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(bytes, &bufinfo, MP_BUFFER_READ);
+    int r = _socket_send(self, bufinfo.buf, bufinfo.len);
+    if (r < bufinfo.len) mp_raise_OSError(MP_ETIMEDOUT);
     return mp_const_none;
 }
 
@@ -424,8 +429,8 @@ STATIC mp_obj_t socket_makefile(size_t n_args, const mp_obj_t *args) {
     //     mode (str): file mode;
     //     buffering (int): buffer size (not supported);
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
-    return mp_const_none;
+    (void)n_args;
+    return args[0];
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(socket_makefile_obj, 1, 3, socket_makefile);
