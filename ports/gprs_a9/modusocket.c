@@ -488,7 +488,6 @@ STATIC mp_uint_t socket_stream_ioctl(mp_obj_t self_in, mp_uint_t request, uintpt
     } else if (request == MP_STREAM_CLOSE) {
         if (socket->fd >= 0) {
             int ret = LWIP_CLOSE(socket->fd);
-            mp_warning("Close: %d", ret);
             if (ret != 0) {
                 *errcode = LWIP_ERRNO();
                 return MP_STREAM_ERROR;
