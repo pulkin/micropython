@@ -33,6 +33,7 @@ Use [ampy](https://github.com/pycampers/ampy).
 ## Run scipts
 
 ```python
+>>> help()
 >>> import frozentest
 ```
 
@@ -211,7 +212,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
 ### `usocket` ###
 
-TCP/IP stack based on lwIP.
+TCP/IP stack over GPRS based on lwIP.
 See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.html) for details.
 
 #### Classes ####
