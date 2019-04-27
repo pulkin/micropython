@@ -366,8 +366,8 @@ STATIC mp_obj_t socket_sendto(mp_obj_t self_in, mp_obj_t bytes, mp_obj_t address
     //     bytes (str, byterray): bytes to send;
     //     address (tuple): destination address;
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
-    return mp_const_none;
+    socket_connect(self_in, address);
+    return socket_sendall(self_in, bytes);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(socket_sendto_obj, &socket_sendto);

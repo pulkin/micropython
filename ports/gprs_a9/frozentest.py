@@ -273,8 +273,15 @@ if sim_present:
     line = s.readline()
     print("... rcvd:", line)
     assert len(line) > 0
-
     s.close()
+
+    s = sock.socket()
+    s.sendto(message_f, (host, 80))
+    response = s.read(len(response_expected))
+    print("Socket (2) rcvd:", response)
+    assert response == response_expected
+    s.close()
+
     assert sock.get_num_open() == 0
 
     cel.gprs_deactivate()

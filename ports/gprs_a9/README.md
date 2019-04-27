@@ -227,7 +227,7 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
     * `send(bytes)`
     * `sendall(bytes)`
     * `recv(bufsize)`
-    * `sendto(bytes, address)` *not implemented*
+    * `sendto(bytes, address)`
     * `recvfrom(bufsize)` *not implemented*
     * `setsockopt(level, optname, value)` *not implemented*
     * `settimeout(value)` *not implemented*
