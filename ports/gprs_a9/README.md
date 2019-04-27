@@ -3,14 +3,14 @@
 1. Install vendor tools: [documentation](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/installation_linux.html), [docker](https://github.com/Neutree/gprs_build)
 2. Clone this
    ```bash
-   git clone git@github.com:Neutree/micropython.git
+   ~ git clone git@github.com:Neutree/micropython.git
    ```
 3. Make
    ```bash
-   make -C mpy-cross
-   cd micropython/ports/gprs_a9
-   chmod +x build.sh
-   ./build.sh
+   ~ make -C mpy-cross
+   ~ cd micropython/ports/gprs_a9
+   ~ chmod +x build.sh
+   ~ ./build.sh
    ```
 4. Burn `micropython/ports/gprs_a9/hex/*` using `cooltools`
 
@@ -19,7 +19,7 @@
 Use [pyserial](https://github.com/pyserial) or any other terminal.
 
 ```bash
-# miniterm.py /dev/ttyUSB1 115200 --raw
+~ miniterm.py /dev/ttyUSB1 115200 --raw
 ```
 
 ## Upload scipts
@@ -27,7 +27,7 @@ Use [pyserial](https://github.com/pyserial) or any other terminal.
 Use [ampy](https://github.com/pycampers/ampy).
 
 ```bash
-# ampy --port /dev/ttyUSB1 put frozentest.py 
+~ ampy --port /dev/ttyUSB1 put frozentest.py 
 ```
 
 ## Run scipts
