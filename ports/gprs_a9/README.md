@@ -212,6 +212,8 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
 ### `usocket` ###
 
+*Alias: `socket`*
+
 TCP/IP stack over GPRS based on lwIP.
 See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.html) for details.
 
@@ -298,6 +300,40 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
   Retrieves the number of open sockets.
 
   **Returns**: The number of open sockets.
+
+### `ussl` ###
+
+*Not implemented*
+
+*Alias: `ssl`*
+
+Provides SSL over GPRS sockets.
+
+#### Classes ####
+
+* `ssl_socket(af, type, proto)`
+
+  *Not implemented*
+
+    * `close()` *Not implemented*
+    * `read([size])` *Not implemented*
+    * `readinto(buf[, nbytes])` *Not implemented*
+    * `readline()` *Not implemented*
+    * `write(buf)` *Not implemented*
+
+#### Methods ####
+
+* `wrap_socket(sock, server_side=False, keyfile=None, certfile=None, cert_reqs=CERT_NONE, ca_certs=None)`
+
+  *Not implemented*
+
+  Takes a stream socket and returns an `SSLSocket`.
+
+  **Args**:
+
+    * sock (`usocket.socket`): the socket to wrap;
+
+  **Returns**: a wrapped SSL socket.
 
 ### `gps`
 
