@@ -592,7 +592,7 @@ STATIC mp_obj_t get_local_ip(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(get_local_ip_obj, get_local_ip);
 
-STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *args) {
+STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     // ========================================
     // Translates host/port into arguments to socket constructor.
     // Args:
@@ -605,55 +605,65 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *args) {
     // Returns:
     //     A 5-tuple with arguments to `usocket.socket`.
     // ========================================
+    enum { ARG_host, ARG_port, ARG_af, ARG_type, ARG_proto, ARG_flag };
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_host, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_port, MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_af, MP_ARG_INT, {.u_int = AF_INET} },
+        { MP_QSTR_type, MP_ARG_INT, {.u_int = SOCK_STREAM} },
+        { MP_QSTR_proto, MP_ARG_INT, {.u_int = IPPROTO_TCP} },
+        { MP_QSTR_flag, MP_ARG_INT, {.u_int = 0} },
+    };
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     
-    mp_obj_t host = args[0];
-    mp_obj_t port = args[1];
+    mp_obj_t host = args[ARG_host].u_obj;
+    mp_obj_t port = mp_obj_new_int(args[ARG_port].u_int);
 
-    int af = AF_INET;
-    if (n_args > 2) {
-        if (mp_obj_get_int(args[2]) != AF_INET) {
-            mp_raise_ValueError("Argument #3: only af=AF_INET supported");
+    int af;
+    switch (args[ARG_af].u_int) {
+        case AF_INET:
+            af = AF_INET;
+            break;
+        case AF_INET6:
+            mp_raise_ValueError("argument #3: af=AF_INET6 is not implemented");
+            break;
+        default:
+            mp_raise_ValueError("argument #3: 'af' should be one of AF_INET, AF_INET6");
             return mp_const_none;
-        }
     }
 
-    int type = SOCK_STREAM;
-    if (n_args > 3) {
-        switch (mp_obj_get_int(args[3])) {
-            case SOCK_STREAM:
-                type = SOCK_STREAM;
-                break;
-            case SOCK_DGRAM:
-                type = SOCK_DGRAM;
-                break;
-            default:
-                mp_raise_ValueError("Argument #4: 'type' should be one of SOCK_STREAM, SOCK_DGRAM");
-                return mp_const_none;
-        }
+    int type;
+    switch (args[ARG_type].u_int) {
+        case SOCK_STREAM:
+            type = SOCK_STREAM;
+            break;
+        case SOCK_DGRAM:
+            type = SOCK_DGRAM;
+            break;
+        default:
+            mp_raise_ValueError("Argument #4: 'type' should be one of SOCK_STREAM, SOCK_DGRAM");
+            return mp_const_none;
     }
 
-    int proto = IPPROTO_TCP;
-    if (n_args > 4) {
-        switch (mp_obj_get_int(args[4])) {
-            case IPPROTO_TCP:
-                proto = IPPROTO_TCP;
-                break;
-            case IPPROTO_UDP:
-                proto = IPPROTO_UDP;
-                break;
-            default:
-                mp_raise_ValueError("Argument #5: 'proto' should be one of IPPROTO_TCP, IPPROTO_UDP");
-                return mp_const_none;
-        }
+    int proto;
+    switch (args[ARG_proto].u_int) {
+        case IPPROTO_TCP:
+            proto = IPPROTO_TCP;
+            break;
+        case IPPROTO_UDP:
+            proto = IPPROTO_UDP;
+            break;
+        default:
+            mp_raise_ValueError("Argument #5: 'proto' should be one of IPPROTO_TCP, IPPROTO_UDP");
+            return mp_const_none;
     }
 
-    int flag = 0;
-    if (n_args > 5) {
-        flag = mp_obj_get_int(args[5]);
-    }
+    int flag = args[ARG_flag].u_int;
 
     struct sockaddr_in res;
-    if (_socket_getaddrinfo2(args[0], args[1], &res) < 0) {
+    if (_socket_getaddrinfo2(host, port, &res) < 0) {
         int errno = LWIP_ERRNO();
         exception_from_errno(errno);
     }
@@ -680,7 +690,7 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *args) {
     return mp_obj_new_tuple(5, addrinfo_objs);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(getaddrinfo_obj, 2, 6, getaddrinfo);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(getaddrinfo_obj, 2, getaddrinfo);
 
 STATIC mp_obj_t modusocket_inet_ntop(mp_obj_t af, mp_obj_t bin_addr) {
     // ========================================

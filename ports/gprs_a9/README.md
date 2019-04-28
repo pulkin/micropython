@@ -232,7 +232,7 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
     * `sendall(bytes)`
     * `recv(bufsize)`
     * `sendto(bytes, address)`
-    * `recvfrom(bufsize)
+    * `recvfrom(bufsize)`
     * `setsockopt(level, optname, value)` *not implemented*
     * `settimeout(value)` *not implemented*
     * `setblocking(flag)` *not implemented*
