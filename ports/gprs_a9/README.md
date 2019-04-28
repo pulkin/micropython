@@ -215,6 +215,10 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 TCP/IP stack over GPRS based on lwIP.
 See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.html) for details.
 
+#### Constants ####
+
+`AF_INET`, `AF_INET6`, `SOCK_STREAM`, `SOCK_DGRAM`, `SOCK_RAW`, `IPPROTO_TCP`, `IPPROTO_UDP`, `IPPROTO_IP`
+
 #### Classes ####
 
 * `socket(af, type, proto)`
@@ -228,7 +232,7 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
     * `sendall(bytes)`
     * `recv(bufsize)`
     * `sendto(bytes, address)`
-    * `recvfrom(bufsize)` *not implemented*
+    * `recvfrom(bufsize)
     * `setsockopt(level, optname, value)` *not implemented*
     * `settimeout(value)` *not implemented*
     * `setblocking(flag)` *not implemented*
@@ -248,9 +252,7 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
 
   **Raises**: `NetworkError` if no address was assigned.
 
-* `getaddrinfo(host, port, af=0, type=0, proto=0, flags=0)`
-
-  *Not implemented*
+* `getaddrinfo(host, port, af=AF_INET, type=SOCK_STREAM, proto=IPPROTO_TCP, flags=0)`
 
   Translates host/port into arguments to socket constructor.
 

@@ -39,6 +39,7 @@
 #include "py/objexcept.h"
 #include "py/mperrno.h"
 #include "py/stream.h"
+#include "lib/netutils/netutils.h"
 
 #include "api_network.h"
 
@@ -299,8 +300,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_sendall_obj, &socket_sendall);
 // XXX this can end up waiting a very long time if the content is dribbled in one character
 // at a time, as the timeout resets each time a recvfrom succeeds ... this is probably not
 // good behaviour.
-STATIC mp_uint_t _socket_read_data(mp_obj_t self_in, void *buf, size_t size,
-    struct sockaddr *from, socklen_t *from_len, int *errcode) {
+STATIC mp_uint_t _socket_read_data(mp_obj_t self_in, void *buf, size_t size, struct sockaddr *from, socklen_t *from_len, int *errcode) {
     socket_obj_t *sock = MP_OBJ_TO_PTR(self_in);
 
     // If the peer closed the connection then the lwIP socket API will only return "0" once
@@ -332,8 +332,7 @@ STATIC mp_uint_t _socket_read_data(mp_obj_t self_in, void *buf, size_t size,
     return MP_STREAM_ERROR;
 }
 
-mp_obj_t _socket_recvfrom(mp_obj_t self_in, mp_obj_t len_in,
-        struct sockaddr *from, socklen_t *from_len) {
+mp_obj_t _socket_recvfrom(mp_obj_t self_in, mp_obj_t len_in, struct sockaddr *from, socklen_t *from_len) {
     size_t len = mp_obj_get_int(len_in);
     vstr_t vstr;
     vstr_init_len(&vstr, len);
@@ -366,8 +365,32 @@ STATIC mp_obj_t socket_sendto(mp_obj_t self_in, mp_obj_t bytes, mp_obj_t address
     //     bytes (str, byterray): bytes to send;
     //     address (tuple): destination address;
     // ========================================
-    socket_connect(self_in, address);
-    return socket_sendall(self_in, bytes);
+    socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    // get the buffer to send
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(bytes, &bufinfo, MP_BUFFER_READ);
+
+    // create the destination address
+    struct sockaddr_in to;
+    to.sin_len = sizeof(to);
+    to.sin_family = AF_INET;
+    to.sin_port = LWIP_HTONS(netutils_parse_inet_addr(address, (uint8_t*)&to.sin_addr, NETUTILS_BIG));
+
+    // send the data
+    for (int i=0; i<=self->retries; i++) {
+        MP_THREAD_GIL_EXIT();
+        int ret = LWIP_SENDTO(self->fd, bufinfo.buf, bufinfo.len, 0, (struct sockaddr*)&to, sizeof(to));
+        MP_THREAD_GIL_ENTER();
+        if (ret > 0) return mp_obj_new_int_from_uint(ret);
+        int errno = LWIP_ERRNO();
+        if (ret == -1 && errno != EWOULDBLOCK) {
+            exception_from_errno(errno);
+        }
+        check_for_exceptions();
+    }
+    mp_raise_OSError(MP_ETIMEDOUT); 
+    return mp_const_none;
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(socket_sendto_obj, &socket_sendto);
@@ -378,8 +401,17 @@ STATIC mp_obj_t socket_recvfrom(mp_obj_t self_in, mp_obj_t bufsize) {
     // Args:
     //     bufsize (int): output array size;
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
-    return mp_const_none;
+    struct sockaddr from;
+    socklen_t fromlen = sizeof(from);
+
+    mp_obj_t tuple[2];
+    tuple[0] = _socket_recvfrom(self_in, bufsize, &from, &fromlen);
+
+    uint8_t *ip = (uint8_t*)&((struct sockaddr_in*)&from)->sin_addr;
+    mp_uint_t port = LWIP_NTOHS(((struct sockaddr_in*)&from)->sin_port);
+    tuple[1] = netutils_format_inet_addr(ip, port, NETUTILS_BIG);
+
+    return mp_obj_new_tuple(2, tuple);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_recvfrom_obj, &socket_recvfrom);
@@ -573,8 +605,79 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *args) {
     // Returns:
     //     A 5-tuple with arguments to `usocket.socket`.
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
-    return mp_const_none;
+    
+    mp_obj_t host = args[0];
+    mp_obj_t port = args[1];
+
+    int af = AF_INET;
+    if (n_args > 2) {
+        if (mp_obj_get_int(args[2]) != AF_INET) {
+            mp_raise_ValueError("Argument #3: only af=AF_INET supported");
+            return mp_const_none;
+        }
+    }
+
+    int type = SOCK_STREAM;
+    if (n_args > 3) {
+        switch (mp_obj_get_int(args[3])) {
+            case SOCK_STREAM:
+                type = SOCK_STREAM;
+                break;
+            case SOCK_DGRAM:
+                type = SOCK_DGRAM;
+                break;
+            default:
+                mp_raise_ValueError("Argument #4: 'type' should be one of SOCK_STREAM, SOCK_DGRAM");
+                return mp_const_none;
+        }
+    }
+
+    int proto = IPPROTO_TCP;
+    if (n_args > 4) {
+        switch (mp_obj_get_int(args[4])) {
+            case IPPROTO_TCP:
+                proto = IPPROTO_TCP;
+                break;
+            case IPPROTO_UDP:
+                proto = IPPROTO_UDP;
+                break;
+            default:
+                mp_raise_ValueError("Argument #5: 'proto' should be one of IPPROTO_TCP, IPPROTO_UDP");
+                return mp_const_none;
+        }
+    }
+
+    int flag = 0;
+    if (n_args > 5) {
+        flag = mp_obj_get_int(args[5]);
+    }
+
+    struct sockaddr_in res;
+    if (_socket_getaddrinfo2(args[0], args[1], &res) < 0) {
+        int errno = LWIP_ERRNO();
+        exception_from_errno(errno);
+    }
+
+    mp_obj_t addrinfo_objs[5] = {
+        mp_obj_new_int(res.sin_family),
+        mp_obj_new_int(type),
+        mp_obj_new_int(proto),
+        host,
+        mp_const_none,
+    };
+
+    // AF_INET
+    // This looks odd, but it's really just a u32_t
+    ip4_addr_t ip4_addr = { .addr = res.sin_addr.s_addr };
+    char buf[16];
+    LWIP_IP4ADDR_NTOA_R(&ip4_addr, buf, sizeof(buf));
+    mp_obj_t inaddr_objs[2] = {
+        mp_obj_new_str(buf, strlen(buf)),
+        mp_obj_new_int(LWIP_NTOHS(res.sin_port))
+    };
+    addrinfo_objs[4] = mp_obj_new_tuple(2, inaddr_objs);
+
+    return mp_obj_new_tuple(5, addrinfo_objs);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(getaddrinfo_obj, 2, 6, getaddrinfo);
@@ -631,6 +734,15 @@ STATIC const mp_map_elem_t mp_module_usocket_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_inet_pton), (mp_obj_t)&modusocket_inet_pton_obj },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_num_open), (mp_obj_t)&modusocket_get_num_open_obj },
+
+    { MP_ROM_QSTR(MP_QSTR_AF_INET), MP_ROM_INT(AF_INET) },
+    { MP_ROM_QSTR(MP_QSTR_AF_INET6), MP_ROM_INT(AF_INET6) },
+    { MP_ROM_QSTR(MP_QSTR_SOCK_STREAM), MP_ROM_INT(SOCK_STREAM) },
+    { MP_ROM_QSTR(MP_QSTR_SOCK_DGRAM), MP_ROM_INT(SOCK_DGRAM) },
+    { MP_ROM_QSTR(MP_QSTR_SOCK_RAW), MP_ROM_INT(SOCK_RAW) },
+    { MP_ROM_QSTR(MP_QSTR_IPPROTO_TCP), MP_ROM_INT(IPPROTO_TCP) },
+    { MP_ROM_QSTR(MP_QSTR_IPPROTO_UDP), MP_ROM_INT(IPPROTO_UDP) },
+    { MP_ROM_QSTR(MP_QSTR_IPPROTO_IP), MP_ROM_INT(IPPROTO_IP) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_usocket_globals, mp_module_usocket_globals_table);

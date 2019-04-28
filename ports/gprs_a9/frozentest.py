@@ -150,6 +150,7 @@ assert lng == _lng
 
 try:
     gps.on(0)
+    raise ValueError("No GPS exception was raised")
 except gps.GPSError as e:
     print("GPS error OK:", e)
 gps.off()
@@ -244,9 +245,16 @@ if sim_present:
     assert sock.get_num_open() == 0
 
     host = "httpstat.us"
+    port = 80
+    host_ai = sock.getaddrinfo(host, port)
+    print("Addrinfo:", host_ai)
+    assert host_ai[:3] == (sock.AF_INET, sock.SOCK_STREAM, sock.IPPROTO_TCP)
+    assert host_ai[3] == host
+    assert len(host_ai[4][0].split(".")) == 4
+    assert host_ai[4][1] == 80
 
     s = sock.socket()
-    s.connect((host, 80))
+    s.connect((host, port))
     assert sock.get_num_open() == 1
     assert s.makefile() == s
 
@@ -254,10 +262,11 @@ if sim_present:
     response_expected = b"HTTP/1.1 200 OK\r\n"
     message_f = message.format(host)
     bytes_sent = s.send(message_f[:10])
-    bytes_sent += s.write(message_f[10:-5])
+    bytes_sent += s.write(message_f[10:20])
+    bytes_sent += s.sendto(message_f[20:30], ("23.99.0.12", 80))
     print("Socket sent:", bytes_sent)
-    assert bytes_sent == len(message_f) - 5
-    s.sendall(message_f[-5:])
+    assert bytes_sent == 30
+    s.sendall(message_f[30:])
 
     # Chunk 1: recv
     response = s.recv(3)
@@ -267,19 +276,24 @@ if sim_present:
     chunk3 = bytearray(len(response_expected) - 6)
     s.readinto(chunk3)
     response += chunk3
-    print("Socket rcvd:", response)
+    print("Socket recvd:", response)
     assert response == response_expected
 
     line = s.readline()
-    print("... rcvd:", line)
+    print("... recvd:", line)
     assert len(line) > 0
     s.close()
 
     s = sock.socket()
-    s.sendto(message_f, (host, 80))
-    response = s.read(len(response_expected))
-    print("Socket (2) rcvd:", response)
+    s.connect((host, port))
+    bytes_sent = s.sendto(message_f, ("127.0.0.1", 80))
+    print("Socket sent (2):", bytes_sent)
+    assert bytes_sent == len(message_f)
+
+    response, fr = s.recvfrom(len(response_expected))
+    print("Socket recvd (2):", response, fr)
     assert response == response_expected
+    assert fr == host_ai[4]
     s.close()
 
     assert sock.get_num_open() == 0

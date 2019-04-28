@@ -84,6 +84,7 @@ LD_OPTIONAL_OBJECTS :=
 ########################################3###
 INC += -I.
 INC += -I$(TOP)
+INC += -I$(TOP)/lib/netutils
 INC += -I$(BUILD_PATH_ABS)
 INC += -I${CSDK_PATH}/include \
        -I${CSDK_PATH}/include/std_inc \
@@ -133,6 +134,7 @@ LIB_SRC_C = $(addprefix lib/,\
 	utils/interrupt_char.c \
 	utils/sys_stdio_mphal.c \
 	timeutils/timeutils.c \
+	netutils/netutils.c \
 	)
 
 LIB_SRC_C += \

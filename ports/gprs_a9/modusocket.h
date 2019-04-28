@@ -29,6 +29,7 @@
 
 // This file re-binds CSDK names to proper uppercases
 #include "sdk_init.h"
+#include "api_inc_socket.h"
 
 #define LWIP_ACCEPT               CSDK_FUNC(lwip_accept)
 #define LWIP_BIND                 CSDK_FUNC(lwip_bind)
@@ -59,10 +60,15 @@
 #define LWIP_IP4ADDR_NTOA         CSDK_FUNC(ip4addr_ntoa_r)
 #define LWIP_IP6ADDR_ATON         CSDK_FUNC(ip6addr_aton)
 #define LWIP_IP4ADDR_ATON         CSDK_FUNC(ip4addr_aton)
-#define LWIP_HTONS                CSDK_FUNC(lwip_htons)
-#define LWIP_HTONL                CSDK_FUNC(lwip_htonl)
 #define LWIP_STRERR               CSDK_FUNC(lwip_strerr)
 #define LWIP_ERR_TO_ERRNO         CSDK_FUNC(err_to_errno)
 #define LWIP_ERRNO                CSDK_FUNC(Socket_GetLastError)
 
 #define DNS_GetHostByName2        CSDK_FUNC(DNS_GetHostByName2)
+
+// Presumably, the transformation is symmetric
+#define LWIP_HTONS(x) PP_HTONS(x)
+#define LWIP_HTONL(x) PP_HTONL(x)
+#define LWIP_NTOHS(x) PP_NTOHS(x)
+#define LWIP_NTOHL(x) PP_NTOHL(x)
+
