@@ -114,11 +114,31 @@ void gc_collect(void) {
 }
 
 
-void nlr_jump_fail(void *val) {
-    Assert(false, "nlr_jump_fail");
-    while (1);//never reach here actully
+void NORETURN nlr_jump_fail(void *val) {
+    static const char msg[] =
+        "\r\n==============================="
+        "\r\nMicropython experienced a fatal"
+        "\r\nerror and will be rebooted."
+        "\r\n"
+        "\r\n  reason: nlr_jump_fail"
+        "\r\n  ptr: ";
+    UART_Write(UART1, (uint8_t*)msg, sizeof(msg));
+
+    char msg2[16];
+    snprintf(msg2, sizeof(msg2), "%p", val);
+    UART_Write(UART1, (uint8_t*)msg2, strlen(msg2));
+
+    static const char msg3[] =
+        "\r\n=============================="
+        "\r\n";
+    UART_Write(UART1, (uint8_t*)msg3, sizeof(msg3));
+
+    OS_Sleep(5000);
+    PM_Restart();
+    while (1);
 }
 
+/*
 void NORETURN __fatal_error(const char *msg) {
     Assert(false,msg);
     while (1);//never reach here actully
@@ -130,6 +150,7 @@ void MP_WEAK __assert_func(const char *file, int line, const char *func, const c
     __fatal_error("Assertion failed");
 }
 #endif
+*/
 
 void MicroPyTask(void *pData) {
     // The primary event-driven UART loop
