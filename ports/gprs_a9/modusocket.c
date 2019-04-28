@@ -5,8 +5,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Paul Sokolovsky
- * Copyright (c) 2016 Damien P. George
+ * Copyright (c) 2019 pulkin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,10 +48,6 @@
 
 uint8_t num_sockets_open = 0;
 
-// -------
-// Classes
-// -------
-
 NORETURN static void exception_from_errno(int _errno) {
     // Here we need to convert from lwip errno values to MicroPython's standard ones
     if (_errno == EINPROGRESS) {
@@ -64,6 +59,10 @@ NORETURN static void exception_from_errno(int _errno) {
 static inline void check_for_exceptions(void) {
     mp_handle_pending();
 }
+
+// -------
+// Classes
+// -------
 
 typedef struct _socket_obj_t {
     mp_obj_base_t base;
