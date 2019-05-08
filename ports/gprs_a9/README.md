@@ -439,3 +439,7 @@ Provides power-related functions: power, watchdogs.
 
   Resets the timer on the hardware watchdog.
 
+## Misc ##
+
+* The module halts on fatal errors; create an empty file `.reboot_on_fatal` if a reboot is desired
+

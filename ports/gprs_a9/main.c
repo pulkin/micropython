@@ -117,7 +117,7 @@ void NORETURN nlr_jump_fail(void *val) {
     static const char msg[] =
         "\r\n==============================="
         "\r\nMicropython experienced a fatal"
-        "\r\nerror and will be rebooted."
+        "\r\nerror and will be halted."
         "\r\n"
         "\r\n  reason: nlr_jump_fail"
         "\r\n  ptr: ";
@@ -132,8 +132,14 @@ void NORETURN nlr_jump_fail(void *val) {
         "\r\n";
     UART_Write(UART1, (uint8_t*)msg3, sizeof(msg3));
 
-    OS_Sleep(5000);
-    PM_Restart();
+    int fd = API_FS_Open(".reboot_on_fatal", FS_O_RDONLY, 0);
+    if (fd < 0) {
+        Assert(false, "nlr_jump_fail");
+    } else {
+        API_FS_Close(fd);
+        OS_Sleep(5000);
+        PM_Restart();
+    }
     while (1);
 }
 
