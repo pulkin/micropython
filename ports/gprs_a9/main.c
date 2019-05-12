@@ -114,19 +114,18 @@ void gc_collect(void) {
     gc_dump_info();
 }
 
-
-void NORETURN nlr_jump_fail(void *val) {
+void NORETURN mp_fatal_error(void* ptr1) {
     static const char msg[] =
         "\r\n==============================="
         "\r\nMicropython experienced a fatal"
         "\r\nerror and will be halted."
         "\r\n"
         "\r\n  reason: nlr_jump_fail"
-        "\r\n  ptr: ";
+        "\r\n  ptr1: ";
     UART_Write(UART1, (uint8_t*)msg, sizeof(msg));
 
     char msg2[16];
-    snprintf(msg2, sizeof(msg2), "%p", val);
+    snprintf(msg2, sizeof(msg2), "%p", ptr1);
     UART_Write(UART1, (uint8_t*)msg2, strlen(msg2));
 
     static const char msg3[] =
@@ -143,6 +142,10 @@ void NORETURN nlr_jump_fail(void *val) {
         PM_Restart();
     }
     while (1);
+}
+
+void NORETURN nlr_jump_fail(void *val) {
+    mp_fatal_error(val);
 }
 
 char* mp_allocate_heap(uint16_t* size) {
