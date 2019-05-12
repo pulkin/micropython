@@ -64,6 +64,8 @@
 #define MICROPYTHON_TASK_PRIORITY       1
 #define UART_CIRCLE_FIFO_BUFFER_MAX_LENGTH 2048
 
+STATIC char* heap;
+
 HANDLE mainTaskHandle  = NULL;
 HANDLE microPyTaskHandle = NULL;
 Buffer_t fifoBuffer; // ringbuf
@@ -143,6 +145,16 @@ void NORETURN nlr_jump_fail(void *val) {
     while (1);
 }
 
+char* mp_allocate_heap(uint16_t* size) {
+    uint16_t h_size = 4 * 1024;
+    uint8_t* heap = OS_Malloc(h_size);
+    if (!heap) {
+        mp_fatal_error(NULL);
+    }
+    size[0] = h_size;
+    return (char*)heap;
+}
+
 /*
 void NORETURN __fatal_error(const char *msg) {
     Assert(false,msg);
@@ -168,9 +180,12 @@ void MicroPyTask(void *pData) {
 
 soft_reset:
     mp_stack_ctrl_init();
-    mp_stack_set_top((void *)(info.stackTop + info.stackSize * 4));
+    stack_top = info.stackTop + info.stackSize * 4;
+    mp_stack_set_top((void *)stack_top);
     mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE * 4 - 1024);
-    // TODO: gc_init(?, ?);
+    uint16_t heap_size;
+    heap = mp_allocate_heap(&heap_size);
+    gc_init(heap, heap + heap_size);
     mp_init();
     moduos_init0();
     modcellular_init0();
@@ -220,8 +235,9 @@ soft_reset:
         // PM_SetSysMinFreq(PM_SYS_FREQ_32K);
     }
 
-    // TODO: gc_sweep_all();
+    gc_sweep_all();
     mp_deinit();
+    OS_Free(heap);
     mp_hal_stdout_tx_str("PYB: soft reboot\r\n");
     mp_hal_delay_us(10000); // allow UART to flush output
 
