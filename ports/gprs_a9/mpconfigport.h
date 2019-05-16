@@ -32,11 +32,11 @@
 // Python internal features
 #define MICROPY_ENABLE_COMPILER             (1)
 #define MICROPY_REPL_EVENT_DRIVEN           (1)
-// #define MICROPY_ENABLE_GC                   (1)
+#define MICROPY_ENABLE_GC                   (1)
 #define MICROPY_LONGINT_IMPL                (MICROPY_LONGINT_IMPL_MPZ)
 #define MICROPY_FLOAT_IMPL                  (MICROPY_FLOAT_IMPL_DOUBLE)
 #define MICROPY_MODULE_FROZEN_MPY           (1)
-// #define MICROPY_ENABLE_FINALISER            (1)
+#define MICROPY_ENABLE_FINALISER            (1)
 #define MICROPY_STACK_CHECK                 (1)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
 #define MICROPY_KBD_EXCEPTION               (1)
@@ -107,7 +107,7 @@
 #define MICROPY_PY_MATH                     (1)
 #define MICROPY_PY_MATH_SPECIAL_FUNCTIONS   (1)
 #define MICROPY_PY_CMATH                    (1)
-#define MICROPY_PY_GC                       (0)
+#define MICROPY_PY_GC                       (1)
 #define MICROPY_PY_IO                       (1)
 #define MICROPY_PY_IO_IOBASE                (1)
 #define MICROPY_PY_IO_FILEIO                (1)
@@ -222,6 +222,7 @@ extern const struct _mp_obj_module_t i2c_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_io), (mp_obj_t)&mp_module_io }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_json), (mp_obj_t)&mp_module_ujson }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&uos_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&usocket_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_time), (mp_obj_t)&utime_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_random), (mp_obj_t)&mp_module_urandom }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_re), (mp_obj_t)&mp_module_ure }, \
