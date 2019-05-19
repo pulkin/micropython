@@ -312,7 +312,8 @@ if sim_present:
     print("Socket recvd (2):", response, fr)
     assert response == response_expected
     assert fr == host_ai[4]
-    s.close()
+    del s
+    gc.collect()
 
     assert sock.get_num_open() == 0
 
