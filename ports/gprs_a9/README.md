@@ -442,5 +442,5 @@ Provides power-related functions: power, watchdogs.
 ## Misc ##
 
 * The module halts on fatal errors; create an empty file `.reboot_on_fatal` if a reboot is desired
-* The size of micropython heap is roughly 512 Kb.
+* The size of micropython heap is roughly 512 Kb. 400k can be realistically allocated right after hard reset.
 
