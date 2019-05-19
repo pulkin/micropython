@@ -17,6 +17,24 @@ print(123456789)
 for i in range(4):
     print(i)
 
+print("================")
+print("gc")
+print("================")
+print("Testing loop ...")
+long_string = "-" * 2 * 2048
+for i in range(512):
+    x = str(i) + long_string
+del long_string
+del x
+
+import gc
+gc.collect()
+mem_free = gc.mem_free()
+mem_alloc = gc.mem_alloc()
+mem_tot = mem_free + mem_alloc
+print("Free:", mem_free, "alloc:", mem_alloc, "total:", mem_tot)
+assert mem_tot > 512e3
+
 if test_fs:
     print("================")
     print("filesystem")

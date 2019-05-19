@@ -113,6 +113,7 @@ LIBS =
 
 SRC_C = \
 	main.c \
+	fatal.c \
 	help.c \
 	modmachine.c \
 	machine_pin.c \

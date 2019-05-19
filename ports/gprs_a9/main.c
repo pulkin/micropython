@@ -50,6 +50,7 @@
 #include "api_network.h"
 #include "time.h"
 #include "api_fs.h"
+#include "fatal.h"
 
 #include "moduos.h"
 #include "mphalport.h"
@@ -63,6 +64,9 @@
 #define MICROPYTHON_TASK_STACK_SIZE     (2048 * 4)
 #define MICROPYTHON_TASK_PRIORITY       1
 #define UART_CIRCLE_FIFO_BUFFER_MAX_LENGTH 2048
+
+#define MICROPYTHON_HEAP_MAX_SIZE (1024 * 2048)
+#define MICROPYTHON_HEAP_MIN_SIZE (2048)
 
 STATIC char* heap;
 
@@ -111,52 +115,30 @@ void gc_collect(void) {
     gc_collect_start();
     gc_collect_root(&dummy, ((mp_uint_t)stack_top - (mp_uint_t)&dummy) / sizeof(mp_uint_t));
     gc_collect_end();
-    gc_dump_info();
-}
-
-void NORETURN mp_fatal_error(void* ptr1) {
-    static const char msg[] =
-        "\r\n==============================="
-        "\r\nMicropython experienced a fatal"
-        "\r\nerror and will be halted."
-        "\r\n"
-        "\r\n  reason: nlr_jump_fail"
-        "\r\n  ptr1: ";
-    UART_Write(UART1, (uint8_t*)msg, sizeof(msg));
-
-    char msg2[16];
-    snprintf(msg2, sizeof(msg2), "%p", ptr1);
-    UART_Write(UART1, (uint8_t*)msg2, strlen(msg2));
-
-    static const char msg3[] =
-        "\r\n=============================="
-        "\r\n";
-    UART_Write(UART1, (uint8_t*)msg3, sizeof(msg3));
-
-    int fd = API_FS_Open(".reboot_on_fatal", FS_O_RDONLY, 0);
-    if (fd < 0) {
-        Assert(false, "nlr_jump_fail");
-    } else {
-        API_FS_Close(fd);
-        OS_Sleep(5000);
-        PM_Restart();
-    }
-    while (1);
+    // gc_dump_info();
 }
 
 void NORETURN nlr_jump_fail(void *val) {
-    mp_fatal_error(val);
+    mp_fatal_error(MP_FATAL_REASON_NLR_JUMP_FAIL, val);
 }
 
-char* mp_allocate_heap(uint16_t* size) {
-    uint16_t h_size = 4 * 1024;
-    uint8_t* heap = OS_Malloc(h_size);
-    if (!heap) {
-        mp_fatal_error(NULL);
+#if MICROPY_ENABLE_GC
+char* mp_allocate_heap(uint32_t* size) {
+    uint32_t h_size = MICROPYTHON_HEAP_MAX_SIZE;
+    uint8_t* heap = NULL;
+    while (!heap) {
+        if (h_size < MICROPYTHON_HEAP_MIN_SIZE) {
+            mp_fatal_error(MP_FATAL_REASON_HEAP_INIT, NULL);
+        }
+        heap = OS_Malloc(h_size);
+        if (!heap) {
+            h_size = h_size >> 1;
+        }
     }
     size[0] = h_size;
     return (char*)heap;
 }
+#endif
 
 /*
 void NORETURN __fatal_error(const char *msg) {
@@ -186,9 +168,11 @@ soft_reset:
     stack_top = info.stackTop + info.stackSize * 4;
     mp_stack_set_top((void *)stack_top);
     mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE * 4 - 1024);
-    uint16_t heap_size;
+#if MICROPY_ENABLE_GC
+    uint32_t heap_size;
     heap = mp_allocate_heap(&heap_size);
     gc_init(heap, heap + heap_size);
+#endif
     mp_init();
     moduos_init0();
     modcellular_init0();
@@ -238,7 +222,9 @@ soft_reset:
         // PM_SetSysMinFreq(PM_SYS_FREQ_32K);
     }
 
+#if MICROPY_ENABLE_GC
     gc_sweep_all();
+#endif
     mp_deinit();
     OS_Free(heap);
     mp_hal_stdout_tx_str("PYB: soft reboot\r\n");
