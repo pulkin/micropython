@@ -34,6 +34,9 @@ mem_alloc = gc.mem_alloc()
 mem_tot = mem_free + mem_alloc
 print("Free:", mem_free, "alloc:", mem_alloc, "total:", mem_tot)
 assert mem_tot > 512e3
+print("400k allocation ...")
+x = bytearray(400000)
+del x
 
 if test_fs:
     print("================")
