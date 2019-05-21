@@ -29,6 +29,7 @@
 
 #include "py/obj.h"
 #include "py/mperrno.h"
+#include "irq.h"
 #include "led.h"
 #include "flash.h"
 #include "storage.h"
@@ -60,6 +61,15 @@ STATIC byte flash_cache_mem[0x4000] __attribute__((aligned(4))); // 16k
 #define FLASH_MEM_SEG1_START_ADDR (0x08004000) // sector 1
 #define FLASH_MEM_SEG1_NUM_BLOCKS (128) // sectors 1,2,3,4: 16k+16k+16k+16k(of 64k)=64k
 
+#elif defined(STM32F413xx)
+
+#define CACHE_MEM_START_ADDR (0x10000000) // SRAM2 data RAM, 64k
+#define FLASH_SECTOR_SIZE_MAX (0x10000) // 64k max, size of SRAM2
+#define FLASH_MEM_SEG1_START_ADDR (0x08004000) // sector 1
+#define FLASH_MEM_SEG1_NUM_BLOCKS (352) // sectors 1,2,3,4,5: 16k+16k+16k+64k+64k(of 128k)=176k
+#define FLASH_MEM_SEG2_START_ADDR (0x08040000) // sector 6
+#define FLASH_MEM_SEG2_NUM_BLOCKS (128) // sector 6: 64k(of 128k). Filesystem 176K + 64K = 240K
+
 #elif defined(STM32F429xx)
 
 #define CACHE_MEM_START_ADDR (0x10000000) // CCM data RAM, 64k
@@ -76,7 +86,7 @@ STATIC byte flash_cache_mem[0x4000] __attribute__((aligned(4))); // 16k
 #define FLASH_MEM_SEG2_START_ADDR (0x08140000) // sector 18
 #define FLASH_MEM_SEG2_NUM_BLOCKS (128) // sector 18: 64k(of 128k)
 
-#elif defined(STM32F746xx) || defined(STM32F767xx) || defined(STM32F769xx)
+#elif defined(STM32F746xx) || defined(STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx)
 
 // The STM32F746 doesn't really have CCRAM, so we use the 64K DTCM for this.
 
@@ -93,7 +103,7 @@ STATIC byte flash_cache_mem[0x4000] __attribute__((aligned(4))); // 16k
 #define FLASH_MEM_SEG1_START_ADDR (0x08020000) // sector 1
 #define FLASH_MEM_SEG1_NUM_BLOCKS (256) // Sector 1: 128k / 512b = 256 blocks
 
-#elif defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L496xx)
+#elif defined(STM32L432xx) || defined(STM32L475xx) || defined(STM32L476xx) || defined(STM32L496xx)
 
 // The STM32L475/6 doesn't have CCRAM, so we use the 32K SRAM2 for this, although
 // actual location and size is defined by the linker script.
@@ -143,14 +153,17 @@ int32_t flash_bdev_ioctl(uint32_t op, uint32_t arg) {
             flash_bdev_irq_handler();
             return 0;
 
-        case BDEV_IOCTL_SYNC:
+        case BDEV_IOCTL_SYNC: {
+            uint32_t basepri = raise_irq_pri(IRQ_PRI_FLASH); // prevent cache flushing and USB access
             if (flash_flags & FLASH_FLAG_DIRTY) {
                 flash_flags |= FLASH_FLAG_FORCE_WRITE;
                 while (flash_flags & FLASH_FLAG_DIRTY) {
-                   NVIC->STIR = FLASH_IRQn;
+                    flash_bdev_irq_handler();
                 }
             }
+            restore_irq_pri(basepri);
             return 0;
+        }
     }
     return -MP_EINVAL;
 }
@@ -262,8 +275,10 @@ bool flash_bdev_writeblock(const uint8_t *src, uint32_t block) {
         // bad block number
         return false;
     }
+    uint32_t basepri = raise_irq_pri(IRQ_PRI_FLASH); // prevent cache flushing and USB access
     uint8_t *dest = flash_cache_get_addr_for_write(flash_addr);
     memcpy(dest, src, FLASH_BLOCK_SIZE);
+    restore_irq_pri(basepri);
     return true;
 }
 

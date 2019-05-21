@@ -1,20 +1,22 @@
 # Select the board to build for: if not given on the command line,
 # then default to PYBV10.
 BOARD ?= PYBV10
-ifeq ($(wildcard boards/$(BOARD)/.),)
-$(error Invalid BOARD specified)
-endif
 
 # If the build directory is not given, make it reflect the board name.
 BUILD ?= build-$(BOARD)
 
+BOARD_DIR ?= boards/$(BOARD)
+ifeq ($(wildcard $(BOARD_DIR)/.),)
+$(error Invalid BOARD specified: $(BOARD_DIR))
+endif
+
 include ../../py/mkenv.mk
 -include mpconfigport.mk
-include boards/$(BOARD)/mpconfigboard.mk
+include $(BOARD_DIR)/mpconfigboard.mk
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h $(BUILD)/modstm_qstr.h
-QSTR_GLOBAL_DEPENDENCIES = mpconfigboard_common.h boards/$(BOARD)/mpconfigboard.h
+QSTR_GLOBAL_DEPENDENCIES = mpconfigboard_common.h $(BOARD_DIR)/mpconfigboard.h
 
 # directory containing scripts to be frozen as bytecode
 FROZEN_MPY_DIR ?= modules
@@ -40,7 +42,8 @@ OPENOCD ?= openocd
 OPENOCD_CONFIG ?= boards/openocd_stm32f4.cfg
 STARTUP_FILE ?= boards/startup_stm32$(MCU_SERIES).o
 
-CROSS_COMPILE = arm-none-eabi-
+# Select the cross compile prefix
+CROSS_COMPILE ?= arm-none-eabi-
 
 INC += -I.
 INC += -I$(TOP)
@@ -50,12 +53,13 @@ INC += -I$(CMSIS_DIR)/
 INC += -I$(TOP)/$(HAL_DIR)/Inc
 INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/inc
 #INC += -I$(USBHOST_DIR)
+INC += -Ilwip_inc
 
 # Basic Cortex-M flags
 CFLAGS_CORTEX_M = -mthumb
 
 # Select hardware floating-point support
-ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),STM32F767xx STM32F769xx STM32H743xx))
+ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),STM32F765xx STM32F767xx STM32F769xx STM32H743xx))
 CFLAGS_CORTEX_M += -mfpu=fpv5-d16 -mfloat-abi=hard
 else
 ifeq ($(MCU_SERIES),f0)
@@ -76,7 +80,7 @@ CFLAGS = $(INC) -Wall -Wpointer-arith -Werror -std=gnu99 -nostdlib $(CFLAGS_MOD)
 CFLAGS += -D$(CMSIS_MCU)
 CFLAGS += $(CFLAGS_MCU_$(MCU_SERIES))
 CFLAGS += $(COPT)
-CFLAGS += -Iboards/$(BOARD)
+CFLAGS += -I$(BOARD_DIR)
 CFLAGS += -DSTM32_HAL_H='<stm32$(MCU_SERIES)xx_hal.h>'
 CFLAGS += -DMICROPY_HW_VTOR=$(TEXT0_ADDR)
 
@@ -102,16 +106,21 @@ else
 COPT += -Os -DNDEBUG
 endif
 
+# Options for mpy-cross
+MPY_CROSS_FLAGS += -march=armv7m
+
 SRC_LIB = $(addprefix lib/,\
 	libc/string0.c \
 	oofatfs/ff.c \
-	oofatfs/option/unicode.c \
+	oofatfs/ffunicode.c \
 	mp-readline/readline.c \
 	netutils/netutils.c \
+	netutils/trace.c \
 	timeutils/timeutils.c \
 	utils/pyexec.c \
 	utils/interrupt_char.c \
 	utils/sys_stdio_mphal.c \
+	utils/mpirq.c \
 	)
 
 ifeq ($(MICROPY_FLOAT_IMPL),double)
@@ -134,6 +143,7 @@ SRC_LIBM = $(addprefix lib/libm_dbl/,\
 	ceil.c \
 	cos.c \
 	cosh.c \
+	copysign.c \
 	erf.c \
 	exp.c \
 	expm1.c \
@@ -194,7 +204,6 @@ endif
 endif
 
 EXTMOD_SRC_C = $(addprefix extmod/,\
-	modlwip.c \
 	modonewire.c \
         )
 
@@ -218,7 +227,9 @@ SRC_C = \
 	irq.c \
 	pendsv.c \
 	systick.c  \
+	powerctrl.c \
 	pybthread.c \
+	factoryreset.c \
 	timer.c \
 	led.c \
 	pin.c \
@@ -235,16 +246,19 @@ SRC_C = \
 	can.c \
 	usb.c \
 	wdt.c \
+	eth.c \
 	gccollect.c \
 	help.c \
 	machine_i2c.c \
 	machine_spi.c \
+	machine_uart.c \
 	modmachine.c \
 	modpyb.c \
 	modstm.c \
 	moduos.c \
 	modutime.c \
 	modusocket.c \
+	network_lan.c \
 	modnetwork.c \
 	extint.c \
 	usrsw.c \
@@ -262,20 +276,20 @@ SRC_C = \
 	servo.c \
 	dac.c \
 	adc.c \
-	$(wildcard boards/$(BOARD)/*.c)
+	$(wildcard $(BOARD_DIR)/*.c)
 
 ifeq ($(MCU_SERIES),f0)
 SRC_O = \
 	$(STARTUP_FILE) \
 	system_stm32f0.o \
 	resethandler_m0.o \
-	gchelper_m0.o
+	lib/utils/gchelper_m0.o
 else
 SRC_O = \
 	$(STARTUP_FILE) \
 	system_stm32.o \
 	resethandler.o \
-	gchelper.o
+	lib/utils/gchelper_m3.o
 endif
 
 SRC_HAL = $(addprefix $(HAL_DIR)/Src/stm32$(MCU_SERIES)xx_,\
@@ -283,8 +297,6 @@ SRC_HAL = $(addprefix $(HAL_DIR)/Src/stm32$(MCU_SERIES)xx_,\
 	hal_adc.c \
 	hal_adc_ex.c \
 	hal_cortex.c \
-	hal_dac.c \
-	hal_dac_ex.c \
 	hal_dma.c \
 	hal_flash.c \
 	hal_flash_ex.c \
@@ -316,7 +328,10 @@ endif
 
 ifeq ($(MCU_SERIES),$(filter $(MCU_SERIES),f4 f7 h7))
 SRC_HAL += $(addprefix $(HAL_DIR)/Src/stm32$(MCU_SERIES)xx_,\
+	hal_mmc.c \
 	hal_sdram.c \
+	hal_dma_ex.c \
+	hal_dcmi.c \
 	)
 endif
 
@@ -371,47 +386,6 @@ SRC_MOD += $(addprefix $(CC3000_DIR)/src/,\
 	patch_prog.c \
 	)
 endif
-
-LWIP_DIR = lib/lwip/src
-INC += -I$(TOP)/$(LWIP_DIR)/include -Ilwip_inc
-$(BUILD)/$(LWIP_DIR)/core/ipv4/dhcp.o: CFLAGS += -Wno-address
-SRC_MOD += $(addprefix $(LWIP_DIR)/,\
-	core/def.c \
-	core/dns.c \
-	core/inet_chksum.c \
-	core/init.c \
-	core/ip.c \
-	core/mem.c \
-	core/memp.c \
-	core/netif.c \
-	core/pbuf.c \
-	core/raw.c \
-	core/stats.c \
-	core/sys.c \
-	core/tcp.c \
-	core/tcp_in.c \
-	core/tcp_out.c \
-	core/timeouts.c \
-	core/udp.c \
-	core/ipv4/autoip.c \
-	core/ipv4/dhcp.c \
-	core/ipv4/etharp.c \
-	core/ipv4/icmp.c \
-	core/ipv4/igmp.c \
-	core/ipv4/ip4_addr.c \
-	core/ipv4/ip4.c \
-	core/ipv4/ip4_frag.c \
-	core/ipv6/dhcp6.c \
-	core/ipv6/ethip6.c \
-	core/ipv6/icmp6.c \
-	core/ipv6/inet6.c \
-	core/ipv6/ip6_addr.c \
-	core/ipv6/ip6.c \
-	core/ipv6/ip6_frag.c \
-	core/ipv6/mld6.c \
-	core/ipv6/nd6.c \
-	netif/ethernet.c \
-	)
 
 OBJ =
 OBJ += $(PY_O)
@@ -479,6 +453,8 @@ TEXT0_ADDR ?= 0x08000000
 ifeq ($(TEXT1_ADDR),)
 # No TEXT1_ADDR given so put all firmware at TEXT0_ADDR location
 
+TEXT0_SECTIONS ?= .isr_vector .text .data
+
 deploy-stlink: $(BUILD)/firmware.dfu
 	$(ECHO) "Writing $(BUILD)/firmware.bin to the board via ST-LINK"
 	$(Q)$(STFLASH) write $(BUILD)/firmware.bin $(TEXT0_ADDR)
@@ -489,11 +465,14 @@ deploy-openocd: $(BUILD)/firmware.dfu
 
 $(BUILD)/firmware.dfu: $(BUILD)/firmware.elf
 	$(ECHO) "Create $@"
-	$(Q)$(OBJCOPY) -O binary -j .isr_vector -j .text -j .data $^ $(BUILD)/firmware.bin
+	$(Q)$(OBJCOPY) -O binary $(addprefix -j ,$(TEXT0_SECTIONS)) $^ $(BUILD)/firmware.bin
 	$(Q)$(PYTHON) $(DFU) -b $(TEXT0_ADDR):$(BUILD)/firmware.bin $@
 
 else
 # TEXT0_ADDR and TEXT1_ADDR are specified so split firmware between these locations
+
+TEXT0_SECTIONS ?= .isr_vector
+TEXT1_SECTIONS ?= .text .data
 
 deploy-stlink: $(BUILD)/firmware.dfu
 	$(ECHO) "Writing $(BUILD)/firmware0.bin to the board via ST-LINK"
@@ -507,8 +486,8 @@ deploy-openocd: $(BUILD)/firmware.dfu
 
 $(BUILD)/firmware.dfu: $(BUILD)/firmware.elf
 	$(ECHO) "GEN $@"
-	$(Q)$(OBJCOPY) -O binary -j .isr_vector $^ $(BUILD)/firmware0.bin
-	$(Q)$(OBJCOPY) -O binary -j .text -j .data $^ $(BUILD)/firmware1.bin
+	$(Q)$(OBJCOPY) -O binary $(addprefix -j ,$(TEXT0_SECTIONS)) $^ $(BUILD)/firmware0.bin
+	$(Q)$(OBJCOPY) -O binary $(addprefix -j ,$(TEXT1_SECTIONS)) $^ $(BUILD)/firmware1.bin
 	$(Q)$(PYTHON) $(DFU) -b $(TEXT0_ADDR):$(BUILD)/firmware0.bin -b $(TEXT1_ADDR):$(BUILD)/firmware1.bin $@
 
 endif
@@ -519,12 +498,12 @@ $(BUILD)/firmware.hex: $(BUILD)/firmware.elf
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
-	$(Q)$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(Q)$(LD) $(LDFLAGS) -o $@ $^ $(LDFLAGS_MOD) $(LIBS)
 	$(Q)$(SIZE) $@
 
 PLLVALUES = boards/pllvalues.py
 MAKE_PINS = boards/make-pins.py
-BOARD_PINS = boards/$(BOARD)/pins.csv
+BOARD_PINS = $(BOARD_DIR)/pins.csv
 PREFIX_FILE = boards/stm32f4xx_prefix.c
 GEN_PINS_SRC = $(BUILD)/pins_$(BOARD).c
 GEN_PINS_HDR = $(HEADER_BUILD)/pins.h
@@ -556,16 +535,20 @@ $(OBJ): | $(GEN_PINS_HDR)
 
 # With conditional pins, we may need to regenerate qstrdefs.h when config
 # options change.
-$(HEADER_BUILD)/qstrdefs.generated.h: boards/$(BOARD)/mpconfigboard.h
+$(HEADER_BUILD)/qstrdefs.generated.h: $(BOARD_DIR)/mpconfigboard.h
 
 # main.c can't be even preprocessed without $(GEN_CDCINF_HEADER)
 main.c: $(GEN_CDCINF_HEADER)
 
 # Use a pattern rule here so that make will only call make-pins.py once to make
 # both pins_$(BOARD).c and pins.h
-$(BUILD)/%_$(BOARD).c $(HEADER_BUILD)/%.h $(HEADER_BUILD)/%_af_const.h $(HEADER_BUILD)/%_af_defs.h $(BUILD)/%_qstr.h: boards/$(BOARD)/%.csv $(MAKE_PINS) $(AF_FILE) $(PREFIX_FILE) | $(HEADER_BUILD)
+$(BUILD)/%_$(BOARD).c $(HEADER_BUILD)/%.h $(HEADER_BUILD)/%_af_const.h $(HEADER_BUILD)/%_af_defs.h $(BUILD)/%_qstr.h: $(BOARD_DIR)/%.csv $(MAKE_PINS) $(AF_FILE) $(PREFIX_FILE) | $(HEADER_BUILD)
 	$(ECHO) "GEN $@"
-	$(Q)$(PYTHON) $(MAKE_PINS) --board $(BOARD_PINS) --af $(AF_FILE) --prefix $(PREFIX_FILE) --hdr $(GEN_PINS_HDR) --qstr $(GEN_PINS_QSTR) --af-const $(GEN_PINS_AF_CONST) --af-defs $(GEN_PINS_AF_DEFS) --af-py $(GEN_PINS_AF_PY) > $(GEN_PINS_SRC)
+	$(Q)$(PYTHON) $(MAKE_PINS) --board $(BOARD_PINS) --af $(AF_FILE) \
+		--prefix $(PREFIX_FILE) --hdr $(GEN_PINS_HDR) --hdr-obj-decls \
+		--qstr $(GEN_PINS_QSTR) --af-const $(GEN_PINS_AF_CONST) \
+		--af-defs $(GEN_PINS_AF_DEFS) --af-defs-cmp-strings \
+		--af-py $(GEN_PINS_AF_PY) > $(GEN_PINS_SRC)
 
 $(BUILD)/pins_$(BOARD).o: $(BUILD)/pins_$(BOARD).c
 	$(call compile_c)
@@ -580,7 +563,7 @@ CMSIS_MCU_HDR = $(CMSIS_DIR)/$(CMSIS_MCU_LOWER).h
 modmachine.c: $(GEN_PLLFREQTABLE_HDR)
 $(GEN_PLLFREQTABLE_HDR): $(PLLVALUES) | $(HEADER_BUILD)
 	$(ECHO) "GEN $@"
-	$(Q)$(PYTHON) $(PLLVALUES) -c file:boards/$(BOARD)/stm32$(MCU_SERIES)xx_hal_conf.h > $@
+	$(Q)$(PYTHON) $(PLLVALUES) -c $(if $(filter $(MCU_SERIES),f7),--relax-pll48,) file:$(BOARD_DIR)/stm32$(MCU_SERIES)xx_hal_conf.h > $@
 
 $(BUILD)/modstm.o: $(GEN_STMCONST_HDR)
 # Use a pattern rule here so that make will only call make-stmconst.py once to

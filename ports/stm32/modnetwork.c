@@ -32,6 +32,8 @@
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "lib/netutils/netutils.h"
+#include "systick.h"
+#include "pendsv.h"
 #include "modnetwork.h"
 
 #if MICROPY_PY_NETWORK
@@ -43,20 +45,31 @@
 #include "lwip/dns.h"
 #include "lwip/dhcp.h"
 
+// Poll lwIP every 128ms
+#define LWIP_TICK(tick) (((tick) & ~(SYSTICK_DISPATCH_NUM_SLOTS - 1) & 0x7f) == 0)
+
 u32_t sys_now(void) {
     return mp_hal_ticks_ms();
 }
 
-void pyb_lwip_poll(void) {
+STATIC void pyb_lwip_poll(void) {
     // Poll all the NICs for incoming data
     for (struct netif *netif = netif_list; netif != NULL; netif = netif->next) {
         if (netif->flags & NETIF_FLAG_LINK_UP) {
             mod_network_nic_type_t *nic = netif->state;
-            nic->poll_callback(nic, netif);
+            if (nic->poll_callback) {
+                nic->poll_callback(nic, netif);
+            }
         }
     }
     // Run the lwIP internal updates
     sys_check_timeouts();
+}
+
+void mod_network_lwip_poll_wrapper(uint32_t ticks_ms) {
+    if (LWIP_TICK(ticks_ms)) {
+        pendsv_schedule_dispatch(PENDSV_DISPATCH_LWIP, pyb_lwip_poll);
+    }
 }
 
 #endif
@@ -102,6 +115,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(network_route_obj, network_route);
 
 STATIC const mp_rom_map_elem_t mp_module_network_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_network) },
+
+    #if defined(MICROPY_HW_ETH_MDC)
+    { MP_ROM_QSTR(MP_QSTR_LAN), MP_ROM_PTR(&network_lan_type) },
+    #endif
 
     #if MICROPY_PY_WIZNET5K
     { MP_ROM_QSTR(MP_QSTR_WIZNET5K), MP_ROM_PTR(&mod_network_nic_type_wiznet5k) },
