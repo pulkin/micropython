@@ -141,7 +141,7 @@ LIB_SRC_C = $(addprefix lib/,\
 
 LIB_SRC_C += \
 	lib/oofatfs/ff.c \
-	lib/oofatfs/option/unicode.c
+	lib/oofatfs/ffunicode.c
 
 
 # include py core make definitions
