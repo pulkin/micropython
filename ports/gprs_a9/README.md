@@ -19,7 +19,7 @@
 Use [pyserial](https://github.com/pyserial) or any other terminal.
 
 ```bash
-~ miniterm.py /dev/ttyUSB1 115200 --raw
+miniterm.py /dev/ttyUSB1 115200 --raw
 ```
 
 ## Upload scipts
@@ -27,7 +27,7 @@ Use [pyserial](https://github.com/pyserial) or any other terminal.
 Use [ampy](https://github.com/pycampers/ampy).
 
 ```bash
-~ ampy --port /dev/ttyUSB1 put frozentest.py 
+ampy --port /dev/ttyUSB1 put frozentest.py 
 ```
 
 ## Run scipts
