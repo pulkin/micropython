@@ -3,14 +3,14 @@
 1. Install vendor tools: [documentation](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/installation_linux.html), [docker](https://github.com/Neutree/gprs_build)
 2. Clone this
    ```bash
-   # git clone git@github.com:Neutree/micropython.git
+   git clone git@github.com:Neutree/micropython.git
    ```
 3. Make
    ```bash
-   # cd micropython
-   # make -C mpy-cross
-   # cd ports/gprs_a9
-   # ./build.sh
+   cd micropython
+   make -C mpy-cross
+   cd ports/gprs_a9
+   ./build.sh
    ```
 4. Burn `micropython/ports/gprs_a9/hex/*` using `cooltools`
 
