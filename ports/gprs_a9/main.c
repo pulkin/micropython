@@ -88,6 +88,8 @@ typedef struct
     uint8_t* pParam1;
 } MicroPy_Event_t;
 
+extern mp_uint_t gc_helper_get_regs_and_sp(mp_uint_t*);
+
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;
@@ -107,15 +109,13 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 
 static char *stack_top;
 
-
 void gc_collect(void) {
-    // WARNING: This gc_collect implementation doesn't try to get root
-    // pointers from CPU registers, and thus may function incorrectly.
-    void *dummy;
+    //ESP8266-style
     gc_collect_start();
-    gc_collect_root(&dummy, ((mp_uint_t)stack_top - (mp_uint_t)&dummy) / sizeof(mp_uint_t));
+    mp_uint_t regs[8];
+    mp_uint_t sp = gc_helper_get_regs_and_sp(regs);
+    gc_collect_root((void**)sp, (mp_uint_t)(stack_top - sp) / sizeof(mp_uint_t));
     gc_collect_end();
-    // gc_dump_info();
 }
 
 void NORETURN nlr_jump_fail(void *val) {

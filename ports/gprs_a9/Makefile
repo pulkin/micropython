@@ -108,6 +108,7 @@ CFLAGS = $(INC) -Wshadow \
 		  -mips16 
 CFLAGS += $(CFLAGS_MOD)
 
+ASFLAGS = --warn -EL -march=xcpu -mtune=xcpu
 
 LIBS =
 
@@ -144,6 +145,9 @@ LIB_SRC_C += \
 	lib/oofatfs/ffunicode.c
 
 
+SRC_S = \
+	gchelper.s
+
 # include py core make definitions
 include $(TOP)/py/py.mk
 
@@ -153,13 +157,12 @@ OBJ_MP += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
 OBJ = $(OBJ_MP) $(PY_CORE_O)
 OBJ += $(addprefix $(BUILD_PATH)/, $(LIB_SRC_C:.c=.o))
+OBJ += $(addprefix $(BUILD_PATH)/, $(SRC_S:.s=.o))
 
 # List of sources for qstr extraction
 SRC_QSTR += $(SRC_C)  $(LIB_SRC_C) 
 # Append any auto-generated sources that are needed by sources listed in SRC_QSTR
 SRC_QSTR_AUTO_DEPS +=
-
-
 
 all: lod
 
