@@ -43,11 +43,11 @@ ampy --port /dev/ttyUSB1 put frozentest.py
 
 ## Platform-specific modules
 
-1. [`cellular`](#`cellular`): SMS, calls, connectivity
-2. [`usocket`](#`usocket`): sockets over GPRS
-3. [`ssl`](#`ssl`): SSL over sockets
-4. [`gps`](#`gps`): everything related to GPS and assisted positioning
-5. [`machine`](#`machine`): hardware and power control
+1. [`cellular`](#cellular): SMS, calls, connectivity
+2. [`usocket`](#usocket): sockets over GPRS
+3. [`ssl`](#ssl): SSL over sockets
+4. [`gps`](#gps): everything related to GPS and assisted positioning
+5. [`machine`](#machine): hardware and power control
 6. [Notes](#Misc)
 
 ### `cellular`
