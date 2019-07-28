@@ -156,6 +156,7 @@
 // #define MICROPY_HW_SOFTSPI_MIN_DELAY        (0)
 // #define MICROPY_HW_SOFTSPI_MAX_BAUDRATE     (ets_get_cpu_frequency() * 1000000 / 200) // roughly
 // #define MICROPY_PY_USSL                     (1)
+// #define MICROPY_SSL_AXTLS                   (1)
 // #define MICROPY_SSL_MBEDTLS                 (1)
 // #define MICROPY_PY_USSL_FINALISER           (1)
 // #define MICROPY_PY_WEBSOCKET                (1)
@@ -223,6 +224,7 @@ extern const struct _mp_obj_module_t i2c_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_json), (mp_obj_t)&mp_module_ujson }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&uos_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&usocket_module }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_ssl), (mp_obj_t)&mp_module_ussl }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_time), (mp_obj_t)&utime_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_random), (mp_obj_t)&mp_module_urandom }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_re), (mp_obj_t)&mp_module_ure }, \

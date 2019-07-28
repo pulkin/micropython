@@ -84,7 +84,11 @@ LD_OPTIONAL_OBJECTS :=
 ########################################3###
 INC += -I.
 INC += -I$(TOP)
-INC += -I$(TOP)/lib/netutils
+# INC += -I$(TOP)/lib/axtls/crypto
+# INC += -I$(TOP)/lib/axtls/ssl
+# INC += -I$(TOP)/extmod/axtls-include
+# INC += -I$(TOP)/extmod/crypto-algorithms
+# INC += -I$(TOP)/lib/netutils
 INC += -I$(BUILD_PATH_ABS)
 INC += -I${CSDK_PATH}/include \
        -I${CSDK_PATH}/include/std_inc \
@@ -114,6 +118,7 @@ LIBS =
 
 SRC_C = \
 	main.c \
+	posix_helpers.c \
 	fatal.c \
 	help.c \
 	modmachine.c \
@@ -144,10 +149,16 @@ LIB_SRC_C += \
 	lib/oofatfs/ff.c \
 	lib/oofatfs/ffunicode.c
 
-
 SRC_S = \
 	gchelper.s
 
+MICROPY_PY_USSL = 1
+MICROPY_SSL_AXTLS = 1
+MICROPY_PY_UHASHLIB = 1
+MICROPY_PY_UHASHLIB_SHA1 = 1
+MICROPY_PY_UHASHLIB_SHA256 = 1
+MICROPY_PY_UCRYPTOLIB = 1
+AXTLS_DEFS_EXTRA = -Dabort=abort_ -include time.h -DRT_MAX_PLAIN_LENGTH=1024 -DRT_EXTRA=4096
 # include py core make definitions
 include $(TOP)/py/py.mk
 
@@ -158,6 +169,10 @@ OBJ_MP += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ = $(OBJ_MP) $(PY_CORE_O)
 OBJ += $(addprefix $(BUILD_PATH)/, $(LIB_SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD_PATH)/, $(SRC_S:.s=.o))
+OBJ += $(addprefix $(BUILD_PATH)/, $(SRC_MOD:.c=.o))
+OBJ += $(addprefix $(BUILD_PATH)/, $(EXTMOD_SRC_C:.c=.o))
+OBJ += $(addprefix $(BUILD_PATH)/, $(DRIVERS_SRC_C:.c=.o))
+OBJ += ../../extmod/crypto-algorithms/sha256.o
 
 # List of sources for qstr extraction
 SRC_QSTR += $(SRC_C)  $(LIB_SRC_C) 
@@ -166,16 +181,11 @@ SRC_QSTR_AUTO_DEPS +=
 
 all: lod
 
-
 lod: ${HEX}
 	$(Q)$(MAKE) targetgen
 	$(Q)srecmap -c ${MAP_CFG_FILE} -m ${FLSH_MODEL} -b ${TARGET_FILE} ${HEX} ${LODBASE} ${STDOUT_NULL}
 	$(Q)python $(LODCOMBINE_TOOL) merge --platform $(PLATFORM_LOD_FILE) --app $(LOD_FILE) --out $(WITH_PLT_LOD_FILE)
 	$(ECHO) "BUILD OK"
-
-
-
-
 
 ${BIN}: $(OBJ)
 	$(ECHO) "LINK $@"
@@ -191,7 +201,7 @@ bin: ${BIN}
 	$(Q)${MKDIR} -p ${BIN_PATH}
 	$(Q)${CP} -f ${BIN} ${BIN_PATH}
 	$(Q)${CP} -f ${PLATFORM_ELF_PATH} ${BIN_PATH}
-	$(Q)${OBJCOPY} --strip-symbols=${STRIP_SYMBOL_FILE} ${BIN_PATH}/${FIRMWARE_NAME}.elf ${BIN_PATH}/${FIRMWARE_NAME}.elf
+	$(Q)${OBJCOPY} --strip-symbols=${STRIP_SYMBOL_FILE} -N send_packet -N calloc ${BIN_PATH}/${FIRMWARE_NAME}.elf ${BIN_PATH}/${FIRMWARE_NAME}.elf
 	$(Q)${ELFCOMBINE_TOOL} -e1 ${BIN_PATH}/${FIRMWARE_NAME}.elf -e2 ${BIN_PATH}/${PLATFORM_ELF_NAME} -o ${BIN_PATH}/${FIRMWARE_NAME}_final.elf
 	$(Q)${RM} -f ${BIN_PATH}/${FIRMWARE_NAME}.elf
 	$(Q)${RM} -f ${BIN_PATH}/${PLATFORM_ELF_NAME}
