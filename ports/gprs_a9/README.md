@@ -316,17 +316,17 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
 
 *Alias: `ssl`*
 
-Provides SSL over GPRS sockets.
+Provides SSL over GPRS sockets (axtls).
 
 #### Classes ####
 
 * `ssl_socket(af, type, proto)`
 
-    * `close()` *Not implemented*
-    * `read([size])` *Not implemented*
-    * `readinto(buf[, nbytes])` *Not implemented*
-    * `readline()` *Not implemented*
-    * `write(buf)` *Not implemented*
+    * `close()`
+    * `read([size])`
+    * `readinto(buf[, nbytes])`
+    * `readline()`
+    * `write(buf)`
 
 #### Methods ####
 
