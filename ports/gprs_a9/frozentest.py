@@ -257,7 +257,7 @@ if sim_present:
     print("Status changed:", cb, "->", cel.get_network_status())
     assert cb
 
-    import usocket as sock
+    import socket as sock
     loc_ip = sock.get_local_ip()
     print("Local IP:", loc_ip)
     assert len(loc_ip.split(".")) == 4
@@ -316,6 +316,17 @@ if sim_present:
     assert fr == host_ai[4]
     del s
     gc.collect()
+
+    import ssl
+    port = 443
+    s = sock.socket()
+    s.connect((host, port))
+    s = ssl.wrap_socket(s)
+    s.write(message_f)
+    response = s.read(len(response_expected))
+    print("SSL socket recvd:", response)
+    assert response == response_expected
+    s.close()
 
     assert sock.get_num_open() == 0
 
