@@ -33,11 +33,41 @@
 // don't want to use urandom's pRNG because then the user won't see a reproducible
 // random stream.
 
+static uint32_t glob_seed = 42;
+
+int rand_r(uint32_t *seed) {
+  uint32_t next = *seed;
+  uint32_t result;
+
+  next *= 1103515245;
+  next += 12345;
+  result = (unsigned int) (next / 65536) % 2048;
+
+  next *= 1103515245;
+  next += 12345;
+  result <<= 10;
+  result ^= (unsigned int) (next / 65536) % 1024;
+
+  next *= 1103515245;
+  next += 12345;
+  result <<= 10;
+  result ^= (unsigned int) (next / 65536) % 1024;
+
+  *seed = next;
+
+  return result;
+}
+
+uint32_t rng_get(void) {
+    return rand_r(&glob_seed);
+}
+
 // Yasmarang random number generator by Ilya Levin
 // http://www.literatecode.com/yasmarang
+/* static uint32_t pad = 0xeda4baba, n = 69, d = 233;
+static uint8_t dat = 0;
+
 static uint32_t pyb_rng_yasmarang(void) {
-    static uint32_t pad = 0xeda4baba, n = 69, d = 233;
-    static uint8_t dat = 0;
 
     pad += dat + d * n;
     pad = (pad << 3) + (pad >> 29);
@@ -50,5 +80,14 @@ static uint32_t pyb_rng_yasmarang(void) {
 
 uint32_t rng_get(void) {
     return pyb_rng_yasmarang();
+} */
+
+/* #undef rand
+uint32_t rand(void) {
+    return pyb_rng_yasmarang();
 }
+
+uint32_t rand_r(uint32_t *seed_p) {
+    return srand(*seed_p);
+}*/
 
