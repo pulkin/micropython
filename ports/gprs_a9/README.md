@@ -303,8 +303,6 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
 
 ### `ussl` ###
 
-*Not implemented*
-
 *Alias: `ssl`*
 
 Provides SSL over GPRS sockets.
@@ -312,8 +310,6 @@ Provides SSL over GPRS sockets.
 #### Classes ####
 
 * `ssl_socket(af, type, proto)`
-
-  *Not implemented*
 
     * `close()` *Not implemented*
     * `read([size])` *Not implemented*
@@ -324,8 +320,6 @@ Provides SSL over GPRS sockets.
 #### Methods ####
 
 * `wrap_socket(sock, server_side=False, keyfile=None, certfile=None, cert_reqs=CERT_NONE, ca_certs=None)`
-
-  *Not implemented*
 
   Takes a stream socket and returns an `SSLSocket`.
 
