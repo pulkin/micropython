@@ -334,7 +334,7 @@ void EventDispatch(API_Event_t* pEvent)
             Trace(1,"UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
             if(pEvent->param1 == UART1)
             {
-                MicroPy_Event_t* event = (MicroPy_Event_t*)malloc(sizeof(MicroPy_Event_t));
+                MicroPy_Event_t* event = (MicroPy_Event_t*)OS_Malloc(sizeof(MicroPy_Event_t));
                 if(!event)
                 {
                     Trace(1,"malloc fail");
