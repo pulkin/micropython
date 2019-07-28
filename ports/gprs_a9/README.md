@@ -1,3 +1,7 @@
+Your support is important for this port: please consider donation.
+
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2RZCNXCUCP4YG&source=url)
+
 ## Build
 
 1. Install vendor tools: [documentation](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/installation_linux.html), [docker](https://github.com/Neutree/gprs_build)
