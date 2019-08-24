@@ -7,7 +7,7 @@ Your support is important for this port: please consider donating.
 1. Install vendor tools: [documentation](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/installation_linux.html), [docker](https://github.com/Neutree/gprs_build)
 2. Clone this
    ```bash
-   git clone git@github.com:Neutree/micropython.git
+   git clone git@github.com:pulkin/micropython.git
    ```
 3. Make
    ```bash
