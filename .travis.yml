@@ -157,3 +157,11 @@ jobs:
         - sudo apt-get install libnewlib-arm-none-eabi
       script:
         - make ${MAKEOPTS} -C ports/teensy
+
+    # gprs_a9 port
+    - stage: test
+      env: NAME="gprs a9 port build"
+      script:
+        - cd ports/gprs_a9
+        - ./build.sh
+
