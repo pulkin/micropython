@@ -1,3 +1,6 @@
+CSDTK_PATH = ../../lib/csdtk42-linux
+LD_LIBRARY_PATH=$(CSDTK_PATH)/lib:$(CSDTK_PATH)/mingw32/usr/lib
+
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))  #获取当前正在执行的makefile的绝对路径
 PATH_CURR := $(strip $(patsubst %/, %, $(dir ${mkfile_path})))
 PATH_MICROPY := $(strip $(patsubst %/ports/, %, $(dir ${PATH_CURR})))
@@ -29,7 +32,7 @@ QSTR_DEFS = qstrdefsport.h
 FROZEN_MPY_DIR ?= modules
 
 #############################################
-CROSS_COMPILE = mips-elf-
+CROSS_COMPILE = $(CSDTK_PATH)/bin/mips-elf-
 MAKE = make
 LD  := $(CROSS_COMPILE)ld
 LDPP := $(CROSS_COMPILE)cpp -C -P -undef
@@ -51,7 +54,8 @@ PLATFORM_ELF_PATH := ${wildcard ${PLATFORM_ELF_FOLDER_PATH}/*.elf}
 PLATFORM_ELF_NAME := ${notdir ${PLATFORM_ELF_PATH}}
 PLATFORM_LOD_PATH := ${CSDK_PATH}/platform/csdk/${strip ${CFG_RELEASE}}
 PLATFORM_LOD_FILE := ${wildcard ${PLATFORM_LOD_PATH}/*.lod}
-ELFCOMBINE_TOOL := ${CSDK_PATH}/platform/compilation/elfCombine.pl
+ELFCOMBINE_TOOL := PATH=$PATH:$(CSDTK_PATH)/bin ${CSDK_PATH}/platform/compilation/elfCombine.pl
+SRECMAP_TOOL := $(CSDTK_PATH)/bin/srecmap 
 TARGET_FILE := ${BUILD_PATH_ABS}/targetgen
 MAP_CFG_FILE := ${CSDK_PATH}/platform/compilation/8955_map_cfg
 LODCOMBINE_TOOL := ${CSDK_PATH}/platform/compilation/lodtool.py
@@ -183,7 +187,7 @@ all: lod
 
 lod: ${HEX}
 	$(Q)$(MAKE) targetgen
-	$(Q)srecmap -c ${MAP_CFG_FILE} -m ${FLSH_MODEL} -b ${TARGET_FILE} ${HEX} ${LODBASE} ${STDOUT_NULL}
+	$(Q)$(SRECMAP_TOOL) -c ${MAP_CFG_FILE} -m ${FLSH_MODEL} -b ${TARGET_FILE} ${HEX} ${LODBASE} ${STDOUT_NULL}
 	$(Q)python $(LODCOMBINE_TOOL) merge --platform $(PLATFORM_LOD_FILE) --app $(LOD_FILE) --out $(WITH_PLT_LOD_FILE)
 	$(ECHO) "BUILD OK"
 
