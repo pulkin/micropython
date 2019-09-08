@@ -20,4 +20,7 @@
     url = https://github.com/NordicSemiconductor/nrfx.git
 [submodule "lib/GPRS_C_SDK"]
 	path = lib/GPRS_C_SDK
-    url = https://github.com/petrynchyn/GPRS_C_SDK
+    url = https://github.com/petrynchyn/GPRS_C_SDK.git
+[submodule "lib/csdtk42-linux"]
+    path = lib/csdtk42-linux
+    url = https://github.com/pulkin/csdtk42-linux.git
