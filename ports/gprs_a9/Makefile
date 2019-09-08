@@ -54,7 +54,7 @@ PLATFORM_ELF_PATH := ${wildcard ${PLATFORM_ELF_FOLDER_PATH}/*.elf}
 PLATFORM_ELF_NAME := ${notdir ${PLATFORM_ELF_PATH}}
 PLATFORM_LOD_PATH := ${CSDK_PATH}/platform/csdk/${strip ${CFG_RELEASE}}
 PLATFORM_LOD_FILE := ${wildcard ${PLATFORM_LOD_PATH}/*.lod}
-ELFCOMBINE_TOOL := PATH=$PATH:$(CSDTK_PATH)/bin ${CSDK_PATH}/platform/compilation/elfCombine.pl
+ELFCOMBINE_TOOL := PATH=$$PATH:$(CSDTK_PATH)/bin ${CSDK_PATH}/platform/compilation/elfCombine.pl
 SRECMAP_TOOL := $(CSDTK_PATH)/bin/srecmap 
 TARGET_FILE := ${BUILD_PATH_ABS}/targetgen
 MAP_CFG_FILE := ${CSDK_PATH}/platform/compilation/8955_map_cfg
@@ -182,6 +182,8 @@ OBJ += ../../extmod/crypto-algorithms/sha256.o
 SRC_QSTR += $(SRC_C)  $(LIB_SRC_C) 
 # Append any auto-generated sources that are needed by sources listed in SRC_QSTR
 SRC_QSTR_AUTO_DEPS +=
+
+$(info $$LD_LIBRARY_PATH is [${LD_LIBRARY_PATH}])
 
 all: lod
 
