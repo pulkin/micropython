@@ -18,6 +18,3 @@
 [submodule "lib/nrfx"]
 	path = lib/nrfx
 	url = https://github.com/NordicSemiconductor/nrfx.git
-[submodule "lib/GPRS_C_SDK"]
-	path = lib/GPRS_C_SDK
-	url = https://github.com/petrynchyn/GPRS_C_SDK
