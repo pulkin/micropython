@@ -13,7 +13,7 @@ env:
 
 # define the successive stages
 stages:
-  - name: test
+  - name: test-a9
 
 # define the jobs for the stages
 # order of the jobs has longest running first to optimise total time
@@ -159,9 +159,9 @@ jobs:
         - make ${MAKEOPTS} -C ports/teensy
 
     # gprs_a9 port
-    - stage: test
+    - stage: test-a9
       env: NAME="gprs a9 port build"
       script:
         - cd ports/gprs_a9
-        - make
+        - make -V=1
 
