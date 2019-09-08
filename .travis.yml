@@ -163,5 +163,5 @@ jobs:
       env: NAME="gprs a9 port build"
       script:
         - cd ports/gprs_a9
-        - make -V=1
+        - make V=1
 
