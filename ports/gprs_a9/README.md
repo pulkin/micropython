@@ -37,7 +37,7 @@ Use [pyserial](https://github.com/pyserial) or any other terminal.
 miniterm.py /dev/ttyUSB1 115200 --raw
 ```
 
-## Upload scipts
+## Upload scripts
 
 Use [ampy](https://github.com/pycampers/ampy).
 
@@ -45,7 +45,7 @@ Use [ampy](https://github.com/pycampers/ampy).
 ampy --port /dev/ttyUSB1 put frozentest.py 
 ```
 
-## Run scipts
+## Run scripts
 
 ```python
 >>> help()
@@ -59,7 +59,8 @@ ampy --port /dev/ttyUSB1 put frozentest.py
 3. [`ssl`](#ussl): SSL over sockets
 4. [`gps`](#gps): everything related to GPS and assisted positioning
 5. [`machine`](#machine): hardware and power control
-6. [Notes](#Misc)
+6. [`i2c`](#i2c): i2c implementation
+7. [Notes](#Misc)
 
 ### `cellular`
 
@@ -454,6 +455,134 @@ Provides power-related functions: power, watchdogs.
 * `watchdog_reset()`
 
   Resets the timer on the hardware watchdog.
+  
+### `i2c`
+
+Provides i2c functionality
+(see [sdk docs](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/function-api/iic.html))
+
+#### Exception classes ####
+
+* `I2CError(message)`
+
+#### Constants ####
+
+I2C_DEFAULT_TIME_OUT
+
+#### Enums ####
+
+* `id`
+
+  **Options**: `1`, `2`, `3`
+  
+  **Fallback**: `1`
+  
+  **Meaning**: I2C port ids (see devboard layout)
+  
+  
+* `freq`
+
+  **Options**: `100`, `400`
+  
+  **Fallback**: `100`
+  
+  **Meaning**: I2C SCL Frequency 100kHz, 400kHz respectively
+  
+
+#### Methods ####
+
+**Note**: parameters in square brackets are optional
+
+* `init(id, freq)`
+
+  Inintializes i2c on given port id and frequency
+    
+  **Args**:
+
+    * `id` (int): see enums;
+    * `freq` (int): see enums;
+  
+  **Returns**: `None` if everything ok.
+
+  **Raises** `I2CError` (see error message for more details)
+  
+  **Note**: Different ports can be initialized simultaneously
+
+* `close(id)`
+
+  Closes i2c on given port id
+  
+  **Args**:
+
+    * `id` (int): see enums;
+  
+  **Returns**: `None` if everything ok.
+
+  **Raises** `I2CError` (see error message for more details)
+  
+* `receive(id, slave_address, data_length, [timeout] = I2C_DEFAULT_TIME_OUT)`
+
+  Receive data given length from slave device
+  
+  **Args**:
+
+    * `id` (int): see enums;
+    * `slave_address` (int, hex): slave device communication address;
+    * `data_length` (int): data length needed to be received;
+    * `[timeout]` (int) = 10: timeout of receiving in ms
+  
+  **Returns**: bytes() of given length.
+
+  **Raises** `I2CError` (see error message for more details)
+  
+* `transmit(id, slave_address, data, [timeout] = I2C_DEFAULT_TIME_OUT)`
+
+  Transmit given data to slave device
+  
+  **Args**:
+
+    * `id` (int): see enums;
+    * `slave_address` (int, hex): slave device communication address;
+    * `data` (bytes): data needed to be transmitted;
+    * `[timeout]` (int) = 10: timeout of receiving in ms
+  
+  **Returns**: None if everything ok.
+
+  **Raises** `I2CError` (see error message for more details)
+  
+* `mem_receive(id, slave_address, memory_address, memory_size, data_length, [timeout] = I2C_DEFAULT_TIME_OUT)`
+
+  Read data given length from slave device's memory by its address
+  
+  **Args**:
+
+    * `id` (int): see enums;
+    * `slave_address` (int, hex): slave device communication address;
+    * `memory_address` (int, hex): slave device memory read address;
+    * `memory_size` (int, hex): slave device memory read size;
+    * `data_length` (int): data length needed to be read;
+    * `[timeout]` (int) = 10: timeout of reading in ms
+  
+  **Returns**: bytes() of given length.
+
+  **Raises** `I2CError` (see error message for more details)
+  
+* `mem_transmit(id, slave_address, memory_address, memory_size, data, [timeout] = I2C_DEFAULT_TIME_OUT)`
+
+  Write given data to slave device's memory by address
+  
+  **Args**:
+
+    * `id` (int): see enums;
+    * `slave_address` (int, hex): slave device communication address;
+    * `memory_address` (int, hex): slave device memory write address;
+    * `memory_size` (int, hex): slave device memory write size;
+    * `data` (bytes): data needed to be written;
+    * `[timeout]` (int) = 10: timeout of writing in ms
+  
+  **Returns**: None if everything ok.
+
+  **Raises** `I2CError` (see error message for more details)
 
 ## Misc ##
 
