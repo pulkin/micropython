@@ -10,10 +10,11 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- script: sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
+  displayName: 'Install dependencies'
 
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    cd ports/gprs_a9
+    make
+  displayName: 'Build a9g'
+
