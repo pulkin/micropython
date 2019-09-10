@@ -13,7 +13,7 @@ env:
 
 # define the successive stages
 stages:
-  - name: test-a9
+  - name: test
 
 # define the jobs for the stages
 # order of the jobs has longest running first to optimise total time
@@ -159,7 +159,7 @@ jobs:
         - make ${MAKEOPTS} -C ports/teensy
 
     # gprs_a9 port
-    - stage: test-a9
+    - stage: test
       env: NAME="gprs a9 port build"
       install:
         - sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
