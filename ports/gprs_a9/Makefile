@@ -1,11 +1,14 @@
-CSDTK_PATH = ../../lib/csdtk42-linux
-LD_LIBRARY_PATH=$(CSDTK_PATH)/lib:$(CSDTK_PATH)/mingw32/usr/lib
-
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))  #获取当前正在执行的makefile的绝对路径
 PATH_CURR := $(strip $(patsubst %/, %, $(dir ${mkfile_path})))
 PATH_MICROPY := $(strip $(patsubst %/ports/, %, $(dir ${PATH_CURR})))
 CSDK_PATH := ${PATH_MICROPY}/lib/GPRS_C_SDK
 include ../../py/mkenv.mk
+
+CSDTK_PATH = ${PATH_MICROPY}/lib/csdtk42-linux
+# mips-elf-* compiler libraries
+export LD_LIBRARY_PATH=$(CSDTK_PATH)/lib:$(CSDTK_PATH)/mingw32/usr/lib
+# TODO: integrate this
+$(shell ./build-libcsdk.sh)
 
 include ${CSDK_PATH}/platform/csdk/memd.def
 include ${CSDK_PATH}/platform/chip/defs/8955_base.def
@@ -54,7 +57,7 @@ PLATFORM_ELF_PATH := ${wildcard ${PLATFORM_ELF_FOLDER_PATH}/*.elf}
 PLATFORM_ELF_NAME := ${notdir ${PLATFORM_ELF_PATH}}
 PLATFORM_LOD_PATH := ${CSDK_PATH}/platform/csdk/${strip ${CFG_RELEASE}}
 PLATFORM_LOD_FILE := ${wildcard ${PLATFORM_LOD_PATH}/*.lod}
-ELFCOMBINE_TOOL := PATH=$PATH:$(CSDTK_PATH)/bin ${CSDK_PATH}/platform/compilation/elfCombine.pl
+ELFCOMBINE_TOOL := PATH=$$PATH:$(CSDTK_PATH)/bin ${CSDK_PATH}/platform/compilation/elfCombine.pl
 SRECMAP_TOOL := $(CSDTK_PATH)/bin/srecmap 
 TARGET_FILE := ${BUILD_PATH_ABS}/targetgen
 MAP_CFG_FILE := ${CSDK_PATH}/platform/compilation/8955_map_cfg
