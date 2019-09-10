@@ -19,5 +19,5 @@ steps:
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: 'ports/gprs_a9/hex/firmware_debug_full.lod'
-    ArtifactName: 'a9g micropython image: firmware_debug_full.lod'
+    ArtifactName: 'gprs-a9-micropython-image'
     publishLocation: 'Container'
