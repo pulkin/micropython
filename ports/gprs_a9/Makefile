@@ -1,13 +1,14 @@
-CSDTK_PATH = $(abspath ../../lib/csdtk42-linux)
-export LD_LIBRARY_PATH=$(CSDTK_PATH)/lib:$(CSDTK_PATH)/mingw32/usr/lib
-# This should be integrated in the future
-$(shell ./build-libcsdk.sh)
-
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))  #获取当前正在执行的makefile的绝对路径
 PATH_CURR := $(strip $(patsubst %/, %, $(dir ${mkfile_path})))
 PATH_MICROPY := $(strip $(patsubst %/ports/, %, $(dir ${PATH_CURR})))
 CSDK_PATH := ${PATH_MICROPY}/lib/GPRS_C_SDK
 include ../../py/mkenv.mk
+
+CSDTK_PATH = ${PATH_MICROPY}/lib/csdtk42-linux
+# mips-elf-* compiler libraries
+export LD_LIBRARY_PATH=$(CSDTK_PATH)/lib:$(CSDTK_PATH)/mingw32/usr/lib
+# TODO: integrate this
+$(shell ./build-libcsdk.sh)
 
 include ${CSDK_PATH}/platform/csdk/memd.def
 include ${CSDK_PATH}/platform/chip/defs/8955_base.def
@@ -184,8 +185,6 @@ OBJ += ../../extmod/crypto-algorithms/sha256.o
 SRC_QSTR += $(SRC_C)  $(LIB_SRC_C) 
 # Append any auto-generated sources that are needed by sources listed in SRC_QSTR
 SRC_QSTR_AUTO_DEPS +=
-
-$(info ldconfig is [${shell ldconfig -p | grep csdtk}])
 
 all: lod
 

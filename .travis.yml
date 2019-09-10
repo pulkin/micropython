@@ -165,7 +165,5 @@ jobs:
         - sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
       script:
         - cd ports/gprs_a9
-        - printenv LD_LIBRARY_PATH
-        - find ../../ -name libcloog.so.0
-        - make V=1
+        - make
 
