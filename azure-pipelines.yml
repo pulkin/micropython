@@ -20,10 +20,10 @@ steps:
     repositoryName: 'pulkin/micropython'
     action: 'edit'
     target: '$(Build.SourceVersion)'
-    tag: 'a9-dev'
-    title: '`master`'
+    tag: 'latest-build'
+    title: 'Latest master build'
     releaseNotesSource: 'input'
-    releaseNotes: 'Latest succesful build of `master`'
+    releaseNotes: 'This is an automatic build triggered on `master` changes'
     assets: 'ports/gprs_a9/hex/firmware_debug_full.lod'
     assetUploadMode: 'replace'
     isPreRelease: true
