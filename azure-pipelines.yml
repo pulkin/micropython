@@ -16,11 +16,10 @@ steps:
     make
   displayName: 'Build a9g'
 
-- task: PublishBuildArtifacts@1
+- task: PublishPipelineArtifact@1
   inputs:
-    PathtoPublish: 'ports/gprs_a9/hex/firmware_debug_full.lod'
-    ArtifactName: 'gprs-a9-micropython-image'
-    publishLocation: 'Container'
+    targetPath: '$(Pipeline.Workspace)/ports/gprs_a9/hex/firmware_debug_full.lod'
+    artifact: 'gprs-a9-micropython-image'
 
 - task: GitHubRelease@0
   inputs:
@@ -32,4 +31,4 @@ steps:
     releaseNotesSource: 'input'
     assetUploadMode: 'replace'
     isDraft: true
-    compareWith: 'lastFullRelease'
+    addChangeLog: false
