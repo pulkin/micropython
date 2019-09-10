@@ -18,7 +18,7 @@ steps:
 
 - task: PublishPipelineArtifact@1
   inputs:
-    targetPath: '$(Pipeline.Workspace)/ports/gprs_a9/hex/firmware_debug_full.lod'
+    targetPath: 'ports/gprs_a9/hex/firmware_debug_full.lod'
     artifact: 'gprs-a9-micropython-image'
 
 - task: GitHubRelease@0
