@@ -1,5 +1,7 @@
-CSDTK_PATH = ../../lib/csdtk42-linux
-LD_LIBRARY_PATH=$(CSDTK_PATH)/lib:$(CSDTK_PATH)/mingw32/usr/lib
+CSDTK_PATH = $(abspath ../../lib/csdtk42-linux)
+export LD_LIBRARY_PATH=$(CSDTK_PATH)/lib:$(CSDTK_PATH)/mingw32/usr/lib
+# This should be integrated in the future
+$(shell ./build-libcsdk.sh)
 
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))  #获取当前正在执行的makefile的绝对路径
 PATH_CURR := $(strip $(patsubst %/, %, $(dir ${mkfile_path})))
@@ -183,7 +185,7 @@ SRC_QSTR += $(SRC_C)  $(LIB_SRC_C)
 # Append any auto-generated sources that are needed by sources listed in SRC_QSTR
 SRC_QSTR_AUTO_DEPS +=
 
-$(info $$LD_LIBRARY_PATH is [${LD_LIBRARY_PATH}])
+$(info ldconfig is [${shell ldconfig -p | grep csdtk}])
 
 all: lod
 
