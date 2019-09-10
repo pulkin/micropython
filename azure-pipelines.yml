@@ -21,6 +21,7 @@ steps:
     action: 'edit'
     target: '$(Build.SourceVersion)'
     tag: 'a9-dev'
+    title: '`master`'
     releaseNotesSource: 'input'
     releaseNotes: 'Latest succesful build of `master`'
     assets: 'ports/gprs_a9/hex/firmware_debug_full.lod'
