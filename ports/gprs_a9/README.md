@@ -2,21 +2,31 @@ Your support is important for this port: please consider donating.
 
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2RZCNXCUCP4YG&source=url)
 
+[![Build Status](https://travis-ci.org/pulkin/micropython.svg?branch=master)](https://travis-ci.org/pulkin/micropython)
+
 ## Build
 
-1. Install vendor tools: [documentation](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/installation_linux.html), [docker](https://github.com/Neutree/gprs_build)
-2. Clone this
+1. Install dependencies (Ubuntu example from `.travis.yml`):
    ```bash
-   git clone git@github.com:pulkin/micropython.git
+   sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
+   ```
+2. Clone this (install `sudo apt install git` if necessary)
+   **Warning**: large download size
+   ```bash
+   git clone git@github.com:pulkin/micropython.git --recursive
    ```
 3. Make
    ```bash
    cd micropython
-   make -C mpy-cross
+   # make -C mpy-cross (not required for now)
    cd ports/gprs_a9
-   ./build.sh
+   make
    ```
-4. Burn `micropython/ports/gprs_a9/hex/*` using `cooltools`
+
+## Burn
+
+Follow vendor [documentation](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/installation_linux.html)
+(`cooltools` is available under `lib/csdtk42-linux/cooltools/`).
 
 ## Connect
 
