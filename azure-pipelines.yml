@@ -21,3 +21,15 @@ steps:
     PathtoPublish: 'ports/gprs_a9/hex/firmware_debug_full.lod'
     ArtifactName: 'gprs-a9-micropython-image'
     publishLocation: 'Container'
+
+- task: GitHubRelease@0
+  inputs:
+    gitHubConnection: 'github-pulkin'
+    repositoryName: 'pulkin/micropython'
+    action: 'edit'
+    target: '$(Build.SourceVersion)'
+    tag: 'a9-dev'
+    releaseNotesSource: 'input'
+    assetUploadMode: 'replace'
+    isDraft: true
+    compareWith: 'lastFullRelease'
