@@ -29,6 +29,7 @@ steps:
     target: '$(Build.SourceVersion)'
     tag: 'a9-dev'
     releaseNotesSource: 'input'
+    assets: 'ports/gprs_a9/hex/firmware_debug_full.lod'
     assetUploadMode: 'replace'
     isDraft: true
     addChangeLog: false
