@@ -26,6 +26,123 @@ jobs:
       make $(MAKEOPTS) -C ports/stm32 BOARD=STM32L476DISC
     displayName: 'Build'
 
+- job: 'qemu-arm port build and tests'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      sudo apt-get install gcc-arm-none-eabi
+      sudo apt-get install libnewlib-arm-none-eabi
+      sudo apt-get install qemu-system
+      arm-none-eabi-gcc --version
+      qemu-system-arm --version
+    displayName: 'Install dependencies'
+
+  - script: |
+      make $(MAKEOPTS) -C mpy-cross
+      make $(MAKEOPTS) -C ports/qemu-arm -f Makefile.test test
+    displayName: 'Build'
+
+- job: 'unix coverage build and tests'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      sudo pip install cpp-coveralls
+      gcc --version
+      python3 --version
+    displayName: 'Install dependencies'
+
+  - script: |
+      make $(MAKEOPTS) -C mpy-cross
+      make $(MAKEOPTS) -C ports/unix deplibs
+      make $(MAKEOPTS) -C ports/unix coverage
+      # run the main test suite
+      (cd tests && MICROPY_CPYTHON3=python3 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests)
+      (cd tests && MICROPY_CPYTHON3=python3 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -d thread)
+      (cd tests && MICROPY_CPYTHON3=python3 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests --emit native)
+      (cd tests && MICROPY_CPYTHON3=python3 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests --via-mpy -d basics float micropython)
+      (cd tests && MICROPY_CPYTHON3=python3 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests --via-mpy --emit native -d basics float micropython)
+      # test when input script comes from stdin
+      cat tests/basics/0prelim.py | ports/unix/micropython_coverage | grep -q 'abc'
+      # run coveralls coverage analysis (try to, even if some builds/tests failed)
+      (cd ports/unix && coveralls --root ../.. --build-root . --gcov $(which gcov) --gcov-options '\-o build-coverage/' --include py --include extmod)
+    displayName: 'Test'
+
+- job: 'unix port build and tests'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      make $(MAKEOPTS) -C mpy-cross
+      make $(MAKEOPTS) -C ports/unix deplibs
+      make $(MAKEOPTS) -C ports/unix
+      make $(MAKEOPTS) -C ports/unix test
+    displayName: 'Build'
+
+- job: 'unix nanbox port build and tests'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      sudo apt-get install gcc-multilib libffi-dev:i386
+    displayName: 'Install dependencies'
+
+  - script: |
+      make $(MAKEOPTS) -C mpy-cross
+      make $(MAKEOPTS) -C ports/unix deplibs
+      make $(MAKEOPTS) -C ports/unix nanbox
+      (cd tests && MICROPY_CPYTHON3=python3 MICROPY_MICROPYTHON=../ports/unix/micropython_nanbox ./run-tests)
+    displayName: 'Build'
+
+- job: 'unix stackless port build and tests'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      make $(MAKEOPTS) -C mpy-cross
+      make $(MAKEOPTS) -C ports/unix deplibs
+      make $(MAKEOPTS) -C ports/unix CFLAGS_EXTRA="-DMICROPY_STACKLESS=1 -DMICROPY_STACKLESS_STRICT=1"
+      make $(MAKEOPTS) -C ports/unix test
+    displayName: 'Build'
+
+- job: 'windows port build via mingw'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      sudo apt-get install gcc-mingw-w64
+    displayName: 'Install dependencies'
+
+  - script: |
+      make $(MAKEOPTS) -C mpy-cross
+      make $(MAKEOPTS) -C ports/windows CROSS_COMPILE=i686-w64-mingw32-
+    displayName: 'Build'
+
 - job: gprs_a9
   pool:
     vmImage: 'ubuntu-latest'
