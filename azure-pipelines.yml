@@ -1,30 +1,59 @@
-pool:
-  vmImage: 'ubuntu-latest'
+variables:
+  MAKEOPTS: "-j4"
 
-steps:
-- checkout: self
-  submodules: recursive
+jobs:
+- job: stm32
+  pool:
+    vmImage: 'ubuntu-latest'
 
-- script: sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
-  displayName: 'Install dependencies'
+  steps:
+  - checkout: self
+    submodules: recursive
 
-- script: |
-    cd ports/gprs_a9
-    make
-  displayName: 'Build a9g'
+  - script: |
+      sudo add-apt-repository -y ppa:team-gcc-arm-embedded/ppa
+      sudo apt-get update -qq || true
+      sudo apt-get install gcc-arm-embedded
+      sudo apt-get install libnewlib-arm-none-eabi
+      arm-none-eabi-gcc --version
+    displayName: 'Install dependencies'
 
-- task: GitHubRelease@0
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
-  inputs:
-    gitHubConnection: 'github-pulkin'
-    repositoryName: 'pulkin/micropython'
-    action: 'edit'
-    target: '$(Build.SourceVersion)'
-    tag: 'latest-build'
-    title: 'Latest master build'
-    releaseNotesSource: 'input'
-    releaseNotes: 'This is an automatic build triggered on `master` changes'
-    assets: 'ports/gprs_a9/hex/firmware_debug_full.lod'
-    assetUploadMode: 'replace'
-    isPreRelease: true
-    addChangeLog: false
+  - script: |
+      make $(MAKEOPTS) -C mpy-cross
+      make $(MAKEOPTS) -C ports/stm32
+      make $(MAKEOPTS) -C ports/stm32 BOARD=PYBV11 MICROPY_PY_WIZNET5K=5200 MICROPY_PY_CC3K=1
+      make $(MAKEOPTS) -C ports/stm32 BOARD=STM32F769DISC
+      make $(MAKEOPTS) -C ports/stm32 BOARD=STM32L476DISC
+    displayName: 'Build'
+
+- job: gprs_a9
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
+    displayName: 'Install dependencies'
+
+  - script: |
+      cd ports/gprs_a9
+      make
+    displayName: 'Build'
+
+  - task: GitHubRelease@0
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    inputs:
+      gitHubConnection: 'github-pulkin'
+      repositoryName: 'pulkin/micropython'
+      action: 'edit'
+      target: '$(Build.SourceVersion)'
+      tag: 'latest-build'
+      title: 'Latest master build'
+      releaseNotesSource: 'input'
+      releaseNotes: 'This is an automatic build triggered on `master` changes'
+      assets: 'ports/gprs_a9/hex/firmware_debug_full.lod'
+      assetUploadMode: 'replace'
+      isPreRelease: true
+      addChangeLog: false
