@@ -3,6 +3,7 @@ variables:
 
 jobs:
 - job: port_stm32
+  displayName: 'stm32 port build'
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -27,6 +28,7 @@ jobs:
     displayName: 'Build'
 
 - job: port_qemu_arm
+  displayName: 'qemu-arm port build and tests'
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -48,6 +50,7 @@ jobs:
     displayName: 'Build'
 
 - job: test_unix
+  displayName: 'unix coverage build and tests'
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -78,6 +81,7 @@ jobs:
     displayName: 'Test'
 
 - job: port_unix
+  displayName: 'unix port build and tests'
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -93,6 +97,7 @@ jobs:
     displayName: 'Build'
 
 - job: port_unix_nanbox
+  displayName: 'unix nanbox port build and tests'
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -112,6 +117,7 @@ jobs:
     displayName: 'Build'
 
 - job: port_unix_stackless
+  displayName: 'unix stackless port build and tests'
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -127,6 +133,7 @@ jobs:
     displayName: 'Build'
 
 - job: port_mingw
+  displayName: 'windows port build via mingw'
   pool:
     vmImage: 'ubuntu-latest'
 
@@ -144,6 +151,7 @@ jobs:
     displayName: 'Build'
 
 - job: port_gprs_a9
+  displayName: 'gprs_a9 build'
   pool:
     vmImage: 'ubuntu-latest'
 
