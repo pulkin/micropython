@@ -7,6 +7,9 @@ Your support is important for this port: please consider donating.
 
 ## Build
 
+The firmware image is automatically built by Azure pipelines: [download](https://github.com/pulkin/micropython/releases/tag/latest-build).
+Follow these steps to build from sources:
+
 1. Install dependencies (Ubuntu example from `.travis.yml`):
    ```bash
    sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
