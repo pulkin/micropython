@@ -106,6 +106,8 @@ jobs:
     submodules: recursive
 
   - script: |
+      sudo apt-get update
+      apt-cache policy libffi-dev
       sudo apt-get install gcc-multilib libffi-dev:i386
     displayName: 'Install dependencies'
 
