@@ -265,6 +265,7 @@ stages:
   jobs:
   - job: github
     displayName: 'Github release'
+    steps:
     - task: GitHubRelease@0
       condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
       inputs:
