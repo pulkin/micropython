@@ -591,5 +591,5 @@ I2C_DEFAULT_TIME_OUT
 
 * The module halts on fatal errors; create an empty file `.reboot_on_fatal` if a reboot is desired
 * The size of micropython heap is roughly 512 Kb. 400k can be realistically allocated right after hard reset.
-* SSL is currently unstable and needs further debugging.
+* ~~SSL~~ sockets are currently unstable and need further investigation (the module halts after around 10 consequitive connections).
 
