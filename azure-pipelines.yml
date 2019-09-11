@@ -92,7 +92,7 @@ jobs:
       make $(MAKEOPTS) -C ports/unix test
     displayName: 'Build'
 
-- job: 'unix nanbox port build and tests'
+- job: port_unix_nanbox
   pool:
     vmImage: 'ubuntu-latest'
 
