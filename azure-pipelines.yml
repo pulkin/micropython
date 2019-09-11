@@ -106,8 +106,8 @@ jobs:
     submodules: recursive
 
   - script: |
+      sudo dpkg --add-architecture i386
       sudo apt-get update
-      apt-cache policy libffi-dev
       sudo apt-get install gcc-multilib libffi-dev:i386
     displayName: 'Install dependencies'
 
@@ -152,6 +152,84 @@ jobs:
       make $(MAKEOPTS) -C ports/windows CROSS_COMPILE=i686-w64-mingw32-
     displayName: 'Build'
 
+- job: port_nrf
+  displayName: 'nrf port build'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      sudo apt-get install gcc-arm-none-eabi
+      sudo apt-get install libnewlib-arm-none-eabi
+      arm-none-eabi-gcc --version
+    displayName: 'Install dependencies'
+
+  - script: |
+      make ${MAKEOPTS} -C ports/nrf
+    displayName: 'Build'
+
+- job: port_bare_arm
+  displayName: 'bare-arm and minimal ports build'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      sudo apt-get install gcc-arm-none-eabi
+      sudo apt-get install libnewlib-arm-none-eabi
+      arm-none-eabi-gcc --version
+    displayName: 'Install dependencies'
+
+  - script: |
+      make ${MAKEOPTS} -C ports/bare-arm
+      make ${MAKEOPTS} -C ports/minimal CROSS=1 build/firmware.bin
+      ls -l ports/minimal/build/firmware.bin
+      tools/check_code_size.sh
+    displayName: 'Build'
+
+- job: port_cc3200
+  displayName: 'cc3200 port build'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      sudo apt-get install gcc-arm-none-eabi
+      sudo apt-get install libnewlib-arm-none-eabi
+    displayName: 'Install dependencies'
+
+  - script: |
+      make ${MAKEOPTS} -C ports/cc3200 BTARGET=application BTYPE=release
+      make ${MAKEOPTS} -C ports/cc3200 BTARGET=bootloader  BTYPE=release
+    displayName: 'Build'
+
+- job: port_teensy
+  displayName: 'teensy port build'
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - script: |
+      sudo apt-get install gcc-arm-none-eabi
+      sudo apt-get install libnewlib-arm-none-eabi
+    displayName: 'Install dependencies'
+
+  - script: |
+      make ${MAKEOPTS} -C ports/teensy
+    displayName: 'Build'
+
 - job: port_gprs_a9
   displayName: 'gprs_a9 build'
   pool:
@@ -169,7 +247,7 @@ jobs:
       make
     displayName: 'Build'
 
-  - task: GitHubRelease@0
+  - task:
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     inputs:
       gitHubConnection: 'github-pulkin'
