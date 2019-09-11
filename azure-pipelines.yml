@@ -1,4 +1,7 @@
 variables:
+  GITHUB_OAUTH_CONNECTION_NAME: 'github-pulkin'
+  GITHUB_MICROPY_REPO: 'pulkin/micropython'
+  GITHUB_RELEASE_TAG: 'latest-build'
   MAKEOPTS: "-j4"
 
 jobs:
@@ -250,11 +253,11 @@ jobs:
   - task: GitHubRelease@0
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     inputs:
-      gitHubConnection: $(MICROPY_GITHUB_REPO)
-      repositoryName: 'pulkin/micropython'
+      gitHubConnection: $(GITHUB_OAUTH_CONNECTION_NAME)
+      repositoryName: $(GITHUB_MICROPY_REPO)
       action: 'edit'
       target: '$(Build.SourceVersion)'
-      tag: 'latest-build'
+      tag: $(GITHUB_RELEASE_TAG)
       title: 'Latest master build'
       releaseNotesSource: 'input'
       releaseNotes: 'This is an automatic build triggered on `master` changes'
@@ -262,3 +265,4 @@ jobs:
       assetUploadMode: 'replace'
       isPreRelease: true
       addChangeLog: false
+
