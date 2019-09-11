@@ -250,7 +250,7 @@ jobs:
   - task: GitHubRelease@0
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     inputs:
-      gitHubConnection: 'github-pulkin'
+      gitHubConnection: $(MICROPY_GITHUB_REPO)
       repositoryName: 'pulkin/micropython'
       action: 'edit'
       target: '$(Build.SourceVersion)'
