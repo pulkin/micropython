@@ -77,7 +77,7 @@ jobs:
       # test when input script comes from stdin
       cat tests/basics/0prelim.py | ports/unix/micropython_coverage | grep -q 'abc'
       # run coveralls coverage analysis (try to, even if some builds/tests failed)
-      (cd ports/unix && coveralls --root ../.. --build-root . --gcov $(which gcov) --gcov-options '\-o build-coverage/' --include py --include extmod)
+      # (cd ports/unix && coveralls --root ../.. --build-root . --gcov $(which gcov) --gcov-options '\-o build-coverage/' --include py --include extmod)
     displayName: 'Test'
 
 - job: port_unix
