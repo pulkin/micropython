@@ -272,6 +272,11 @@ stages:
         buildType: 'current'
         targetPath: '$(Build.BinariesDirectory)'
 
+    - script: |
+        mv $(Build.BinariesDirectory)/build_gprs_a9/*.lod $(Build.BinariesDirectory)
+        rm -rf $(Build.BinariesDirectory)/build_gprs_a9
+      displayName: 'Sort and filter binaries'
+
     - task: GitHubRelease@0
       displayName: 'Publish on Github releases'
       condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
@@ -296,7 +301,7 @@ stages:
             Firmware files:
             - [firmware_debug_full.lod](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_full.lod)
             - [firmware_debug_flash.lod](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_flash.lod)
-        assets: '$(Build.BinariesDirectory)/build_gprs_a9/firmware_debug_full.lod'
+        assets: '$(Build.BinariesDirectory)/*'
         assetUploadMode: 'replace'
         isPreRelease: true
         addChangeLog: false
