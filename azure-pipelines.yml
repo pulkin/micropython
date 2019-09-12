@@ -286,16 +286,18 @@ stages:
         tag: $(GITHUB_RELEASE_TAG)
         title: 'Latest master build'
         releaseNotesSource: 'input'
-        releaseNotes: >
-          'The latest successful `master` build.'
+        releaseNotes: |
+          The latest successful `master` build.
 
-          'gprs_a9'
-          '-------'
+          Firmware files
+          --------------
 
-          'Burn instructions: use [cooltools](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/burn-debug.html)'
+          - gprs_a9
 
-          'Firmware files:'
-          '- https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_full.lod'
+            Burn instructions: use [cooltools](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/burn-debug.html)
+
+            Firmware files:
+            - [firmware_debug_full.lod](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_full.lod)
         assets: '$(Build.BinariesDirectory)/build_gprs_a9/firmware_debug_full.lod'
         assetUploadMode: 'replace'
         isPreRelease: true
