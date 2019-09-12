@@ -270,7 +270,7 @@ stages:
       displayName: 'Download all builds'
       inputs:
         buildType: 'current'
-        targetPath: '$(Pipeline.Workspace)'
+        targetPath: '$(Build.BinariesDirectory)'
 
     - script: 'ls $(Pipeline.Workspace)'
       displayName: 'ls debug'
@@ -285,9 +285,9 @@ stages:
         target: '$(Build.SourceVersion)'
         tag: $(GITHUB_RELEASE_TAG)
         title: 'Latest master build'
-        releaseNotesSource: 'input'
-        releaseNotes: 'This is an automatic build triggered on `master` changes'
-        assets: '$(Pipeline.Workspace)/firmware_debug_full.lod'
+        releaseNotesSource: 'file'
+        releaseNotesFile: '.azure-templates/github-release.rst'
+        assets: '$(Build.BinariesDirectory)/build_gprs_a9/firmware_debug_full.lod'
         assetUploadMode: 'replace'
         isPreRelease: true
         addChangeLog: false
