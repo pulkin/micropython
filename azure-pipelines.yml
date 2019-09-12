@@ -256,17 +256,27 @@ stages:
     - task: PublishPipelineArtifact@1
       displayName: 'Collect the build'
       inputs:
-        targetPath: '$(Pipeline.Workspace)/ports/gprs_a9/hex'
+        targetPath: '$(Build.Repository.LocalPath)/ports/gprs_a9/hex'
         artifact: 'build_gprs_a9'
 
 - stage: publish
   displayName: 'Publish builds'
   dependsOn: build
   jobs:
-  - job: github
-    displayName: 'Github release'
+  - job: publish
+    displayName: 'Download and publish builds'
     steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download all builds'
+      inputs:
+        buildType: 'current'
+        targetPath: '$(Build.BinariesDirectory)'
+
+    - script: 'ls $(Pipeline.Workspace)'
+      displayName: 'ls debug'
+
     - task: GitHubRelease@0
+      displayName: 'Publish on Github releases'
       condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
       inputs:
         gitHubConnection: $(GITHUB_OAUTH_CONNECTION_NAME)
@@ -275,9 +285,10 @@ stages:
         target: '$(Build.SourceVersion)'
         tag: $(GITHUB_RELEASE_TAG)
         title: 'Latest master build'
-        releaseNotesSource: 'input'
-        releaseNotes: 'This is an automatic build triggered on `master` changes'
-        assets: 'ports/gprs_a9/hex/firmware_debug_full.lod'
+        releaseNotesSource: 'file'
+        releaseNotesFile: '.azure-templates/github-release.rst'
+        assets: '$(Build.BinariesDirectory)/build_gprs_a9/firmware_debug_full.lod'
         assetUploadMode: 'replace'
         isPreRelease: true
         addChangeLog: false
+
