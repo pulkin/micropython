@@ -263,19 +263,20 @@ stages:
   displayName: 'Publish builds'
   dependsOn: build
   jobs:
-  - task: DownloadPipelineArtifact@2
-    displayName: 'Download all builds'
-    inputs:
-      buildType: 'current'
-      targetPath: '$(Pipeline.Workspace)'
-
-  - script: 'ls $(Pipeline.Workspace)'
-    displayName: 'ls debug'
-
-  - job: github
-    displayName: 'Github release'
+  - job: publish
+    displayName: 'Download and publish builds'
     steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download all builds'
+      inputs:
+        buildType: 'current'
+        targetPath: '$(Pipeline.Workspace)'
+
+    - script: 'ls $(Pipeline.Workspace)'
+      displayName: 'ls debug'
+
     - task: GitHubRelease@0
+      displayName: 'Publish on Github releases'
       condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
       inputs:
         gitHubConnection: $(GITHUB_OAUTH_CONNECTION_NAME)
