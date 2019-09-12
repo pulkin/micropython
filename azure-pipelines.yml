@@ -272,9 +272,6 @@ stages:
         buildType: 'current'
         targetPath: '$(Build.BinariesDirectory)'
 
-    - script: 'ls $(Pipeline.Workspace)'
-      displayName: 'ls debug'
-
     - task: GitHubRelease@0
       displayName: 'Publish on Github releases'
       condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
@@ -298,6 +295,7 @@ stages:
 
             Firmware files:
             - [firmware_debug_full.lod](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_full.lod)
+            - [firmware_debug_flash.lod](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_flash.lod)
         assets: '$(Build.BinariesDirectory)/build_gprs_a9/firmware_debug_full.lod'
         assetUploadMode: 'replace'
         isPreRelease: true
