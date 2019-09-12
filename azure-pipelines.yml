@@ -253,9 +253,6 @@ stages:
         make
       displayName: 'Build'
 
-    - script: 'ls $(Build.Repository.LocalPath) && ls $(Build.Repository.LocalPath)/ports/gprs_a9/hex'
-      displayName: 'debug'
-
     - task: PublishPipelineArtifact@1
       displayName: 'Collect the build'
       inputs:
@@ -266,6 +263,15 @@ stages:
   displayName: 'Publish builds'
   dependsOn: build
   jobs:
+  - task: DownloadPipelineArtifact@2
+    displayName: 'Download all builds'
+    inputs:
+      buildType: 'current'
+      targetPath: '$(Pipeline.Workspace)'
+
+  - script: 'ls $(Pipeline.Workspace)'
+    displayName: 'ls debug'
+
   - job: github
     displayName: 'Github release'
     steps:
@@ -280,7 +286,8 @@ stages:
         title: 'Latest master build'
         releaseNotesSource: 'input'
         releaseNotes: 'This is an automatic build triggered on `master` changes'
-        assets: 'ports/gprs_a9/hex/firmware_debug_full.lod'
+        assets: '$(Pipeline.Workspace)/firmware_debug_full.lod'
         assetUploadMode: 'replace'
         isPreRelease: true
         addChangeLog: false
+
