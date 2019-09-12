@@ -253,13 +253,13 @@ stages:
         make
       displayName: 'Build'
 
-    - script: 'ls $(Pipeline.Workspace) && ls $(Pipeline.Workspace)/ports/gprs_a9/hex'
+    - script: 'ls $(Build.Repository.LocalPath) && ls $(Build.Repository.LocalPath)/ports/gprs_a9/hex'
       displayName: 'debug'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Collect the build'
       inputs:
-        targetPath: '$(Pipeline.Workspace)/ports/gprs_a9/hex'
+        targetPath: '$(Build.Repository.LocalPath)/ports/gprs_a9/hex'
         artifact: 'build_gprs_a9'
 
 - stage: publish
