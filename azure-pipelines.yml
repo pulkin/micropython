@@ -201,7 +201,7 @@ stages:
   
     - script: |
         sudo apt-get install python3-pip
-        sudo pip3 install pyparsing
+        sudo pip3 install pyparsing pyserial
         wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
         zcat xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz | tar x
         git clone https://github.com/espressif/esp-idf.git
@@ -211,11 +211,6 @@ stages:
   
     - script: |
         export PATH=$(pwd)/xtensa-esp32-elf/bin:$PATH
-        printenv PATH
-        ls -al xtensa-esp32-elf/bin
-        file /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
-        /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc --version
-        xtensa-esp32-elf-gcc --version
         make ${MAKEOPTS} -C mpy-cross
         make ${MAKEOPTS} -C ports/esp32 ESPIDF=$(pwd)/esp-idf
       displayName: 'Build'
@@ -232,17 +227,14 @@ stages:
       displayName: 'Checkout submodules'
   
     - script: |
+        sudo apt-get install python3-pip
+        sudo pip3 install pyserial
         wget https://github.com/jepler/esp-open-sdk/releases/download/2018-06-10/xtensa-lx106-elf-standalone.tar.gz
         zcat xtensa-lx106-elf-standalone.tar.gz | tar x
       displayName: 'Install dependencies and toolchain'
   
     - script: |
         export PATH=$(pwd)/xtensa-lx106-elf/bin:$PATH
-        printenv PATH
-        ls -al xtensa-esp32-elf/bin
-        file /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
-        /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc --version
-        xtensa-esp32-elf-gcc --version
         make ${MAKEOPTS} -C mpy-cross
         make ${MAKEOPTS} -C ports/esp8266
       displayName: 'Build'
