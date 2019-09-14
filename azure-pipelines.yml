@@ -351,6 +351,7 @@ stages:
       displayName: 'Install dependencies'
   
     - script: |
+        make ${MAKEOPTS} -C mpy-cross
         cd ports/gprs_a9
         make
       displayName: 'Build'
