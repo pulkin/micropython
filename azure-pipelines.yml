@@ -200,6 +200,12 @@ stages:
       displayName: 'Checkout submodules'
   
     - script: |
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
+        sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
+      displayName: 'Install i386 arch'
+  
+    - script: |
         sudo apt-get install python3-pip
         sudo pip3 install pyparsing
         wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
@@ -207,6 +213,7 @@ stages:
         export PATH=$(pwd)/xtensa-esp32-elf/bin:$PATH
         printenv PATH
         ls -al xtensa-esp32-elf/bin
+        file /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
         git clone https://github.com/espressif/esp-idf.git
         git -C esp-idf checkout $(grep "ESPIDF_SUPHASH :=" ports/esp32/Makefile | cut -d " " -f 3)
         git -C esp-idf submodule update --init components/json/cJSON components/esp32/lib components/esptool_py/esptool components/expat/expat components/lwip/lwip components/mbedtls/mbedtls components/micro-ecc/micro-ecc components/nghttp/nghttp2
@@ -229,11 +236,18 @@ stages:
       displayName: 'Checkout submodules'
   
     - script: |
+        sudo dpkg --add-architecture i386
+        sudo apt-get update
+        sudo apt-get install libc6:i386 libncurses5:i386 libstdc++6:i386
+      displayName: 'Install i386 arch'
+  
+    - script: |
         wget https://github.com/jepler/esp-open-sdk/releases/download/2018-06-10/xtensa-lx106-elf-standalone.tar.gz
         zcat xtensa-lx106-elf-standalone.tar.gz | tar x
         export PATH=$(pwd)/xtensa-lx106-elf/bin:$PATH
         printenv PATH
         ls -al xtensa-esp32-elf/bin
+        file /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
       displayName: 'Install dependencies and toolchain'
   
     - script: |
