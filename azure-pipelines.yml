@@ -200,8 +200,9 @@ stages:
       displayName: 'Checkout submodules'
   
     - script: |
-        sudo apt-get install python3-pip
-        sudo pip3 install pyparsing pyserial
+        sudo apt-get install python-pip python3-pip
+        sudo pip3 install pyparsing
+        sudo pip install pyserial
         wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
         zcat xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz | tar x
         git clone https://github.com/espressif/esp-idf.git
@@ -227,8 +228,9 @@ stages:
       displayName: 'Checkout submodules'
   
     - script: |
-        sudo apt-get install python3-pip
-        sudo pip3 install pyserial
+        sudo apt-get install python-pip python3-pip
+        sudo pip3 install pyparsing
+        sudo pip install pyserial
         wget https://github.com/jepler/esp-open-sdk/releases/download/2018-06-10/xtensa-lx106-elf-standalone.tar.gz
         zcat xtensa-lx106-elf-standalone.tar.gz | tar x
       displayName: 'Install dependencies and toolchain'
