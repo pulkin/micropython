@@ -81,6 +81,7 @@
 #define MICROPY_PY_UTIME_MP_HAL     (1)
 #define MICROPY_PY_UZLIB            (1)
 #define MICROPY_PY_LWIP             (1)
+#define MICROPY_PY_LWIP_SOCK_RAW    (1)
 #define MICROPY_PY_MACHINE          (1)
 #define MICROPY_PY_MACHINE_PIN_MAKE_NEW mp_pin_make_new
 #define MICROPY_PY_MACHINE_PULSE    (1)
@@ -90,6 +91,7 @@
 #define MICROPY_PY_UWEBSOCKET       (1)
 #define MICROPY_PY_WEBREPL          (1)
 #define MICROPY_PY_WEBREPL_DELAY    (20)
+#define MICROPY_PY_WEBREPL_STATIC_FILEBUF (1)
 #define MICROPY_PY_FRAMEBUF         (1)
 #define MICROPY_PY_MICROPYTHON_MEM_INFO (1)
 #define MICROPY_PY_OS_DUPTERM       (2)

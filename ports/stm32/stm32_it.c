@@ -72,6 +72,7 @@
 #include "stm32_it.h"
 #include "pendsv.h"
 #include "irq.h"
+#include "powerctrl.h"
 #include "pybthread.h"
 #include "gccollect.h"
 #include "extint.h"
@@ -144,7 +145,7 @@ int pyb_hard_fault_debug = 0;
 
 void HardFault_C_Handler(ExceptionRegisters_t *regs) {
     if (!pyb_hard_fault_debug) {
-        NVIC_SystemReset();
+        powerctrl_mcu_reset();
     }
 
     #if MICROPY_HW_ENABLE_USB
@@ -181,7 +182,7 @@ void HardFault_C_Handler(ExceptionRegisters_t *regs) {
     if ((void*)&_ram_start <= (void*)regs && (void*)regs < (void*)&_ram_end) {
         mp_hal_stdout_tx_str("Stack:\r\n");
         uint32_t *stack_top = &_estack;
-        if ((void*)regs < (void*)&_heap_end) {
+        if ((void*)regs < (void*)&_sstack) {
             // stack not in static stack area so limit the amount we print
             stack_top = (uint32_t*)regs + 32;
         }
@@ -297,6 +298,24 @@ void DebugMon_Handler(void) {
 /*  file (startup_stm32f4xx.s).                                               */
 /******************************************************************************/
 
+#if defined(STM32L0) || defined(STM32L432xx)
+
+#if MICROPY_HW_USB_FS
+void USB_IRQHandler(void) {
+    HAL_PCD_IRQHandler(&pcd_fs_handle);
+}
+#endif
+
+#elif defined(STM32WB)
+
+#if MICROPY_HW_USB_FS
+void USB_LP_IRQHandler(void) {
+    HAL_PCD_IRQHandler(&pcd_fs_handle);
+}
+#endif
+
+#else
+
 /**
   * @brief  This function handles USB-On-The-Go FS global interrupt request.
   * @param  None
@@ -377,8 +396,10 @@ void OTG_FS_WKUP_IRQHandler(void) {
 
   OTG_CMD_WKUP_Handler(&pcd_fs_handle);
 
+  #if !defined(STM32H7)
   /* Clear EXTI pending Bit*/
   __HAL_USB_FS_EXTI_CLEAR_FLAG();
+  #endif
 
     IRQ_EXIT(OTG_FS_WKUP_IRQn);
 }
@@ -401,6 +422,8 @@ void OTG_HS_WKUP_IRQHandler(void) {
     IRQ_EXIT(OTG_HS_WKUP_IRQn);
 }
 #endif
+
+#endif // !defined(STM32L0)
 
 /**
   * @brief  This function handles PPP interrupt request.
@@ -508,7 +531,7 @@ void RTC_WKUP_IRQHandler(void) {
     IRQ_EXIT(RTC_WKUP_IRQn);
 }
 
-#if defined(STM32F0)
+#if defined(STM32F0) || defined(STM32L0)
 
 void RTC_IRQHandler(void) {
     IRQ_ENTER(RTC_IRQn);

@@ -114,6 +114,7 @@
 #define MICROPY_PY_COLLECTIONS_DEQUE (1)
 #define MICROPY_PY_COLLECTIONS_ORDEREDDICT (1)
 #define MICROPY_PY_MATH_SPECIAL_FUNCTIONS (1)
+#define MICROPY_PY_MATH_ISCLOSE     (1)
 #define MICROPY_PY_MATH_FACTORIAL   (1)
 #define MICROPY_PY_CMATH            (1)
 #define MICROPY_PY_IO               (1)
@@ -139,6 +140,9 @@
 #define MICROPY_PY_URE_SUB          (1)
 #define MICROPY_PY_UHEAPQ           (1)
 #define MICROPY_PY_UHASHLIB         (1)
+#define MICROPY_PY_UHASHLIB_MD5     (MICROPY_PY_USSL)
+#define MICROPY_PY_UHASHLIB_SHA1    (MICROPY_PY_USSL)
+#define MICROPY_PY_UCRYPTOLIB       (MICROPY_PY_USSL)
 #define MICROPY_PY_UBINASCII        (1)
 #define MICROPY_PY_URANDOM          (1)
 #define MICROPY_PY_URANDOM_EXTRA_FUNCS (1)
@@ -147,6 +151,7 @@
 #define MICROPY_PY_UTIME_MP_HAL     (1)
 #define MICROPY_PY_OS_DUPTERM       (3)
 #define MICROPY_PY_UOS_DUPTERM_BUILTIN_STREAM (1)
+#define MICROPY_PY_LWIP_SOCK_RAW    (MICROPY_PY_LWIP)
 #define MICROPY_PY_MACHINE          (1)
 #define MICROPY_PY_MACHINE_PULSE    (1)
 #define MICROPY_PY_MACHINE_PIN_MAKE_NEW mp_pin_make_new
@@ -160,7 +165,11 @@
 #define MICROPY_PY_MACHINE_SPI_MAKE_NEW machine_hard_spi_make_new
 #define MICROPY_HW_SOFTSPI_MIN_DELAY (0)
 #define MICROPY_HW_SOFTSPI_MAX_BAUDRATE (HAL_RCC_GetSysClockFreq() / 48)
+#define MICROPY_PY_UWEBSOCKET       (MICROPY_PY_LWIP)
+#define MICROPY_PY_WEBREPL          (MICROPY_PY_LWIP)
+#ifndef MICROPY_PY_FRAMEBUF
 #define MICROPY_PY_FRAMEBUF         (1)
+#endif
 #ifndef MICROPY_PY_USOCKET
 #define MICROPY_PY_USOCKET          (1)
 #endif
@@ -224,6 +233,12 @@ extern const struct _mp_obj_module_t mp_module_onewire;
 #define SOCKET_BUILTIN_MODULE_WEAK_LINKS
 #endif
 
+#if MICROPY_PY_USSL
+#define SSL_BUILTIN_MODULE_WEAK_LINKS       { MP_ROM_QSTR(MP_QSTR_ssl), MP_ROM_PTR(&mp_module_ussl) },
+#else
+#define SSL_BUILTIN_MODULE_WEAK_LINKS
+#endif
+
 #if MICROPY_PY_NETWORK
 #define NETWORK_BUILTIN_MODULE              { MP_ROM_QSTR(MP_QSTR_network), MP_ROM_PTR(&mp_module_network) },
 #else
@@ -254,6 +269,7 @@ extern const struct _mp_obj_module_t mp_module_onewire;
     { MP_ROM_QSTR(MP_QSTR_time), MP_ROM_PTR(&mp_module_utime) }, \
     { MP_ROM_QSTR(MP_QSTR_select), MP_ROM_PTR(&mp_module_uselect) }, \
     SOCKET_BUILTIN_MODULE_WEAK_LINKS \
+    SSL_BUILTIN_MODULE_WEAK_LINKS \
     { MP_ROM_QSTR(MP_QSTR_struct), MP_ROM_PTR(&mp_module_ustruct) }, \
     { MP_ROM_QSTR(MP_QSTR_machine), MP_ROM_PTR(&machine_module) }, \
     { MP_ROM_QSTR(MP_QSTR_errno), MP_ROM_PTR(&mp_module_uerrno) }, \
@@ -266,6 +282,12 @@ extern const struct _mp_obj_module_t mp_module_onewire;
     STM_BUILTIN_MODULE \
 
 #define MP_STATE_PORT MP_STATE_VM
+
+#if MICROPY_SSL_MBEDTLS
+#define MICROPY_PORT_ROOT_POINTER_MBEDTLS void **mbedtls_memory;
+#else
+#define MICROPY_PORT_ROOT_POINTER_MBEDTLS
+#endif
 
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[8]; \
@@ -295,6 +317,8 @@ extern const struct _mp_obj_module_t mp_module_onewire;
     \
     /* list of registered NICs */ \
     mp_obj_list_t mod_network_nic_list; \
+    \
+    MICROPY_PORT_ROOT_POINTER_MBEDTLS
 
 // type definitions for the specific machine
 
