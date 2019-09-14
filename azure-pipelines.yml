@@ -209,6 +209,7 @@ stages:
         ls -al xtensa-esp32-elf/bin
         file /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
         /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc --version
+        xtensa-esp32-elf-gcc --version
         git clone https://github.com/espressif/esp-idf.git
         git -C esp-idf checkout $(grep "ESPIDF_SUPHASH :=" ports/esp32/Makefile | cut -d " " -f 3)
         git -C esp-idf submodule update --init components/json/cJSON components/esp32/lib components/esptool_py/esptool components/expat/expat components/lwip/lwip components/mbedtls/mbedtls components/micro-ecc/micro-ecc components/nghttp/nghttp2
@@ -238,6 +239,7 @@ stages:
         ls -al xtensa-esp32-elf/bin
         file /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
         /home/vsts/work/1/s/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc --version
+        xtensa-esp32-elf-gcc --version
       displayName: 'Install dependencies and toolchain'
   
     - script: |
