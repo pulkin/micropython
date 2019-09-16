@@ -346,7 +346,7 @@ stages:
     steps:
     - checkout: self
   
-    - script: git submodule update --init lib/axtls lib/GPRS_C_SDK lib/csdtk42-linux
+    - script: git submodule update --init --recursive lib/axtls lib/GPRS_C_SDK lib/csdtk42-linux
       displayName: 'Checkout submodules'
 
     - script: sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
