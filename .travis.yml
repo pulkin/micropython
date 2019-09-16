@@ -227,6 +227,7 @@ jobs:
         - sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
       script:
         - git submodule update --init --recursive lib/axtls lib/GPRS_C_SDK lib/csdtk42-linux
+        - make ${MAKEOPTS} -C mpy-cross
         - cd ports/gprs_a9
         - make
 
