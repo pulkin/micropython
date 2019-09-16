@@ -239,7 +239,14 @@ stages:
         export PATH=$(pwd)/xtensa-lx106-elf/bin:$PATH
         make ${MAKEOPTS} -C mpy-cross
         make ${MAKEOPTS} -C ports/esp8266
+        ls ports/esp8266
       displayName: 'Build'
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Collect the build'
+      inputs:
+        targetPath: '$(Build.Repository.LocalPath)/ports/esp8266/build'
+        artifact: 'build_esp8266'
   
   - job: port_nrf
     displayName: 'nrf port build'
