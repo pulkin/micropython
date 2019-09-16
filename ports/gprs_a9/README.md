@@ -19,10 +19,15 @@ Follow these steps to build from sources:
    ```bash
    git clone git@github.com:pulkin/micropython.git --recursive
    ```
+   or (smaller download size):
+   ```bash
+   git clone git@github.com:pulkin/micropython.git
+   git submodule update --init --recursive lib/axtls lib/GPRS_C_SDK lib/csdtk42-linux
+   ```
 3. Make
    ```bash
    cd micropython
-   # make -C mpy-cross (not required for now)
+   make -C mpy-cross
    cd ports/gprs_a9
    make
    ```
