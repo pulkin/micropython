@@ -413,7 +413,7 @@ stages:
           Firmware files
           --------------
 
-          - gprs_a9
+          - **gprs_a9**
 
             Burn instructions: use [cooltools](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/burn-debug.html)
 
@@ -421,12 +421,12 @@ stages:
             - [firmware_debug_full.lod](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_full.lod)
             - [firmware_debug_flash.lod](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_flash.lod)
 
-          - esp8266
+          - **esp8266**
 
             Burn instructions: use [esptool](https://github.com/espressif/esptool)
 
             Firmware files:
-            - [firmware_combined.bin](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_combined.bin)
+            - [firmware_combined.bin](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware-combined.bin)
         assets: '$(Build.BinariesDirectory)/*'
         assetUploadMode: 'replace'
         isPreRelease: true
