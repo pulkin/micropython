@@ -239,8 +239,13 @@ stages:
         export PATH=$(pwd)/xtensa-lx106-elf/bin:$PATH
         make ${MAKEOPTS} -C mpy-cross
         make ${MAKEOPTS} -C ports/esp8266
-        ls ports/esp8266/build
       displayName: 'Build'
+
+    - script: |
+        cd ports/esp8266/build
+        rm !(*.bin)
+        cd -
+      displayName: 'Cleanup build before publishing'
 
     - task: PublishPipelineArtifact@1
       displayName: 'Collect the build'
@@ -387,6 +392,8 @@ stages:
     - script: |
         mv $(Build.BinariesDirectory)/build_gprs_a9/*.lod $(Build.BinariesDirectory)
         rm -rf $(Build.BinariesDirectory)/build_gprs_a9
+        mv $(Build.BinariesDirectory)/build_esp8266/*.bin $(Build.BinariesDirectory)
+        rm -rf $(Build.BinariesDirectory)/build_esp8266
       displayName: 'Sort and filter binaries'
 
     - task: GitHubRelease@0
@@ -413,6 +420,13 @@ stages:
             Firmware files:
             - [firmware_debug_full.lod](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_full.lod)
             - [firmware_debug_flash.lod](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_debug_flash.lod)
+
+          - esp8266
+
+            Burn instructions: use [esptool](https://github.com/espressif/esptool)
+
+            Firmware files:
+            - [firmware_combined.bin](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/firmware_combined.bin)
         assets: '$(Build.BinariesDirectory)/*'
         assetUploadMode: 'replace'
         isPreRelease: true
