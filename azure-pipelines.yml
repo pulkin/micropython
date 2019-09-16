@@ -243,7 +243,7 @@ stages:
 
     - script: |
         cd ports/esp8266/build
-        rm !(*.bin)
+        find . \! -name '*.bin' -delete
         cd -
       displayName: 'Cleanup build before publishing'
 
