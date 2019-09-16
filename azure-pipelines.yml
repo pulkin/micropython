@@ -239,7 +239,7 @@ stages:
         export PATH=$(pwd)/xtensa-lx106-elf/bin:$PATH
         make ${MAKEOPTS} -C mpy-cross
         make ${MAKEOPTS} -C ports/esp8266
-        ls ports/esp8266
+        ls ports/esp8266/build
       displayName: 'Build'
 
     - task: PublishPipelineArtifact@1
