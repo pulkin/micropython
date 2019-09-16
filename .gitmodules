@@ -17,10 +17,19 @@
 	branch = work-F4-1.13.1+F7-1.5.0+L4-1.3.0
 [submodule "lib/nrfx"]
 	path = lib/nrfx
-    url = https://github.com/NordicSemiconductor/nrfx.git
+	url = https://github.com/NordicSemiconductor/nrfx.git
+[submodule "lib/mbedtls"]
+	path = lib/mbedtls
+	url = https://github.com/ARMmbed/mbedtls.git
+[submodule "lib/asf4"]
+	path = lib/asf4
+	url = https://github.com/adafruit/asf4
+[submodule "lib/tinyusb"]
+	path = lib/tinyusb
+	url = https://github.com/hathach/tinyusb
 [submodule "lib/GPRS_C_SDK"]
 	path = lib/GPRS_C_SDK
-    url = https://github.com/petrynchyn/GPRS_C_SDK.git
+	url = https://github.com/petrynchyn/GPRS_C_SDK.git
 [submodule "lib/csdtk42-linux"]
-    path = lib/csdtk42-linux
-    url = https://github.com/pulkin/csdtk42-linux.git
+	path = lib/csdtk42-linux
+	url = https://github.com/pulkin/csdtk42-linux.git

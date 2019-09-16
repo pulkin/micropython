@@ -287,3 +287,5 @@ typedef long mp_off_t;
 extern const struct _mp_print_t mp_debug_print;
 #endif
 
+#define mp_hal_stdio_poll(poll_flags) (0) // not implemented
+
