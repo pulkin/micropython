@@ -188,8 +188,8 @@ stages:
         make $(MAKEOPTS) -C ports/windows CROSS_COMPILE=i686-w64-mingw32-
       displayName: 'Build'
   
-  - job: port_esp32
-    displayName: 'esp32 port build'
+  - job: port_esp32_idfv3
+    displayName: 'esp32 port build IDF v3'
     pool:
       vmImage: 'ubuntu-latest'
   
@@ -201,17 +201,47 @@ stages:
   
     - script: |
         sudo apt-get install python-pip python3-pip
-        sudo pip3 install pyparsing
+        sudo pip3 install 'pyparsing<2.4'
         sudo pip install pyserial
         wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
         zcat xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz | tar x
         git clone https://github.com/espressif/esp-idf.git
-        git -C esp-idf checkout $(grep "ESPIDF_SUPHASH :=" ports/esp32/Makefile | cut -d " " -f 3)
+        git -C esp-idf checkout $(grep "ESPIDF_SUPHASH_V3 :=" ports/esp32/Makefile | cut -d " " -f 3)
         git -C esp-idf submodule update --init components/json/cJSON components/esp32/lib components/esptool_py/esptool components/expat/expat components/lwip/lwip components/mbedtls/mbedtls components/micro-ecc/micro-ecc components/nghttp/nghttp2
       displayName: 'Install dependencies and toolchain'
   
     - script: |
         export PATH=$(pwd)/xtensa-esp32-elf/bin:$PATH
+        export IDF_PATH=$(pwd)/esp-idf
+        make ${MAKEOPTS} -C mpy-cross
+        make ${MAKEOPTS} -C ports/esp32 ESPIDF=$(pwd)/esp-idf
+      displayName: 'Build'
+  
+  - job: port_esp32_idfv4
+    displayName: 'esp32 port build IDF v4'
+    pool:
+      vmImage: 'ubuntu-latest'
+  
+    steps:
+    - checkout: self
+
+    - script: git submodule update --init lib/berkeley-db-1.xx
+      displayName: 'Checkout submodules'
+  
+    - script: |
+        sudo apt-get install python-pip python3-pip
+        sudo pip3 install 'pyparsing<2.4'
+        sudo pip install pyserial
+        wget https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
+        zcat xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz | tar x
+        git clone https://github.com/espressif/esp-idf.git
+        git -C esp-idf checkout $(grep "ESPIDF_SUPHASH_V4 :=" ports/esp32/Makefile | cut -d " " -f 3)
+        git -C esp-idf submodule update --init components/esp_wifi/lib_esp32 components/esptool_py/esptool components/lwip/lwip components/mbedtls/mbedtls
+      displayName: 'Install dependencies and toolchain'
+  
+    - script: |
+        export PATH=$(pwd)/xtensa-esp32-elf/bin:$PATH
+        export IDF_PATH=$(pwd)/esp-idf
         make ${MAKEOPTS} -C mpy-cross
         make ${MAKEOPTS} -C ports/esp32 ESPIDF=$(pwd)/esp-idf
       displayName: 'Build'
