@@ -68,7 +68,8 @@ ampy --port /dev/ttyUSB1 put frozentest.py
 4. [`gps`](#gps): everything related to GPS and assisted positioning
 5. [`machine`](#machine): hardware and power control
 6. [`i2c`](#i2c): i2c implementation
-7. [Notes](#Misc)
+7. [Port TODO](#TODO)
+8. [Notes](#Notes)
 
 ### `cellular`
 
@@ -592,9 +593,32 @@ I2C_DEFAULT_TIME_OUT
 
   **Raises** `I2CError` (see error message for more details)
 
-## Misc ##
+## TODO ##
+
+Port SDK:
+
+[x] GPIO: `machine.Pin`
+[ ] ADC: `machine.ADC`
+[ ] UART: `machine.UART` (software UART?)
+[x] Cellular misc (IMEI, ICCID, ...): `cellular`
+[x] GPS: `gps`
+[x] I2C: `i2c`
+[ ] SPI: `machine.SPI`
+[x] time: `utime`
+[x] File system
+[x] GPRS, DNS: `cellular`, `socket`, `ssl`
+[x] Power: `machine`
+[ ] Calls: `cellular`
+[x] SMS: `cellular.SMS`
+
+Misc:
+
+- move `i2c` to `machine`
+- move all SMS-related functions to `cellular.SMS`
+- add assisted location services to `gps`
+
+## Notes ##
 
 * The module halts on fatal errors; create an empty file `.reboot_on_fatal` if a reboot is desired
 * The size of micropython heap is roughly 512 Kb. 400k can be realistically allocated right after hard reset.
-* ~~SSL~~ sockets are currently unstable and need further investigation (the module halts after around 10 consequitive connections).
 
