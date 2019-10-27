@@ -310,12 +310,30 @@ STATIC mp_uint_t _socket_read_data(mp_obj_t self_in, void *buf, size_t size, str
         return 0;
     }
 
+    struct fd_set fds;
+    struct timeval timeout = {12, 0};
+    FD_ZERO(&fds);
+    FD_SET(sock->fd, &fds);
+
     // XXX Would be nicer to use RTC to handle timeouts
     for (int i = 0; i <= sock->retries; ++i) {
 
-        MP_THREAD_GIL_EXIT();
-        int r = LWIP_RECVFROM(sock->fd, buf, size, 0, from, from_len);
-        MP_THREAD_GIL_ENTER();
+        int r = -1;
+        switch (LWIP_SELECT(sock->fd + 1, &fds, NULL, NULL, &timeout)) {
+            case -1:
+                // An error is set already, proceed to raising it
+                break;
+            case 0:
+                continue;
+            default:
+                if (FD_ISSET(sock->fd, &fds)) {
+                    MP_THREAD_GIL_EXIT();
+                    r = LWIP_RECVFROM(sock->fd, buf, size, 0, from, from_len);
+                    MP_THREAD_GIL_ENTER();
+                } else {
+                    continue;
+                }
+        }
 
         if (r == 0) sock->peer_closed = true;
         if (r >= 0) return r;
