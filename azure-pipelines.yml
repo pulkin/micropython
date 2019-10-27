@@ -383,7 +383,7 @@ stages:
   - job: port_gprs_a9
     displayName: 'gprs_a9 build'
     pool:
-      vmImage: 'ubuntu-latest'
+      vmImage: 'ubuntu-16.04'
   
     steps:
     - checkout: self
