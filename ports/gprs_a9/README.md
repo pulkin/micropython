@@ -599,6 +599,7 @@ Port SDK:
 
 - [x] GPIO: `machine.Pin`
 - [ ] ADC: `machine.ADC`
+- [ ] PWM: `machine.PWM`
 - [ ] UART: `machine.UART` (software UART?)
 - [x] Cellular misc (IMEI, ICCID, ...): `cellular`
 - [x] GPS: `gps`
