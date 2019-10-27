@@ -178,7 +178,7 @@ mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
 
     self->fd = LWIP_SOCKET(self->domain, self->type, self->proto);
     if (self->fd < 0) {
-        mp_raise_NotImplementedError("Failed to create the socket but the error is unknown");
+        mp_raise_OSError(EMFILE);
     }
     num_sockets_open ++;
     _socket_settimeout(self, UINT64_MAX);
