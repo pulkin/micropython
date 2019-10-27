@@ -704,7 +704,8 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
     };
     addrinfo_objs[4] = mp_obj_new_tuple(2, inaddr_objs);
 
-    return mp_obj_new_tuple(5, addrinfo_objs);
+    mp_obj_t tuple = mp_obj_new_tuple(5, addrinfo_objs);
+    return mp_obj_new_list(1, &tuple);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(getaddrinfo_obj, 2, getaddrinfo);

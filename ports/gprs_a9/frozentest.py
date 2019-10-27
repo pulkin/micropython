@@ -266,7 +266,7 @@ if sim_present:
 
     host = "httpstat.us"
     port = 80
-    host_ai = sock.getaddrinfo(host, port)
+    host_ai = sock.getaddrinfo(host, port)[0]
     print("Addrinfo:", host_ai)
     assert host_ai[:3] == (sock.AF_INET, sock.SOCK_STREAM, sock.IPPROTO_TCP)
     assert host_ai[3] == host

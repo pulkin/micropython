@@ -616,6 +616,7 @@ Misc:
 - move `i2c` to `machine`
 - move all SMS-related functions to `cellular.SMS`
 - add assisted location services to `gps`
+- get rid of workarounds in `socket.getaddrinfo`
 
 ## Notes ##
 
