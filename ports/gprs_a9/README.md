@@ -617,6 +617,7 @@ Misc:
 - move all SMS-related functions to `cellular.SMS`
 - add assisted location services to `gps`
 - get rid of workarounds in `socket.getaddrinfo`
+- allow interrupts during `time.sleep`
 
 ## Notes ##
 
