@@ -597,19 +597,19 @@ I2C_DEFAULT_TIME_OUT
 
 Port SDK:
 
-[x] GPIO: `machine.Pin`
-[ ] ADC: `machine.ADC`
-[ ] UART: `machine.UART` (software UART?)
-[x] Cellular misc (IMEI, ICCID, ...): `cellular`
-[x] GPS: `gps`
-[x] I2C: `i2c`
-[ ] SPI: `machine.SPI`
-[x] time: `utime`
-[x] File system
-[x] GPRS, DNS: `cellular`, `socket`, `ssl`
-[x] Power: `machine`
-[ ] Calls: `cellular`
-[x] SMS: `cellular.SMS`
+- [x] GPIO: `machine.Pin`
+- [ ] ADC: `machine.ADC`
+- [ ] UART: `machine.UART` (software UART?)
+- [x] Cellular misc (IMEI, ICCID, ...): `cellular`
+- [x] GPS: `gps`
+- [x] I2C: `i2c`
+- [ ] SPI: `machine.SPI`
+- [x] time: `utime`
+- [x] File system
+- [x] GPRS, DNS: `cellular`, `socket`, `ssl`
+- [x] Power: `machine`
+- [ ] Calls: `cellular`
+- [x] SMS: `cellular.SMS`
 
 Misc:
 
