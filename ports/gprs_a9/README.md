@@ -194,8 +194,6 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   **Returns**: Two integers, the signal quality (0-31) and RXQUAL. These are replaced by `None` if no signal quality information is available.
   **Note**: The RXQUAL output is always `None`. Its meaning is unknown.
 
-##### SMS #####
-
 ##### GPRS #####
 
 * `gprs_attach()`
