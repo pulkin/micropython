@@ -98,34 +98,9 @@ void modcellular_init0(void) {
 // ----------
 
 MP_DEFINE_EXCEPTION(CellularError, OSError)
-MP_DEFINE_EXCEPTION(CellularRegistrationError, CellularError)
-MP_DEFINE_EXCEPTION(SMSError, CellularError)
-MP_DEFINE_EXCEPTION(NoSIMError, CellularError)
-MP_DEFINE_EXCEPTION(CellularAttachmentError, CellularError)
-MP_DEFINE_EXCEPTION(CellularActivationError, CellularError)
 
 NORETURN void mp_raise_CellularError(const char *msg) {
     mp_raise_msg(&mp_type_CellularError, msg);
-}
-
-NORETURN void mp_raise_CellularRegistrationError(const char *msg) {
-    mp_raise_msg(&mp_type_CellularRegistrationError, msg);
-}
-
-NORETURN void mp_raise_SMSError(const char *msg) {
-    mp_raise_msg(&mp_type_SMSError, msg);
-}
-
-NORETURN void mp_raise_NoSIMError(const char *msg) {
-    mp_raise_msg(&mp_type_NoSIMError, msg);
-}
-
-NORETURN void mp_raise_CellularAttachmentError(const char *msg) {
-    mp_raise_msg(&mp_type_CellularAttachmentError, msg);
-}
-
-NORETURN void mp_raise_CellularActivationError(const char *msg) {
-    mp_raise_msg(&mp_type_CellularActivationError, msg);
 }
 
 // ------
@@ -328,7 +303,7 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
     if (self->status != 0) {
-        mp_raise_SMSError("A message with non-zero status cannot be sent");
+        mp_raise_CellularError("A message with non-zero status cannot be sent");
         return mp_const_none;
     }
 
@@ -336,7 +311,7 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
     const char* message_c = mp_obj_str_get_str(self->message);
 
     if (!SMS_SetFormat(SMS_FORMAT_TEXT, SIM0)) {
-        mp_raise_SMSError("Failed to set SMS format");
+        mp_raise_CellularError("Failed to set SMS format");
         return mp_const_none;
     } 
 
@@ -348,12 +323,12 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
     };
 
     if (!SMS_SetParameter(&smsParam, SIM0)) {
-        mp_raise_SMSError("Failed to set SMS parameters");
+        mp_raise_CellularError("Failed to set SMS parameters");
         return mp_const_none;
     }
 
     if (!SMS_SetNewMessageStorage(SMS_STORAGE_SIM_CARD)) {
-        mp_raise_SMSError("Failed to set SMS storage in the SIM card");
+        mp_raise_CellularError("Failed to set SMS storage in the SIM card");
         return mp_const_none;
     }
 
@@ -361,14 +336,14 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
     uint32_t unicodeLen;
 
     if (!SMS_LocalLanguage2Unicode((uint8_t*)message_c, strlen(message_c), CHARSET_UTF_8, &unicode, &unicodeLen)) {
-        mp_raise_SMSError("Failed to convert to Unicode before sending SMS");
+        mp_raise_CellularError("Failed to convert to Unicode before sending SMS");
         return mp_const_none;
     }
 
     sms_send_flag = 0;
     if (!SMS_SendMessage(destination_c, unicode, unicodeLen, SIM0)) {
         OS_Free(unicode);
-        mp_raise_SMSError("Failed to submit SMS message for sending");
+        mp_raise_CellularError("Failed to submit SMS message for sending");
         return mp_const_none;
     }
     OS_Free(unicode);
@@ -379,7 +354,7 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
     }
 
     if (!sms_send_flag) {
-        mp_raise_SMSError("SMS send timeout. The module will still attempt to send SMS but this may interfer with other cellular activities");
+        mp_raise_CellularError("SMS send timeout. The module will still attempt to send SMS but this may interfer with other cellular activities");
         return mp_const_none;
     }
 
@@ -398,12 +373,12 @@ STATIC mp_obj_t modcellular_sms_withdraw(mp_obj_t self_in) {
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
     if (self->index == 0 || self->status == 0) {
-        mp_raise_SMSError("Cannot withdraw SMS with zero index/status");
+        mp_raise_CellularError("Cannot withdraw SMS with zero index/status");
         return mp_const_none;
     }
 
     if (!SMS_DeleteMessage(self->index, SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD)) {
-        mp_raise_SMSError("Failed to withdraw SMS");
+        mp_raise_CellularError("Failed to withdraw SMS");
         return mp_const_none;
     }
 
@@ -594,31 +569,31 @@ STATIC mp_obj_t modcellular_poll_network_exception(void) {
     switch (network_exception) {
 
         case NTW_EXC_NOSIM:
-            mp_raise_NoSIMError("No SIM card inserted");
+            mp_raise_CellularError("No SIM card inserted");
             break;
 
         case NTW_EXC_REG_DENIED:
-            mp_raise_CellularRegistrationError("Failed to register on the cellular network");
+            mp_raise_CellularError("Failed to register on the cellular network");
             break;
 
         case NTW_EXC_SMS_SEND:
-            mp_raise_SMSError("SMS was not sent");
+            mp_raise_CellularError("SMS was not sent");
             break;
 
         case NTW_EXC_SIM_DROP:
-            mp_raise_NoSIMError("SIM card dropped");
+            mp_raise_CellularError("SIM card dropped");
             break;
 
         case NTW_EXC_ATT_FAILED:
-            mp_raise_CellularAttachmentError("Failed to attach to the cellular network");
+            mp_raise_CellularError("Failed to attach to the cellular network");
             break;
 
         case NTW_EXC_ACT_FAILED:
-            mp_raise_CellularActivationError("Failed to activate the cellular network");
+            mp_raise_CellularError("Failed to activate the cellular network");
             break;
 
         case NTW_EXC_SMS_DROP:
-            mp_raise_SMSError("SMS message was discarded due to a timeout or a wrong SMS storage information");
+            mp_raise_CellularError("SMS message was discarded due to a timeout or a wrong SMS storage information");
             break;
 
         case NTW_NO_EXC:
@@ -681,7 +656,7 @@ STATIC mp_obj_t modcellular_get_iccid(void) {
     if (SIM_GetICCID((uint8_t*)iccid))
         return mp_obj_new_str(iccid, strlen(iccid));
     else {
-        mp_raise_NoSIMError("No ICCID data available");
+        mp_raise_CellularError("No ICCID data available");
         return mp_const_none;
     }
 }
@@ -699,7 +674,7 @@ STATIC mp_obj_t modcellular_get_imsi(void) {
     if (SIM_GetIMSI((uint8_t*)imsi))
         return mp_obj_new_str(imsi, strlen(imsi));
     else {
-        mp_raise_NoSIMError("No IMSI data available");
+        mp_raise_CellularError("No IMSI data available");
         return mp_const_none;
     }
 }
@@ -770,14 +745,14 @@ STATIC mp_obj_t modcellular_gprs_attach() {
 
     // Attach
     if (!Network_GetAttachStatus(&status)) {
-        mp_raise_CellularAttachmentError("Cannot retrieve attach status");
+        mp_raise_CellularError("Cannot retrieve attach status");
         return mp_const_none;
     }
 
     if (!status) {
 
         if (!Network_StartAttach()) {
-            mp_raise_CellularAttachmentError("Cannot initiate attachment");
+            mp_raise_CellularError("Cannot initiate attachment");
             return mp_const_none;
         }
 
@@ -787,7 +762,7 @@ STATIC mp_obj_t modcellular_gprs_attach() {
         }
 
         if (!(network_status & NTW_ATT_BIT)) {
-            mp_raise_CellularAttachmentError("Network attachment timeout");
+            mp_raise_CellularError("Network attachment timeout");
             return mp_const_none;
         }
     }
@@ -807,14 +782,14 @@ STATIC mp_obj_t modcellular_gprs_detach() {
 
     // Attach
     if (!Network_GetAttachStatus(&status)) {
-        mp_raise_CellularAttachmentError("Cannot retrieve attach status");
+        mp_raise_CellularError("Cannot retrieve attach status");
         return mp_const_none;
     }
 
     if (status) {
 
         if (!Network_StartDetach()) {
-            mp_raise_CellularAttachmentError("Cannot initiate detachment");
+            mp_raise_CellularError("Cannot initiate detachment");
             return mp_const_none;
         }
 
@@ -824,7 +799,7 @@ STATIC mp_obj_t modcellular_gprs_detach() {
         }
 
         if (network_status & NTW_ATT_BIT) {
-            mp_raise_CellularAttachmentError("Network detach timeout");
+            mp_raise_CellularError("Network detach timeout");
             return mp_const_none;
         }
     }
@@ -852,7 +827,7 @@ STATIC mp_obj_t modcellular_gprs_activate(mp_obj_t apn, mp_obj_t user, mp_obj_t 
 
     // Attach
     if (!Network_GetActiveStatus(&status)) {
-        mp_raise_CellularActivationError("Cannot retrieve context activation status");
+        mp_raise_CellularError("Cannot retrieve context activation status");
         return mp_const_none;
     }
 
@@ -864,7 +839,7 @@ STATIC mp_obj_t modcellular_gprs_activate(mp_obj_t apn, mp_obj_t user, mp_obj_t 
         memcpy(context.userPasswd, c_pass, MIN(strlen(c_pass) + 1, sizeof(context.userPasswd)));
 
         if (!Network_StartActive(context)) {
-            mp_raise_CellularActivationError("Cannot initiate context activation");
+            mp_raise_CellularError("Cannot initiate context activation");
             return mp_const_none;
         }
 
@@ -874,7 +849,7 @@ STATIC mp_obj_t modcellular_gprs_activate(mp_obj_t apn, mp_obj_t user, mp_obj_t 
         }
 
         if (!(network_status & NTW_ACT_BIT)) {
-            mp_raise_CellularActivationError("Network context activation timeout");
+            mp_raise_CellularError("Network context activation timeout");
             return mp_const_none;
         }
     }
@@ -894,14 +869,14 @@ STATIC mp_obj_t modcellular_gprs_deactivate() {
 
     // Attach
     if (!Network_GetActiveStatus(&status)) {
-        mp_raise_CellularActivationError("Cannot retrieve context activation status");
+        mp_raise_CellularError("Cannot retrieve context activation status");
         return mp_const_none;
     }
 
     if (status) {
 
         if (!Network_StartDeactive(1)) {
-            mp_raise_CellularActivationError("Cannot initiate context deactivation");
+            mp_raise_CellularError("Cannot initiate context deactivation");
             return mp_const_none;
         }
 
@@ -911,7 +886,7 @@ STATIC mp_obj_t modcellular_gprs_deactivate() {
         }
 
         if (network_status & NTW_ACT_BIT) {
-            mp_raise_CellularActivationError("Network context deactivation timeout");
+            mp_raise_CellularError("Network context deactivation timeout");
             return mp_const_none;
         }
     }
@@ -925,9 +900,6 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_CellularError), (mp_obj_t)MP_ROM_PTR(&mp_type_CellularError) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_CellularRegistrationError), (mp_obj_t)MP_ROM_PTR(&mp_type_CellularRegistrationError) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_SMSError), (mp_obj_t)MP_ROM_PTR(&mp_type_SMSError) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_NoSIMError), (mp_obj_t)MP_ROM_PTR(&mp_type_NoSIMError) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_SMS), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_type) },
 

@@ -95,23 +95,17 @@ The purpose of this module is to have an access to high-level networking (SMS, G
     
       Sends the message.
 
-      **Raises**: `CelularRegistrationError` if not registered on the network or `SMSError` if failed to set up/send SMS.
+      **Raises**: `CelularError` if not registered on the network or failed to set up/send SMS.
 
     * `withdraw()`
 
       Withdraws SMS from SIM storage. Resets status and index of this object to zero.
 
-      **Raises**: `SMSError` if failed to withdraw.
+      **Raises**: `CellularError` if failed to withdraw.
 
 #### Exception classes ####
 
 * `CellularError(message)`
-* `CellularRegistrationError(message)`
-* `SMSError(message)`
-* `NoSIMError(message)`
-* `CellularAttachmentError(message)`
-* `CellularActivationError(message)`
-* `NetworkError(message)`
 
 #### Methods ####
 
@@ -129,7 +123,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: a string with ICCID number.
 
-  **Raises**: `NoSIMError` if no ICCID number can be retrieved.
+  **Raises**: `CellularError` if no ICCID number can be retrieved.
 
 * `get_imsi()`
 
@@ -137,7 +131,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: a string with IMSI number.
 
-  **Raises**: `NoSIMError` if no IMSI number can be retrieved.
+  **Raises**: `CellularError` if no IMSI number can be retrieved.
 
 * `network_status_changed()`
 
@@ -177,7 +171,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: True if roaming.
 
-  **Raises** `CellularRegistrationError` if not registered on the network.
+  **Raises** `CellularError` if not registered on the network.
 
 * `get_signal_quality()`
 
@@ -200,7 +194,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   
   **Returns**: a list of SMS messages.
 
-  **Raises**: `CellularRegistrationError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
+  **Raises**: `CellularError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
 
 ##### GPRS #####
 
@@ -208,7 +202,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   Attaches to the network. This is required for activating the GPRS context. If already attached, does nothing.
 
-  **Raises**: `CellularRegistrationError` if not registered on the network or `CellularAttachmentError` if the attachment process failed at any stage.
+  **Raises**: `CellularError` if not registered on the network or attachment process failed at any stage.
 
   **Note**: There may be no need to run this as, after a hard reset, the module attempts to attach automatically.
 
@@ -218,7 +212,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   Detaches from the network. Does nothing if already detached.
 
-  **Raises**: `CellularRegistrationError` if not registered on the network or `CellularAttachmentError` if the detachment process failed at any stage.
+  **Raises**: `CellularError` if not registered on the network or the detachment process failed at any stage.
 
   **TODO**: Consider getting rid of this function.
 
@@ -232,7 +226,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
     * user (str): username;
     * pass (str): password;
 
-  **Raises**: `CellularRegistrationError` if not registered on the network or `CellularActivationError` if the activation process failed at any stage.
+  **Raises**: `CellularError` if not registered on the network or the activation process failed at any stage.
 
   **Note**: there is no way to check whether the credentials supplied are valid.
 
@@ -240,7 +234,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   Deactivates the GPRS context. Does nothing if already deactivated.
 
-  **Raises**: `CellularRegistrationError` if not registered on the network or `CellularActivationError` if the deactivation process failed at any stage.
+  **Raises**: `CellularError` if not registered on the network or the deactivation process failed at any stage.
 
 ### `usocket` ###
 
