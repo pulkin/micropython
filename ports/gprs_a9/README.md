@@ -103,6 +103,20 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
       **Raises**: `CellularError` if failed to withdraw.
 
+    * `poll()` [staticmethod]
+
+      Polls SMS.
+
+      **Returns**: the number of new SMS received.
+
+    * `list()` [staticmethod]
+
+      Retrieves SMS from the SIM card.
+      
+      **Returns**: a list of SMS messages.
+
+      **Raises**: `CellularError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
+
 #### Exception classes ####
 
 * `CellularError(message)`
@@ -181,20 +195,6 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   **Note**: The RXQUAL output is always `None`. Its meaning is unknown.
 
 ##### SMS #####
-
-* `sms_received()`
-
-  Retrieves the number of SMS received since the last check.
-
-  **Returns**: the number of SMS received.
-
-* `sms_list()`
-
-  Retrieves SMS from the SIM card.
-  
-  **Returns**: a list of SMS messages.
-
-  **Raises**: `CellularError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
 
 ##### GPRS #####
 
@@ -609,7 +609,6 @@ Port SDK:
 Misc:
 
 - move `i2c` to `machine`
-- move all SMS-related functions to `cellular.SMS`
 - add assisted location services to `gps`
 - get rid of workarounds in `socket.getaddrinfo`
 - allow interrupts during `time.sleep`

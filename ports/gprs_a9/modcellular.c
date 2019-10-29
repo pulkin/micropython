@@ -389,6 +389,62 @@ STATIC mp_obj_t modcellular_sms_withdraw(mp_obj_t self_in) {
 
 MP_DEFINE_CONST_FUN_OBJ_1(modcellular_sms_withdraw_obj, &modcellular_sms_withdraw);
 
+STATIC mp_obj_t modcellular_sms_list(void) {
+    // ========================================
+    // Lists SMS messages.
+    // Returns:
+    //     A list of SMS messages.
+    // ========================================
+    REQUIRES_NETWORK_REGISTRATION;
+
+    SMS_Storage_Info_t storage;
+    SMS_GetStorageInfo(&storage, SMS_STORAGE_SIM_CARD);
+    
+    sms_list_buffer = mp_obj_new_list(storage.used, NULL);
+    sms_list_buffer_count = 0;
+
+    SMS_ListMessageRequst(SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD);
+    
+    clock_t time = clock();
+    uint8_t prev_count = 0;
+    while (clock() - time < MAX_SMS_LIST_TIMEOUT * CLOCKS_PER_MSEC) {
+        OS_Sleep(100);
+        if (sms_list_buffer_count == storage.used) break;
+        if (prev_count != sms_list_buffer_count) {
+            prev_count = sms_list_buffer_count;
+            time = clock();
+        }
+    }
+    
+    mp_obj_list_t *result = sms_list_buffer;
+    sms_list_buffer = NULL;
+    
+    uint16_t i;
+    for (i = sms_list_buffer_count; i < result->len; i++) {
+        result->items[i] = mp_const_none;
+    }
+    sms_list_buffer_count = 0;
+
+    return (mp_obj_t)result;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_list_obj, modcellular_sms_list);
+STATIC MP_DEFINE_CONST_STATICMETHOD_OBJ(modcellular_sms_list_static_class_obj, MP_ROM_PTR(&modcellular_sms_list_obj));
+
+STATIC mp_obj_t modcellular_sms_poll(void) {
+    // ========================================
+    // Polls new SMS.
+    // Returns:
+    //     The number of SMS received.
+    // ========================================
+    mp_obj_t result = mp_obj_new_int(sms_received_count);
+    sms_received_count = 0;
+    return result;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_poll_obj, modcellular_sms_poll);
+STATIC MP_DEFINE_CONST_STATICMETHOD_OBJ(modcellular_sms_poll_static_class_obj, MP_ROM_PTR(&modcellular_sms_poll_obj));
+
 STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     // ========================================
     // SMS.[attr]
@@ -396,7 +452,7 @@ STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     if (dest[0] != MP_OBJ_NULL) {
     } else {
         sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-        // .telephone_number
+        // .phone_number
         if (attr == MP_QSTR_phone_number) {
             dest[0] = self->phone_number;
         // .message
@@ -420,6 +476,12 @@ STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         // .withdraw
         } else if (attr == MP_QSTR_withdraw) {
             mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_withdraw_obj), dest);
+        // .list[static]
+        } else if (attr == MP_QSTR_list) {
+            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_list_static_class_obj), dest);
+        // .poll[static]
+        } else if (attr == MP_QSTR_poll) {
+            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_poll_static_class_obj), dest);
         }
     }
 }
@@ -440,12 +502,22 @@ STATIC void modcellular_sms_print(const mp_print_t *print, mp_obj_t self_in, mp_
     );
 }
 
+STATIC const mp_rom_map_elem_t sms_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_send), MP_ROM_PTR(&modcellular_sms_send_obj) },
+    { MP_ROM_QSTR(MP_QSTR_withdraw), MP_ROM_PTR(&modcellular_sms_withdraw_obj) },
+    { MP_ROM_QSTR(MP_QSTR_list), MP_ROM_PTR(&modcellular_sms_list_static_class_obj) },
+    { MP_ROM_QSTR(MP_QSTR_poll), MP_ROM_PTR(&modcellular_sms_poll_static_class_obj) },
+};
+
+STATIC MP_DEFINE_CONST_DICT(sms_locals_dict, sms_locals_dict_table);
+
 STATIC const mp_obj_type_t modcellular_sms_type = {
     { &mp_type_type },
     .name = MP_QSTR_SMS,
     .make_new = modcellular_sms_make_new,
     .print = modcellular_sms_print,
     .attr = modcellular_sms_attr,
+    .locals_dict = (mp_obj_dict_t*)&sms_locals_dict,
 };
 
 // -------
@@ -681,60 +753,6 @@ STATIC mp_obj_t modcellular_get_imsi(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_get_imsi_obj, modcellular_get_imsi);
 
-STATIC mp_obj_t modcellular_sms_received(void) {
-    // ========================================
-    // Retrieves the number of SMS received since last poll.
-    // Returns:
-    //     The number of SMS received.
-    // ========================================
-    mp_obj_t result = mp_obj_new_int(sms_received_count);
-    sms_received_count = 0;
-    return result;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_received_obj, modcellular_sms_received);
-
-STATIC mp_obj_t modcellular_sms_list(void) {
-    // ========================================
-    // Lists SMS messages.
-    // Returns:
-    //     A list of SMS messages.
-    // ========================================
-    REQUIRES_NETWORK_REGISTRATION;
-
-    SMS_Storage_Info_t storage;
-    SMS_GetStorageInfo(&storage, SMS_STORAGE_SIM_CARD);
-    
-    sms_list_buffer = mp_obj_new_list(storage.used, NULL);
-    sms_list_buffer_count = 0;
-
-    SMS_ListMessageRequst(SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD);
-    
-    clock_t time = clock();
-    uint8_t prev_count = 0;
-    while (clock() - time < MAX_SMS_LIST_TIMEOUT * CLOCKS_PER_MSEC) {
-        OS_Sleep(100);
-        if (sms_list_buffer_count == storage.used) break;
-        if (prev_count != sms_list_buffer_count) {
-            prev_count = sms_list_buffer_count;
-            time = clock();
-        }
-    }
-    
-    mp_obj_list_t *result = sms_list_buffer;
-    sms_list_buffer = NULL;
-    
-    uint16_t i;
-    for (i = sms_list_buffer_count; i < result->len; i++) {
-        result->items[i] = mp_const_none;
-    }
-    sms_list_buffer_count = 0;
-
-    return (mp_obj_t)result;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_list_obj, modcellular_sms_list);
-
 STATIC mp_obj_t modcellular_gprs_attach() {
     // ========================================
     // Attaches to the GPRS network.
@@ -913,8 +931,6 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_roaming), (mp_obj_t)&modcellular_is_roaming_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&modcellular_get_iccid_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imsi), (mp_obj_t)&modcellular_get_imsi_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_received), (mp_obj_t)&modcellular_sms_received_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_sms_list), (mp_obj_t)&modcellular_sms_list_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_attach), (mp_obj_t)&modcellular_gprs_attach_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_detach), (mp_obj_t)&modcellular_gprs_detach_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_activate), (mp_obj_t)&modcellular_gprs_activate_obj },
