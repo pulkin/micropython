@@ -84,32 +84,31 @@ void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////
-/////hal time////////////////////////////////////////////////////////////////
-
-
 uint32_t mp_hal_ticks_ms(void) {
-    return (uint32_t)(clock()/CLOCKS_PER_MSEC);
+    return (uint32_t)(clock() / CLOCKS_PER_MSEC);
 }
 
 uint32_t mp_hal_ticks_us(void) {
-    return (uint32_t)(clock()/CLOCKS_PER_MSEC*1000);
+    return (uint32_t)(clock() / CLOCKS_PER_MSEC * 1000);
 }
 
 void mp_hal_delay_ms(uint32_t ms) {
-    OS_Sleep(ms);
+    uint32_t start = clock();
+    while (clock() - start < ms * CLOCKS_PER_MSEC) {
+        OS_Sleep(1);
+        mp_handle_pending();
+    }
 }
 
 void mp_hal_delay_us(uint32_t us) {
-    OS_SleepUs(us);
+    uint32_t start = clock();
+    while ((clock() - start) * 1000 < us * CLOCKS_PER_MSEC) {
+        OS_SleepUs(1);
+        mp_handle_pending();
+    }
 }
 
-// this function could do with improvements (eg use ets_delay_us)
 void mp_hal_delay_us_fast(uint32_t us) {
     OS_SleepUs(us);
 }
-
-
-/////////////////////////////////////////////////////////////////////////////
-
 
