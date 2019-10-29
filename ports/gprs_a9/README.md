@@ -60,7 +60,24 @@ ampy --port /dev/ttyUSB1 put frozentest.py
 >>> import frozentest
 ```
 
-## Platform-specific modules
+## Functionality
+
+- [x] GPIO: `machine.Pin`
+- [ ] ADC: `machine.ADC`
+- [ ] PWM: `machine.PWM`
+- [ ] UART: `machine.UART` (software UART?)
+- [x] Cellular misc (IMEI, ICCID, ...): `cellular`
+- [x] GPS: `gps`
+- [x] I2C: `i2c`
+- [ ] SPI: `machine.SPI`
+- [x] time: `utime`
+- [x] File system
+- [x] GPRS, DNS: `cellular`, `socket`, `ssl`
+- [x] Power: `machine`
+- [ ] Calls: `cellular`
+- [x] SMS: `cellular.SMS`
+
+## API
 
 1. [`cellular`](#cellular): SMS, calls, connectivity
 2. [`usocket`](#usocket): sockets over GPRS
@@ -68,7 +85,6 @@ ampy --port /dev/ttyUSB1 put frozentest.py
 4. [`gps`](#gps): everything related to GPS and assisted positioning
 5. [`machine`](#machine): hardware and power control
 6. [`i2c`](#i2c): i2c implementation
-7. [Port TODO](#TODO)
 8. [Notes](#Notes)
 
 ### `cellular`
@@ -584,32 +600,6 @@ I2C_DEFAULT_TIME_OUT
   **Returns**: None if everything ok.
 
   **Raises** `I2CError` (see error message for more details)
-
-## TODO ##
-
-Port SDK:
-
-- [x] GPIO: `machine.Pin`
-- [ ] ADC: `machine.ADC`
-- [ ] PWM: `machine.PWM`
-- [ ] UART: `machine.UART` (software UART?)
-- [x] Cellular misc (IMEI, ICCID, ...): `cellular`
-- [x] GPS: `gps`
-- [x] I2C: `i2c`
-- [ ] SPI: `machine.SPI`
-- [x] time: `utime`
-- [x] File system
-- [x] GPRS, DNS: `cellular`, `socket`, `ssl`
-- [x] Power: `machine`
-- [ ] Calls: `cellular`
-- [x] SMS: `cellular.SMS`
-
-Misc:
-
-- move `i2c` to `machine`
-- add assisted location services to `gps`
-- get rid of workarounds in `socket.getaddrinfo`
-- allow interrupts during `time.sleep`
 
 ## Notes ##
 
