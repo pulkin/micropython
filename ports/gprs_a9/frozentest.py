@@ -227,10 +227,10 @@ if sim_present:
     print("SMS")
     print("----------------")
 
-    sms_received = cel.sms_received()
+    sms_received = cel.SMS.poll()
     print("SMS received count:", sms_received)
 
-    sms_list = cel.sms_list()
+    sms_list = cel.SMS.list()
     print("SMS:", sms_list)
     assert len(sms_list) > 0
     for i in sms_list:
