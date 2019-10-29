@@ -62,16 +62,41 @@ STATIC mp_obj_t modmachine_reset(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_reset_obj, modmachine_reset);
 
-STATIC mp_obj_t modmachine_idle(void) {
+STATIC mp_obj_t modmachine_set_idle(mp_obj_t flag) {
     // ========================================
-    // Puts the module into low-power mode.
+    // Puts the module into low-power mode by
+    // tuning down frequencies and powering
+    // down certain peripherials.
     // The execution continues.
+    // Args:
+    //     flag (bool): if True, triggers low-
+    //     power mode. If False, switches low-
+    //     power mode off.
     // ========================================
-    PM_SleepMode(true);
+    PM_SleepMode(mp_obj_get_int(flag));
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_idle_obj, modmachine_idle);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modmachine_set_idle_obj, modmachine_set_idle);
+
+STATIC mp_obj_t modmachine_set_min_freq(mp_obj_t freq) {
+    // ========================================
+    // Sets the minimal CPU frequency.
+    // Args:
+    //     freq (int): a constant specifying
+    //     the frequency.
+    // ========================================
+    int i = mp_obj_get_int(freq);
+    if (i != PM_SYS_FREQ_32K && i != PM_SYS_FREQ_13M && i != PM_SYS_FREQ_26M && i != PM_SYS_FREQ_39M &&
+            i != PM_SYS_FREQ_52M && i != PM_SYS_FREQ_78M && i != PM_SYS_FREQ_89M && i != PM_SYS_FREQ_104M &&
+            i != PM_SYS_FREQ_113M && i != PM_SYS_FREQ_125M && i != PM_SYS_FREQ_139M && i != PM_SYS_FREQ_156M &&
+            i != PM_SYS_FREQ_178M && i != PM_SYS_FREQ_208M && i != PM_SYS_FREQ_250M && i != PM_SYS_FREQ_312M)
+        mp_raise_ValueError("Unknown frequency");
+    PM_SetSysMinFreq(i);
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modmachine_set_min_freq_obj, modmachine_set_min_freq);
 
 STATIC mp_obj_t modmachine_power_on_cause(void) {
     // ========================================
@@ -171,7 +196,8 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_umachine) },
     { MP_ROM_QSTR(MP_QSTR_Pin), MP_ROM_PTR(&machine_pin_type) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modmachine_reset_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_idle), (mp_obj_t)&modmachine_idle_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_set_idle), (mp_obj_t)&modmachine_set_idle_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_set_min_freq), (mp_obj_t)&modmachine_set_min_freq_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_power_on_cause), (mp_obj_t)&modmachine_power_on_cause_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&modmachine_off_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_input_voltage), (mp_obj_t)&modmachine_get_input_voltage_obj },
@@ -186,6 +212,24 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_POWER_ON_CAUSE_EXCEPTION), MP_ROM_INT(POWER_ON_CAUSE_EXCEPTION) },
     { MP_ROM_QSTR(MP_QSTR_POWER_ON_CAUSE_RESET),     MP_ROM_INT(POWER_ON_CAUSE_RESET) },
     { MP_ROM_QSTR(MP_QSTR_POWER_ON_CAUSE_MAX),       MP_ROM_INT(POWER_ON_CAUSE_MAX) },
+
+    // Frequencies
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_32K),          MP_ROM_INT(PM_SYS_FREQ_32K) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_13M),          MP_ROM_INT(PM_SYS_FREQ_13M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_26M),          MP_ROM_INT(PM_SYS_FREQ_26M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_39M),          MP_ROM_INT(PM_SYS_FREQ_39M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_52M),          MP_ROM_INT(PM_SYS_FREQ_52M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_78M),          MP_ROM_INT(PM_SYS_FREQ_78M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_89M),          MP_ROM_INT(PM_SYS_FREQ_89M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_104M),         MP_ROM_INT(PM_SYS_FREQ_104M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_113M),         MP_ROM_INT(PM_SYS_FREQ_113M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_125M),         MP_ROM_INT(PM_SYS_FREQ_125M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_139M),         MP_ROM_INT(PM_SYS_FREQ_139M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_156M),         MP_ROM_INT(PM_SYS_FREQ_156M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_178M),         MP_ROM_INT(PM_SYS_FREQ_178M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_208M),         MP_ROM_INT(PM_SYS_FREQ_208M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_250M),         MP_ROM_INT(PM_SYS_FREQ_250M) },
+    { MP_ROM_QSTR(MP_QSTR_PM_SYS_FREQ_312M),         MP_ROM_INT(PM_SYS_FREQ_312M) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(machine_module_globals, machine_module_globals_table);
