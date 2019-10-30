@@ -27,6 +27,7 @@
  */
 
 #include "modcellular.h"
+#include "mphalport.h"
 
 #include "py/nlr.h"
 #include "py/obj.h"
@@ -139,7 +140,6 @@ void modcellular_notify_reg_searching(API_Event_t* event) {
 void modcellular_notify_reg_denied(API_Event_t* event) {
     network_status = 0;
     network_status_updated = 1;
-
     network_exception = NTW_EXC_REG_DENIED;
 }
 
@@ -158,7 +158,6 @@ void modcellular_notify_det(API_Event_t* event) {
 void modcellular_notify_att_failed(API_Event_t* event) {
     network_status &= ~NTW_ATT_BIT;
     network_status_updated = 1;
-
     network_exception = NTW_EXC_ATT_FAILED;
 }
 
@@ -177,7 +176,6 @@ void modcellular_notify_deact(API_Event_t* event) {
 void modcellular_notify_act_failed(API_Event_t* event) {
     network_status &= ~NTW_ACT_BIT;
     network_status_updated = 1;
-
     network_exception = NTW_EXC_ACT_FAILED;
 }
 
@@ -347,19 +345,9 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
         return mp_const_none;
     }
     OS_Free(unicode);
-
-    clock_t time = clock();
-    while (clock() - time < MAX_SMS_SEND_TIMEOUT * CLOCKS_PER_MSEC && !sms_send_flag) {
-        OS_Sleep(100);
-    }
-
-    if (!sms_send_flag) {
-        mp_raise_CellularError("SMS send timeout. The module will still attempt to send SMS but this may interfer with other cellular activities");
-        return mp_const_none;
-    }
+    WAIT_UNTIL(sms_send_flag, TIMEOUT_SMS_SEND, 100, mp_warning(NULL, "Failed to send SMS. The module will continue attempting sending it"));
 
     sms_send_flag = 0;
-
     return mp_const_none;
 }
 
@@ -404,18 +392,8 @@ STATIC mp_obj_t modcellular_sms_list(void) {
     sms_list_buffer_count = 0;
 
     SMS_ListMessageRequst(SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD);
-    
-    clock_t time = clock();
-    uint8_t prev_count = 0;
-    while (clock() - time < MAX_SMS_LIST_TIMEOUT * CLOCKS_PER_MSEC) {
-        OS_Sleep(100);
-        if (sms_list_buffer_count == storage.used) break;
-        if (prev_count != sms_list_buffer_count) {
-            prev_count = sms_list_buffer_count;
-            time = clock();
-        }
-    }
-    
+    WAIT_UNTIL(sms_list_buffer_count == storage.used, TIMEOUT_SMS_LIST, 100, mp_warning(NULL, "Failed to poll all SMS: the list may be incomplete"));
+
     mp_obj_list_t *result = sms_list_buffer;
     sms_list_buffer = NULL;
     
@@ -638,7 +616,10 @@ STATIC mp_obj_t modcellular_poll_network_exception(void) {
     // Returns:
     //    An integer representing network exception.
     // ========================================
-    switch (network_exception) {
+    uint8_t e = network_exception;
+    network_exception = NTW_NO_EXC;
+
+    switch (e) {
 
         case NTW_EXC_NOSIM:
             mp_raise_CellularError("No SIM card inserted");
@@ -676,7 +657,6 @@ STATIC mp_obj_t modcellular_poll_network_exception(void) {
             break;
 
     }
-    network_exception = 0;
     return mp_const_none;
 }
 
@@ -768,21 +748,11 @@ STATIC mp_obj_t modcellular_gprs_attach() {
     }
 
     if (!status) {
-
         if (!Network_StartAttach()) {
             mp_raise_CellularError("Cannot initiate attachment");
             return mp_const_none;
         }
-
-        clock_t time = clock();
-        while (clock() - time < MAX_ATT_TIMEOUT * CLOCKS_PER_MSEC && !(network_status & NTW_ATT_BIT)) {
-            OS_Sleep(100);
-        }
-
-        if (!(network_status & NTW_ATT_BIT)) {
-            mp_raise_CellularError("Network attachment timeout");
-            return mp_const_none;
-        }
+        WAIT_UNTIL(network_status & NTW_ATT_BIT, TIMEOUT_GPRS_ATTACHMENT, 100, mp_raise_CellularError("Network attach timeout"));
     }
 
     return mp_const_none;
@@ -805,21 +775,11 @@ STATIC mp_obj_t modcellular_gprs_detach() {
     }
 
     if (status) {
-
         if (!Network_StartDetach()) {
             mp_raise_CellularError("Cannot initiate detachment");
             return mp_const_none;
         }
-
-        clock_t time = clock();
-        while (clock() - time < MAX_ATT_TIMEOUT * CLOCKS_PER_MSEC && (network_status & NTW_ATT_BIT)) {
-            OS_Sleep(100);
-        }
-
-        if (network_status & NTW_ATT_BIT) {
-            mp_raise_CellularError("Network detach timeout");
-            return mp_const_none;
-        }
+        WAIT_UNTIL(!(network_status & NTW_ATT_BIT), TIMEOUT_GPRS_ATTACHMENT, 100, mp_raise_CellularError("Network detach timeout"));
     }
 
     return mp_const_none;
@@ -860,16 +820,7 @@ STATIC mp_obj_t modcellular_gprs_activate(mp_obj_t apn, mp_obj_t user, mp_obj_t 
             mp_raise_CellularError("Cannot initiate context activation");
             return mp_const_none;
         }
-
-        clock_t time = clock();
-        while (clock() - time < MAX_ACT_TIMEOUT * CLOCKS_PER_MSEC && !(network_status & NTW_ACT_BIT)) {
-            OS_Sleep(100);
-        }
-
-        if (!(network_status & NTW_ACT_BIT)) {
-            mp_raise_CellularError("Network context activation timeout");
-            return mp_const_none;
-        }
+        WAIT_UNTIL(network_status & NTW_ACT_BIT, TIMEOUT_GPRS_ACTIVATION, 100, mp_raise_CellularError("Network context activation timeout"));
     }
 
     return mp_const_none;
@@ -877,7 +828,7 @@ STATIC mp_obj_t modcellular_gprs_activate(mp_obj_t apn, mp_obj_t user, mp_obj_t 
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(modcellular_gprs_activate_obj, modcellular_gprs_activate);
 
-STATIC mp_obj_t modcellular_gprs_deactivate() {
+STATIC mp_obj_t modcellular_gprs_deactivate(void) {
     // ========================================
     // Deactivates the GPRS network.
     // ========================================
@@ -892,27 +843,46 @@ STATIC mp_obj_t modcellular_gprs_deactivate() {
     }
 
     if (status) {
-
         if (!Network_StartDeactive(1)) {
             mp_raise_CellularError("Cannot initiate context deactivation");
             return mp_const_none;
         }
-
-        clock_t time = clock();
-        while (clock() - time < MAX_ACT_TIMEOUT * CLOCKS_PER_MSEC && (network_status & NTW_ACT_BIT)) {
-            OS_Sleep(100);
-        }
-
-        if (network_status & NTW_ACT_BIT) {
-            mp_raise_CellularError("Network context deactivation timeout");
-            return mp_const_none;
-        }
+        WAIT_UNTIL(!(network_status & NTW_ACT_BIT), TIMEOUT_GPRS_ACTIVATION, 100, mp_raise_CellularError("Network context deactivation timeout"));
     }
 
     return mp_const_none;
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_gprs_deactivate_obj, modcellular_gprs_deactivate);
+
+bool get_flight_mode(void) {
+    // Polls flight mode
+    bool flag;
+    if (!Network_GetFlightMode(&flag)) {
+        mp_raise_CellularError("Failed to retrieve flight mode status");
+    }
+    return !flag;  // By fact, the meaning of the output is inverse
+}
+
+STATIC mp_obj_t modcellular_flight_mode(size_t n_args, const mp_obj_t *args) {
+    // ========================================
+    // Retrieves and switches the flight mode
+    // status.
+    // Returns:
+    //     The new flight mode status.
+    // ========================================
+    if (n_args == 1) {
+        mp_int_t set_flag = mp_obj_get_int(args[0]);
+        if (!Network_SetFlightMode(set_flag)) {
+            mp_raise_CellularError("Failed to set flight mode status");
+            return mp_const_none;
+        }
+        WAIT_UNTIL(set_flag == get_flight_mode(), TIMEOUT_FLIGHT_MODE, 100, mp_raise_CellularError("Flight mode change timeout"));
+    }
+    return mp_obj_new_bool(get_flight_mode());
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_flight_mode_obj, 0, 1, modcellular_flight_mode);
 
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
@@ -935,6 +905,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_detach), (mp_obj_t)&modcellular_gprs_detach_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_activate), (mp_obj_t)&modcellular_gprs_activate_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs_deactivate), (mp_obj_t)&modcellular_gprs_deactivate_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_flight_mode), (mp_obj_t)&modcellular_flight_mode_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);

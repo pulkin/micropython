@@ -191,6 +191,29 @@ if sim_present:
     print("Network")
     print("----------------")
 
+    fm = cel.flight_mode()
+    print("Flight mode:", fm)
+
+    print("Setting flight mode")
+    assert cel.flight_mode(True)  # Switch flight mode on
+    try:
+        cel.poll_network_exception()
+    except cel.CellularError as e:
+        print("Exception:", e)
+    else:
+        raise RuntimeError("Exception not raised")
+
+    reg = cel.is_network_registered()
+    print("Ntw registered:", reg)
+    assert not reg
+
+    print("Releasing flight mode")
+    assert not cel.flight_mode(False)  # Switch flight mode off
+    for i in range(10):
+        time.sleep(1)
+        if cel.is_network_registered():
+            break
+
     reg = cel.is_network_registered()
     print("Ntw registered:", reg)
     assert reg
@@ -339,7 +362,17 @@ print("================")
 
 import machine
 
-machine.idle()
+def f():
+    t = time.ticks_ms()
+    for i in range(10000):
+        x = i * i
+    return time.ticks_ms() - t
+
+print("Default performance: ", f())
+machine.set_idle(True)
+print("Idle performance: ", f())
+machine.set_min_freq(machine.PM_SYS_FREQ_78M)
+print("78M performance: ", f())
 
 cause = machine.power_on_cause()
 print("Power on cause:", cause)
