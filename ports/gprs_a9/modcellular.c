@@ -65,7 +65,7 @@
 
 // Tracks the status on the network
 uint8_t network_status = 0;
-uint8_t network_exception = 0;
+uint8_t network_exception = NTW_NO_EXC;
 uint8_t network_status_updated = 0;
 uint8_t network_signal_quality = 0;
 uint8_t network_signal_rx_level = 0;
@@ -762,6 +762,29 @@ STATIC mp_obj_t modcellular_flight_mode(size_t n_args, const mp_obj_t *args) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_flight_mode_obj, 0, 1, modcellular_flight_mode);
 
+STATIC mp_obj_t modcellular_set_bands(size_t n_args, const mp_obj_t *args) {
+    // ========================================
+    // Sets 2G bands the module operates at.
+    // Args:
+    //     bands (int): a mask specifying
+    //     bands;
+    // ========================================
+    if (n_args == 0) {
+        if (!Network_SetFrequencyBand(NETWORK_FREQ_BAND_GSM_900P | NETWORK_FREQ_BAND_GSM_900E | NETWORK_FREQ_BAND_GSM_850 | NETWORK_FREQ_BAND_DCS_1800 | NETWORK_FREQ_BAND_PCS_1900)) {
+            mp_raise_CellularError("Failed to reset 2G GSM bands");
+            return mp_const_none;
+        }
+    } else if (n_args == 1) {
+        if (!Network_SetFrequencyBand(mp_obj_get_int(args[0]))) {
+            mp_raise_CellularError("Failed to set 2G GSM bands");
+            return mp_const_none;
+        }
+    }
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_set_bands_obj, 0, 1, modcellular_set_bands);
+
 STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
     // ========================================
     // Polls and switches GPRS status.
@@ -866,6 +889,20 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_gprs_obj, 0, 3, modcellular_gprs);
 
+STATIC mp_obj_t modcellular_reset(void) {
+    // ========================================
+    // Resets network settings to defaults.
+    // ========================================
+    mp_obj_t mp_false = mp_obj_new_int(0);
+    network_exception = NTW_NO_EXC;
+    modcellular_gprs(1, &mp_false);
+    modcellular_set_bands(0, NULL);
+    modcellular_flight_mode(1, mp_false);
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_reset_obj, modcellular_reset);
+
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
@@ -884,7 +921,15 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_iccid), (mp_obj_t)&modcellular_get_iccid_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imsi), (mp_obj_t)&modcellular_get_imsi_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_flight_mode), (mp_obj_t)&modcellular_flight_mode_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_set_bands), (mp_obj_t)&modcellular_set_bands_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs), (mp_obj_t)&modcellular_gprs_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
+
+    { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },
+    { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900E), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900E) },
+    { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_850),  MP_ROM_INT(NETWORK_FREQ_BAND_GSM_850)  },
+    { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_DCS_1800), MP_ROM_INT(NETWORK_FREQ_BAND_DCS_1800) },
+    { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_PCS_1900), MP_ROM_INT(NETWORK_FREQ_BAND_PCS_1900) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);

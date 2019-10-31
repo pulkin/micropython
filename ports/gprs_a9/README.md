@@ -244,6 +244,12 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Note**: there is no way to check whether the credentials supplied are valid.
 
+* `reset()`
+
+  Resets network settings to defaults. Disconnects GPRS.
+
+  **Raises**: `CellularError` if reset failed at any stage.
+
 ### `usocket` ###
 
 *Alias: `socket`*

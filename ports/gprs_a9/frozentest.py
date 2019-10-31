@@ -190,6 +190,8 @@ if sim_present:
     print("----------------")
     print("Network")
     print("----------------")
+    print("Resetting ...")
+    cel.set_bands()
 
     fm = cel.flight_mode()
     print("Flight mode:", fm)
@@ -209,6 +211,30 @@ if sim_present:
 
     print("Releasing flight mode")
     assert not cel.flight_mode(False)  # Switch flight mode off
+    for i in range(10):
+        time.sleep(1)
+        if cel.is_network_registered():
+            break
+
+    reg = cel.is_network_registered()
+    print("Ntw registered:", reg)
+    assert reg
+
+    print("Setting a single wrong band")
+    cel.set_bands(cel.NETWORK_FREQ_BAND_PCS_1900)
+    cel.poll_network_exception()
+    for i in range(10):
+        time.sleep(1)
+        if not cel.is_network_registered():
+            break
+
+    reg = cel.is_network_registered()
+    print("Ntw registered:", reg)
+    assert not reg
+
+    print("Resetting bands")
+    cel.set_bands()
+    cel.poll_network_exception()
     for i in range(10):
         time.sleep(1)
         if cel.is_network_registered():
