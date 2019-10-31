@@ -220,6 +220,12 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
   **Returns**: True if in flight mode.
 
+* `reset()`
+
+  Resets network settings to defaults. Disconnects GPRS.
+
+  **Raises**: `CellularError` if reset failed at any stage.
+
 ##### GPRS #####
 
 * `gprs(apn, user=None, pass=None)`
@@ -243,12 +249,6 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   **Raises**: `CellularError` if not registered on the network or the (de)activation process failed at any stage.
 
   **Note**: there is no way to check whether the credentials supplied are valid.
-
-* `reset()`
-
-  Resets network settings to defaults. Disconnects GPRS.
-
-  **Raises**: `CellularError` if reset failed at any stage.
 
 ### `usocket` ###
 
