@@ -210,45 +210,39 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   **Returns**: Two integers, the signal quality (0-31) and RXQUAL. These are replaced by `None` if no signal quality information is available.
   **Note**: The RXQUAL output is always `None`. Its meaning is unknown.
 
-##### GPRS #####
+* `flight_mode(flag)`
 
-* `gprs_attach()`
-
-  Attaches to the network. This is required for activating the GPRS context. If already attached, does nothing.
-
-  **Raises**: `CellularError` if not registered on the network or attachment process failed at any stage.
-
-  **Note**: There may be no need to run this as, after a hard reset, the module attempts to attach automatically.
-
-  **TODO**: Consider getting rid of this function.
-
-* `gprs_detach()`
-
-  Detaches from the network. Does nothing if already detached.
-
-  **Raises**: `CellularError` if not registered on the network or the detachment process failed at any stage.
-
-  **TODO**: Consider getting rid of this function.
-
-* `gprs_activate(apn, user, name)`
-
-  Activates the GPRS context. Does nothing if already activated even if different credentials were provided previously.
+  Turn the flight mode on or off. Retrieve the flight mode status.
 
   **Args**:
 
-    * apn (str): access point name (APN);
+    * flag (bool): set or unset the flight mode;
+
+  **Returns**: True if in flight mode.
+
+##### GPRS #####
+
+* `gprs(apn, user=None, pass=None)`
+
+  Activates, deactivates or retrieves the status of GPRS.
+
+  Activate: `cellular.gprs('apn', 'user', 'pass')`
+
+  Deactivate: `cellular.gprs(False)`
+
+  Status: `cellular.gprs()`
+
+  **Args**:
+
+    * apn (str, bool): access point name (APN);
     * user (str): username;
     * pass (str): password;
 
-  **Raises**: `CellularError` if not registered on the network or the activation process failed at any stage.
+  **Returns**: True if GPRS is operating.
+
+  **Raises**: `CellularError` if not registered on the network or the (de)activation process failed at any stage.
 
   **Note**: there is no way to check whether the credentials supplied are valid.
-
-* `gprs_deactivate()`
-
-  Deactivates the GPRS context. Does nothing if already deactivated.
-
-  **Raises**: `CellularError` if not registered on the network or the deactivation process failed at any stage.
 
 ### `usocket` ###
 

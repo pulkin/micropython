@@ -267,14 +267,8 @@ if sim_present:
     print("GPRS")
     print("----------------")
 
-    cel.gprs_deactivate()
-    cel.gprs_detach()
-    cel.network_status_changed()
-    time.sleep(2)
-
-    cel.gprs_attach()
     # LEBARA NL credentials
-    cel.gprs_activate("internet", "", "")
+    assert cel.gprs("internet", "", "")
 
     cb = cel.network_status_changed()
     print("Status changed:", cb, "->", cel.get_network_status())
@@ -353,8 +347,8 @@ if sim_present:
 
     assert sock.get_num_open() == 0
 
-    cel.gprs_deactivate()
-    cel.gprs_detach()
+    assert cel.gprs()
+    assert not cel.gprs(False)
 
 print("================")
 print("machine")
@@ -382,6 +376,9 @@ print("Voltage:", 1e-3 * v, percent, "%")
 assert 3 < 1e-3 * v < 5
 assert 10 < percent < 100
 
+print("========")
+print("Tests OK")
+print("========")
 print("Resetting ...")
 machine.reset()
 raise RuntimeError("Failed to reset the module")
