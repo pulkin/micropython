@@ -93,6 +93,11 @@ Provides cellular functionality.
 As usual, the original API does not give access to radio-level and low-level functionality such as controlling the registration on the cellular network: these are performed in the background automatically.
 The purpose of this module is to have an access to high-level networking (SMS, GPRS, calls) as well as to read the status of various components of cellular networking.
 
+#### Constants ####
+
+Frequencies: `NETWORK_FREQ_BAND_GSM_900P`, `NETWORK_FREQ_BAND_GSM_900E`, `NETWORK_FREQ_BAND_GSM_850`, `NETWORK_FREQ_BAND_DCS_1800`, `NETWORK_FREQ_BAND_PCS_1900`.
+Operator status: `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERATOR_STATUS_CURRENT`, `OPERATOR_STATUS_DISABLED`.
+
 #### Classes ####
 
 * `SMS(phone_number, message)`
@@ -219,6 +224,26 @@ The purpose of this module is to have an access to high-level networking (SMS, G
     * flag (bool): set or unset the flight mode;
 
   **Returns**: True if in flight mode.
+
+* `set_bands(bands)`
+
+  Sets frequency bands.
+
+  **Args**:
+
+    * bands (int): a mask specifying frequencies, see constants above.
+      If no argument specified, sets all bands.
+
+* `list_operators()`
+
+  Lists available operators.
+
+  **Returns**: A list of tuples `(op_id, op_name, op_status)` with operator data.
+  The first element is a 6-byte operator ID.
+  The second element is operator name.
+  The third element is the status of the operator network with respect to this module, see one of the constants above.
+
+  **Note**: Ignores virtual operators.
 
 * `reset()`
 
