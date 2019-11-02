@@ -58,13 +58,10 @@ void modcellular_notify_signal(API_Event_t* event);
 
 #define TIMEOUT_SMS_LIST 10000
 #define TIMEOUT_SMS_SEND 10000
-#define TIMEOUT_GPRS_ATTACHMENT 10000
+#define TIMEOUT_GPRS_ATTACHMENT 15000
 #define TIMEOUT_GPRS_ACTIVATION 10000
 #define TIMEOUT_FLIGHT_MODE 10000
 
-#define GPRS_STATUS_OFF 0
-#define GPRS_STATUS_ATTACHED 1
-#define GPRS_STATUS_ON 3
 
 #define REQUIRES_NETWORK_REGISTRATION do {if (!network_status) {mp_raise_CellularError("Network is not available: is SIM card inserted?"); return mp_const_none;}} while(0)
 #define REQUIRES_VALID_SMS_STATUS(bits) do {if (bitsum(bits) != 1) {return mp_const_none;}} while(0)

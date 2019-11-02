@@ -799,52 +799,27 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
     // ========================================
     REQUIRES_NETWORK_REGISTRATION;
 
-    uint8_t status;
-
-    // Attach status
-    if (!Network_GetAttachStatus(&status)) {
-        mp_raise_CellularError("Cannot retrieve attach status");
-        return mp_const_none;
-    }
-
-    if (status) {
-        if (!Network_GetActiveStatus(&status)) {
-            mp_raise_CellularError("Cannot retrieve context activation status");
-            return mp_const_none;
-        }
-        if (status)
-            status = GPRS_STATUS_ON;
-        else
-            status = GPRS_STATUS_ATTACHED;
-    } else
-        status = GPRS_STATUS_OFF;
-
-    if (n_args == 0) {
-        return mp_obj_new_bool(status);
-
-    } else if (n_args == 1) {
+    if (n_args == 1) {
         mp_int_t flag = mp_obj_get_int(args[0]);
         if (flag != 0) {
             mp_raise_ValueError("Unkown integer argument supplied, zero (or False) expected");
             return mp_const_none;
         }
 
-        if (status == GPRS_STATUS_ON) {
+        if (network_status & NTW_ACT_BIT) {
             if (!Network_StartDeactive(1)) {
                 mp_raise_CellularError("Cannot initiate context deactivation");
                 return mp_const_none;
             }
             WAIT_UNTIL(!(network_status & NTW_ACT_BIT), TIMEOUT_GPRS_ACTIVATION, 100, mp_raise_CellularError("Network context deactivation timeout"));
-            status = GPRS_STATUS_ATTACHED;
         }
 
-        if (status == GPRS_STATUS_ATTACHED) {
+        if (network_status & NTW_ATT_BIT) {
             if (!Network_StartDetach()) {
                 mp_raise_CellularError("Cannot initiate detachment");
                 return mp_const_none;
             }
             WAIT_UNTIL(!(network_status & NTW_ATT_BIT), TIMEOUT_GPRS_ATTACHMENT, 100, mp_raise_CellularError("Network detach timeout"));
-            status = GPRS_STATUS_OFF;
         }
 
     } else if (n_args == 3) {
@@ -852,21 +827,20 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
         const char* c_user = mp_obj_str_get_str(args[1]);
         const char* c_pass = mp_obj_str_get_str(args[2]);
 
-        if (status == GPRS_STATUS_ON) {
+        if (network_status & NTW_ACT_BIT) {
             mp_raise_CellularError("GPRS is already on");
             return mp_const_none;
         }
 
-        if (status == GPRS_STATUS_OFF) {
+        if (!(network_status & NTW_ATT_BIT)) {
             if (!Network_StartAttach()) {
                 mp_raise_CellularError("Cannot initiate attachment");
                 return mp_const_none;
             }
             WAIT_UNTIL(network_status & NTW_ATT_BIT, TIMEOUT_GPRS_ATTACHMENT, 100, mp_raise_CellularError("Network attach timeout"));
-            status = GPRS_STATUS_ATTACHED;
         }
 
-        if (status == GPRS_STATUS_ATTACHED) {
+        if (!(network_status & NTW_ACT_BIT)) {
             Network_PDP_Context_t context;
             memcpy(context.apn, c_apn, MIN(strlen(c_apn) + 1, sizeof(context.apn)));
             memcpy(context.userName, c_user, MIN(strlen(c_user) + 1, sizeof(context.userName)));
@@ -877,14 +851,13 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
                 return mp_const_none;
             }
             WAIT_UNTIL(network_status & NTW_ACT_BIT, TIMEOUT_GPRS_ACTIVATION, 100, mp_raise_CellularError("Network context activation timeout"));
-            status = GPRS_STATUS_ON;
         }
 
-    } else {
+    } else if (n_args != 0) {
         mp_raise_ValueError("Unexpected number of argument: 0, 1 or 3 required");
     }
 
-    return mp_obj_new_bool(status == GPRS_STATUS_ON);
+    return mp_obj_new_bool(network_status & NTW_ACT_BIT);
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_gprs_obj, 0, 3, modcellular_gprs);
