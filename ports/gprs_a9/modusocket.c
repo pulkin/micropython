@@ -626,9 +626,9 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_host, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
         { MP_QSTR_port, MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
-        { MP_QSTR_af, MP_ARG_INT, {.u_int = AF_INET} },
-        { MP_QSTR_type, MP_ARG_INT, {.u_int = SOCK_STREAM} },
-        { MP_QSTR_proto, MP_ARG_INT, {.u_int = IPPROTO_TCP} },
+        { MP_QSTR_af, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_type, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_proto, MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_flag, MP_ARG_INT, {.u_int = 0} },
     };
 
@@ -640,11 +640,14 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 
     int af;
     switch (args[ARG_af].u_int) {
+        case 0:
+            af = AF_INET;
+            break;
         case AF_INET:
             af = AF_INET;
             break;
         case AF_INET6:
-            mp_raise_ValueError("argument #3: af=AF_INET6 is not implemented");
+            mp_raise_ValueError("TODO argument #3: af=AF_INET6 is not implemented");
             break;
         default:
             mp_raise_ValueError("argument #3: 'af' should be one of AF_INET, AF_INET6");
@@ -653,6 +656,9 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 
     int type;
     switch (args[ARG_type].u_int) {
+        case 0:
+            type = SOCK_STREAM;
+            break;
         case SOCK_STREAM:
             type = SOCK_STREAM;
             break;
@@ -666,6 +672,9 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 
     int proto;
     switch (args[ARG_proto].u_int) {
+        case 0:
+            proto = IPPROTO_TCP;
+            break;
         case IPPROTO_TCP:
             proto = IPPROTO_TCP;
             break;
