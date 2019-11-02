@@ -6,6 +6,9 @@ test_send_sms = None
 test_fs = False
 # test_fs = True
 
+# Operator name expected
+opname_expected = "KPNNL"
+
 print("================")
 print("std")
 print("================")
@@ -191,7 +194,21 @@ if sim_present:
     print("Network")
     print("----------------")
     print("Resetting ...")
-    cel.set_bands()
+    cel.reset()
+    print("Waiting 15 secs ...")
+    time.sleep(15)
+
+    print("Scanning ...")
+    ops = cel.list_operators()
+    print("Operators:", ops)
+    assert len(ops) > 0
+
+    for op_id, op_status, op_name in ops:
+        if op_name == opname_expected:
+            assert op_status == cel.OPERATOR_STATUS_CURRENT
+            break
+    else:
+        raise RuntimeError("Operator '{}' not found".format(opname_expected))
 
     fm = cel.flight_mode()
     print("Flight mode:", fm)
