@@ -81,8 +81,15 @@ uint8_t sms_send_flag = 0;
 // -------------------
 
 // A buffer used for listing messages
-mp_obj_list_t* sms_list_buffer = NULL;
+mp_obj_list_t *sms_list_buffer = NULL;
 uint8_t sms_list_buffer_count = 0;
+
+// ---------------------------
+// Vars: Network operator list
+// ---------------------------
+
+uint8_t network_list_buffer_len = 0;
+Network_Operator_Info_t *network_list_buffer = NULL;
 
 // SMS parsing
 STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record);
@@ -182,6 +189,18 @@ void modcellular_notify_act_failed(API_Event_t* event) {
 void modcellular_notify_act(API_Event_t* event) {
     network_status |= NTW_ACT_BIT;
     network_status_updated = 1;
+}
+
+// Networks
+
+void modcellular_notify_ntwlist(API_Event_t* event) {
+    network_list_buffer_len = event->param1;
+
+    if (network_list_buffer != NULL)
+        free(network_list_buffer);
+    network_list_buffer = malloc(sizeof(Network_Operator_Info_t) * (network_list_buffer_len + 1));  // One more item added for empty outputs
+    if (network_list_buffer != NULL)
+        memcpy(network_list_buffer, event->pParam1, sizeof(Network_Operator_Info_t) * network_list_buffer_len);
 }
 
 // SMS
@@ -862,6 +881,42 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_gprs_obj, 0, 3, modcellular_gprs);
 
+STATIC mp_obj_t modcellular_list_operators(void) {
+    // ========================================
+    // Lists network operators.
+    // ========================================
+    network_list_buffer = NULL;
+    if (!Network_GetAvailableOperatorReq()) {
+        mp_raise_CellularError("Failed to poll available operators");
+        return mp_const_none;
+    }
+    WAIT_UNTIL(network_list_buffer != NULL, TIMEOUT_LIST_OPERATORS, 100, mp_raise_CellularError("Network list timeout"));
+
+    mp_obj_t items[network_list_buffer_len];
+    for (int i=0; i < network_list_buffer_len; i++) {
+
+        // Name
+        uint8_t *op_name;
+        if (!Network_GetOperatorNameById(network_list_buffer[i].operatorId, &op_name)) {
+            mp_raise_CellularError("Failed to poll operator name");
+            return mp_const_none;
+        }
+
+        mp_obj_t tuple[3] = {
+            mp_obj_new_bytearray(sizeof(network_list_buffer[i].operatorId), network_list_buffer[i].operatorId),
+            mp_obj_new_int(network_list_buffer[i].status),
+            mp_obj_new_str((char*) op_name, strlen((char*) op_name)),
+        };
+        items[i] = mp_obj_new_tuple(sizeof(tuple) / sizeof(mp_obj_t), tuple);
+    }
+
+    free(network_list_buffer);
+
+    return mp_obj_new_list(sizeof(items) / sizeof(mp_obj_t), items);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_list_operators_obj, modcellular_list_operators);
+
 STATIC mp_obj_t modcellular_reset(void) {
     // ========================================
     // Resets network settings to defaults.
@@ -896,6 +951,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_flight_mode), (mp_obj_t)&modcellular_flight_mode_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_bands), (mp_obj_t)&modcellular_set_bands_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs), (mp_obj_t)&modcellular_gprs_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_list_operators), (mp_obj_t)&modcellular_list_operators_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
 
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },
@@ -903,6 +959,11 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_850),  MP_ROM_INT(NETWORK_FREQ_BAND_GSM_850)  },
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_DCS_1800), MP_ROM_INT(NETWORK_FREQ_BAND_DCS_1800) },
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_PCS_1900), MP_ROM_INT(NETWORK_FREQ_BAND_PCS_1900) },
+
+    { MP_ROM_QSTR(MP_QSTR_OPERATOR_STATUS_UNKNOWN), MP_ROM_INT(0) },
+    { MP_ROM_QSTR(MP_QSTR_OPERATOR_STATUS_AVAILABLE), MP_ROM_INT(1) },
+    { MP_ROM_QSTR(MP_QSTR_OPERATOR_STATUS_CURRENT), MP_ROM_INT(2) },
+    { MP_ROM_QSTR(MP_QSTR_OPERATOR_STATUS_DISABLED), MP_ROM_INT(3) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);

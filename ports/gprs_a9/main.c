@@ -302,6 +302,10 @@ void EventDispatch(API_Event_t* pEvent)
             modcellular_notify_act(pEvent);
             break;
 
+        case API_EVENT_ID_NETWORK_AVAILABEL_OPERATOR:
+            modcellular_notify_ntwlist(pEvent);
+            break;
+
         // SMS
         // ===
 
