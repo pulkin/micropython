@@ -870,7 +870,7 @@ STATIC mp_obj_t modcellular_reset(void) {
     network_exception = NTW_NO_EXC;
     modcellular_gprs(1, &mp_false);
     modcellular_set_bands(0, NULL);
-    modcellular_flight_mode(1, mp_false);
+    modcellular_flight_mode(1, &mp_false);
     return mp_const_none;
 }
 
