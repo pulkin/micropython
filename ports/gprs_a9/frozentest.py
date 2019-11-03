@@ -202,7 +202,7 @@ if sim_present:
     print("Current operator:", op)
 
     print("Scanning ...")
-    ops = cel.list_operators()
+    ops = cel.scan()
     print("Operators:", ops)
     assert len(ops) > 0
 

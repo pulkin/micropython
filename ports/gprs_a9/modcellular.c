@@ -97,9 +97,39 @@ STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record);
 STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
 
 void modcellular_init0(void) {
+    // Reset statuses
     network_status_updated = 0;
-    network_exception = 0;
+    network_exception = NTW_NO_EXC;
     sms_received_count = 0;
+
+    uint8_t status;
+
+    // Deactivate
+    if (Network_GetActiveStatus(&status)) {
+        if (status)
+            network_status |= NTW_ACT_BIT;
+        else
+            network_status &= ~NTW_ACT_BIT;
+    }
+
+    if (network_status & NTW_ACT_BIT)
+        if (Network_StartDeactive(1))
+            WAIT_UNTIL(!(network_status & NTW_ACT_BIT), TIMEOUT_GPRS_ACTIVATION, 100, break);
+
+    // Poll attachment status
+    // TODO: attachment status does not really work
+    if (Network_GetAttachStatus(&status)) {
+        if (status)
+            network_status |= NTW_ATT_BIT;
+        else
+            network_status &= ~NTW_ATT_BIT;
+    }
+
+    // Set bands to default
+    Network_SetFrequencyBand(NETWORK_FREQ_BAND_GSM_900P | NETWORK_FREQ_BAND_GSM_900E | NETWORK_FREQ_BAND_GSM_850 | NETWORK_FREQ_BAND_DCS_1800 | NETWORK_FREQ_BAND_PCS_1900);
+
+    // Turn off flight mode
+    Network_SetFlightMode(0);
 }
 
 // ----------
@@ -805,6 +835,14 @@ STATIC mp_obj_t modcellular_set_bands(size_t n_args, const mp_obj_t *args) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_set_bands_obj, 0, 1, modcellular_set_bands);
 
+bool __is_attached(void) {
+    uint8_t status;
+    if (Network_GetAttachStatus(&status)) {
+        return status;
+    }
+    return false;
+}
+
 STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
     // ========================================
     // Polls and switches GPRS status.
@@ -834,14 +872,6 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
             WAIT_UNTIL(!(network_status & NTW_ACT_BIT), TIMEOUT_GPRS_ACTIVATION, 100, mp_raise_CellularError("Network context deactivation timeout"));
         }
 
-        if (network_status & NTW_ATT_BIT) {
-            if (!Network_StartDetach()) {
-                mp_raise_CellularError("Cannot initiate detachment");
-                return mp_const_none;
-            }
-            WAIT_UNTIL(!(network_status & NTW_ATT_BIT), TIMEOUT_GPRS_ATTACHMENT, 100, mp_raise_CellularError("Network detach timeout"));
-        }
-
     } else if (n_args == 3) {
         const char* c_apn = mp_obj_str_get_str(args[0]);
         const char* c_user = mp_obj_str_get_str(args[1]);
@@ -851,14 +881,7 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
             mp_raise_CellularError("GPRS is already on");
             return mp_const_none;
         }
-
-        if (!(network_status & NTW_ATT_BIT)) {
-            if (!Network_StartAttach()) {
-                mp_raise_CellularError("Cannot initiate attachment");
-                return mp_const_none;
-            }
-            WAIT_UNTIL(network_status & NTW_ATT_BIT, TIMEOUT_GPRS_ATTACHMENT, 100, mp_raise_CellularError("Network attach timeout"));
-        }
+        WAIT_UNTIL(__is_attached(), TIMEOUT_GPRS_ATTACHMENT, 100, mp_raise_CellularError("Network is not attached: try resetting"));
 
         if (!(network_status & NTW_ACT_BIT)) {
             Network_PDP_Context_t context;
@@ -866,6 +889,7 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
             memcpy(context.userName, c_user, MIN(strlen(c_user) + 1, sizeof(context.userName)));
             memcpy(context.userPasswd, c_pass, MIN(strlen(c_pass) + 1, sizeof(context.userPasswd)));
 
+            
             if (!Network_StartActive(context)) {
                 mp_raise_CellularError("Cannot initiate context activation");
                 return mp_const_none;
@@ -983,11 +1007,7 @@ STATIC mp_obj_t modcellular_reset(void) {
     // ========================================
     // Resets network settings to defaults.
     // ========================================
-    mp_obj_t mp_false = mp_obj_new_int(0);
-    network_exception = NTW_NO_EXC;
-    modcellular_gprs(1, &mp_false);
-    modcellular_set_bands(0, NULL);
-    modcellular_flight_mode(1, &mp_false);
+    modcellular_init0();
     return mp_const_none;
 }
 
