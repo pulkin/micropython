@@ -60,6 +60,9 @@
 #define NTW_EXC_ACT_FAILED 0x06
 #define NTW_EXC_SMS_DROP 0x07
 
+#define MAX_NUMBER_LEN 16
+#define MAX_CALLS_MISSED 15
+
 // --------------
 // Vars: statuses
 // --------------
@@ -72,7 +75,7 @@ uint8_t network_signal_quality = 0;
 uint8_t network_signal_rx_level = 0;
 
 // Count SMS received
-uint8_t sms_received_count = 0;
+uint16_t sms_received_count = 0;
 
 // SMS send flag
 uint8_t sms_send_flag = 0;
@@ -92,6 +95,15 @@ uint8_t sms_list_buffer_count = 0;
 uint8_t network_list_buffer_len = 0;
 Network_Operator_Info_t *network_list_buffer = NULL;
 
+// -----------
+// Vars: Calls
+// -----------
+
+Buffer_t calls_missed;
+uint8_t calls_missed_buffer[MAX_NUMBER_LEN * (MAX_CALLS_MISSED + 1)];
+uint8_t calls_incoming_now[MAX_NUMBER_LEN] = {0};
+uint8_t calls_incoming_now_flag = 0;
+
 // SMS parsing
 STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record);
 STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
@@ -101,6 +113,9 @@ void modcellular_init0(void) {
     network_status_updated = 0;
     network_exception = NTW_NO_EXC;
     sms_received_count = 0;
+
+    // Incoming calls buffer
+    Buffer_Init(&calls_missed, calls_missed_buffer, sizeof(calls_missed_buffer));
 
     uint8_t status;
 
@@ -263,6 +278,22 @@ void modcellular_notify_sms_receipt(API_Event_t* event) {
 void modcellular_notify_signal(API_Event_t* event) {
     network_signal_quality = event->param1;
     network_signal_rx_level = event->param2;
+}
+
+void modcellular_notify_call_incoming(API_Event_t* event) {
+    if (strlen((char*) event->pParam1) > MAX_NUMBER_LEN - 1) {
+        event->pParam1[MAX_NUMBER_LEN] = 0;
+    }
+    uint8_t l = strlen((char*) event->pParam1);
+    memcpy(calls_incoming_now, event->pParam1, l + 1);
+    calls_incoming_now_flag = true;
+}
+
+void modcellular_notify_call_hangup(API_Event_t* event) {
+    if (event->param1) {
+        Buffer_Puts(&calls_missed, calls_incoming_now, MAX_NUMBER_LEN);
+        calls_incoming_now_flag = false;
+    }
 }
 
 // -------
@@ -1010,6 +1041,29 @@ STATIC mp_obj_t modcellular_register(size_t n_args, const mp_obj_t *args) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_register_obj, 0, 2, modcellular_register);
 
+STATIC mp_obj_t modcellular_call(void) {
+    // ========================================
+    // Incoming call number.
+    // ========================================
+    mp_obj_t tuple[Buffer_Size(&calls_missed) / MAX_NUMBER_LEN];
+    char tel_n[MAX_NUMBER_LEN];
+
+    for (int i=0; i<sizeof(tuple) / sizeof(mp_obj_t); i++) {
+        Buffer_Gets(&calls_missed, (uint8_t*) tel_n, MAX_NUMBER_LEN);
+        tuple[i] = mp_obj_new_str(tel_n, strlen(tel_n));
+    }
+
+    mp_obj_t items[2] = {
+        mp_obj_new_list(sizeof(tuple) / sizeof(mp_obj_t), tuple),
+        mp_const_none,
+    };
+    if (calls_incoming_now_flag)
+        items[1] = mp_obj_new_str((char*) calls_incoming_now, strlen((char*) calls_incoming_now));
+    return mp_obj_new_tuple(sizeof(items) / sizeof(mp_obj_t), items);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_call_obj, modcellular_call);
+
 STATIC mp_obj_t modcellular_reset(void) {
     // ========================================
     // Resets network settings to defaults.
@@ -1042,6 +1096,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs), (mp_obj_t)&modcellular_gprs_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_scan), (mp_obj_t)&modcellular_scan_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&modcellular_register_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_call), (mp_obj_t)&modcellular_call_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
 
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },

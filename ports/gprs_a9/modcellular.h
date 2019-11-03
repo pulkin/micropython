@@ -56,7 +56,11 @@ void modcellular_notify_sms_list(API_Event_t* event);
 void modcellular_notify_sms_sent(API_Event_t* event);
 void modcellular_notify_sms_error(API_Event_t* event);
 void modcellular_notify_sms_receipt(API_Event_t* event);
+
 void modcellular_notify_signal(API_Event_t* event);
+
+void modcellular_notify_call_incoming(API_Event_t* event);
+void modcellular_notify_call_hangup(API_Event_t* event);
 
 #define TIMEOUT_SMS_LIST 10000
 #define TIMEOUT_SMS_SEND 10000

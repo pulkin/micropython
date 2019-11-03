@@ -332,6 +332,17 @@ void EventDispatch(API_Event_t* pEvent)
             modcellular_notify_signal(pEvent);
             break;
 
+        // Call
+        // ====
+
+        case API_EVENT_ID_CALL_INCOMING:
+            modcellular_notify_call_incoming(pEvent);
+            break;
+
+        case API_EVENT_ID_CALL_HANGUP:
+            modcellular_notify_call_hangup(pEvent);
+            break;
+
         // UART
         // ====
         case API_EVENT_ID_UART_RECEIVED:

@@ -289,6 +289,14 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
 
   **Note**: there is no way to check whether the credentials supplied are valid.
 
+##### Calls #####
+
+* `call()`
+
+  Calls and call status.
+
+  **Returns**: A list of calls missed and the incoming call number or `None` if no incoming calls at the moment.
+
 ### `usocket` ###
 
 *Alias: `socket`*
