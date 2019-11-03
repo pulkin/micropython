@@ -97,6 +97,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
 Frequencies: `NETWORK_FREQ_BAND_GSM_900P`, `NETWORK_FREQ_BAND_GSM_900E`, `NETWORK_FREQ_BAND_GSM_850`, `NETWORK_FREQ_BAND_DCS_1800`, `NETWORK_FREQ_BAND_PCS_1900`.
 Operator status: `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERATOR_STATUS_CURRENT`, `OPERATOR_STATUS_DISABLED`.
+Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_AUTO`.
 
 #### Classes ####
 
@@ -234,7 +235,7 @@ Operator status: `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERAT
     * bands (int): a mask specifying frequencies, see constants above.
       If no argument specified, sets all bands.
 
-* `list_operators()`
+* `scan()`
 
   Lists available operators.
 
@@ -244,6 +245,19 @@ Operator status: `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERAT
   The third element is the status of the operator network with respect to this module, see one of the constants above.
 
   **Note**: Ignores virtual operators.
+
+* `register(operator_id, register_mode)`
+
+  Registers on the network and retrieve the current network ID.
+
+  **Args**:
+
+    * `operator_id` (byterray, bool): a 6-byte operator ID of `False` if a de-registration requested;
+    * `register_mode` (int): registration mode, see one of the constants above;
+
+  **Returns**: Operator ID (6 bytes) and register mode (int).
+
+  **TODO**: Figure out how (and whether) registration works.
 
 * `reset()`
 

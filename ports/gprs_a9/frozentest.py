@@ -198,6 +198,9 @@ if sim_present:
     print("Waiting 15 secs ...")
     time.sleep(15)
 
+    op, status = cel.register()
+    print("Current operator:", op)
+
     print("Scanning ...")
     ops = cel.list_operators()
     print("Operators:", ops)
@@ -206,6 +209,7 @@ if sim_present:
     for op_id, op_status, op_name in ops:
         if op_name == opname_expected:
             assert op_status == cel.OPERATOR_STATUS_CURRENT
+            assert op_id == op
             break
     else:
         raise RuntimeError("Operator '{}' not found".format(opname_expected))

@@ -34,6 +34,7 @@
 #include "py/runtime.h"
 #include "py/binary.h"
 #include "py/objexcept.h"
+#include "py/objarray.h"
 
 #include "api_info.h"
 #include "api_sim.h"
@@ -881,7 +882,7 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_gprs_obj, 0, 3, modcellular_gprs);
 
-STATIC mp_obj_t modcellular_list_operators(void) {
+STATIC mp_obj_t modcellular_scan(void) {
     // ========================================
     // Lists network operators.
     // ========================================
@@ -915,7 +916,68 @@ STATIC mp_obj_t modcellular_list_operators(void) {
     return mp_obj_new_list(sizeof(items) / sizeof(mp_obj_t), items);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_list_operators_obj, modcellular_list_operators);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_scan_obj, modcellular_scan);
+
+STATIC mp_obj_t modcellular_register(size_t n_args, const mp_obj_t *args) {
+    // ========================================
+    // Lists network operators.
+    // ========================================
+    if (n_args == 1) {
+        mp_int_t flag = mp_obj_get_int(args[0]);
+        if (flag != 0) {
+            mp_raise_ValueError("Unkown integer argument supplied, zero (or False) expected");
+            return mp_const_none;
+        }
+
+        if (!Network_DeRegister()) {
+            mp_raise_CellularError("Failed to request deregistration");
+            return mp_const_none;
+        }
+        WAIT_UNTIL(!(network_status & NTW_REG_BIT), TIMEOUT_REG, 100, mp_raise_CellularError("De-registration timeout"));
+
+    } else if (n_args == 2) {
+        mp_obj_array_t *op_id = MP_OBJ_TO_PTR(args[0]);
+        mp_int_t op_mode = mp_obj_get_int(args[1]);
+
+        if (op_id->base.type != &mp_type_bytearray) {
+            mp_raise_ValueError("A bytearray expected");
+            return mp_const_none;
+        }
+
+        if (op_id->len != 6) {
+            mp_raise_ValueError("The length of the input bytearray should be 6");
+            return mp_const_none;
+        }
+
+        if (op_mode != NETWORK_REGISTER_MODE_MANUAL && op_mode != NETWORK_REGISTER_MODE_AUTO && op_mode != NETWORK_REGISTER_MODE_MANUAL_AUTO) {
+            mp_raise_ValueError("The mode should be one of NETWORK_REGISTER_MODE_*");
+            return mp_const_none;
+        }
+
+        if (!Network_Register((uint8_t*) op_id->items, (Network_Register_Mode_t) op_mode)) {
+            mp_raise_CellularError("Failed to request network registration");
+            return mp_const_none;
+        }
+        WAIT_UNTIL(network_status & NTW_REG_BIT, TIMEOUT_REG, 100, mp_raise_CellularError("Registration timeout"));
+    }
+
+    uint8_t op_id[6];
+    Network_Register_Mode_t op_mode;
+
+    if (!Network_GetCurrentOperator(op_id, &op_mode)) {
+        mp_raise_CellularError("Failed to poll current operator");
+        return mp_const_none;
+    }
+
+    mp_obj_t tuple[2] = {
+        mp_obj_new_bytearray(sizeof(op_id), op_id),
+        mp_obj_new_int((uint8_t) op_mode),
+    };
+
+    return mp_obj_new_tuple(sizeof(tuple) / sizeof(mp_obj_t), tuple);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_register_obj, 0, 2, modcellular_register);
 
 STATIC mp_obj_t modcellular_reset(void) {
     // ========================================
@@ -951,7 +1013,8 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_flight_mode), (mp_obj_t)&modcellular_flight_mode_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_bands), (mp_obj_t)&modcellular_set_bands_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs), (mp_obj_t)&modcellular_gprs_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_list_operators), (mp_obj_t)&modcellular_list_operators_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_scan), (mp_obj_t)&modcellular_scan_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&modcellular_register_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
 
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },
@@ -964,6 +1027,11 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_OPERATOR_STATUS_AVAILABLE), MP_ROM_INT(1) },
     { MP_ROM_QSTR(MP_QSTR_OPERATOR_STATUS_CURRENT), MP_ROM_INT(2) },
     { MP_ROM_QSTR(MP_QSTR_OPERATOR_STATUS_DISABLED), MP_ROM_INT(3) },
+
+    { MP_ROM_QSTR(MP_QSTR_NETWORK_MODE_MANUAL),      MP_ROM_INT(NETWORK_REGISTER_MODE_MANUAL)      },
+    { MP_ROM_QSTR(MP_QSTR_NETWORK_MODE_AUTO),        MP_ROM_INT(NETWORK_REGISTER_MODE_AUTO)        },
+    { MP_ROM_QSTR(MP_QSTR_NETWORK_MODE_MANUAL_AUTO), MP_ROM_INT(NETWORK_REGISTER_MODE_MANUAL_AUTO) },
+    
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);
