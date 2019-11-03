@@ -929,8 +929,8 @@ STATIC mp_obj_t modcellular_scan(void) {
 
         mp_obj_t tuple[3] = {
             mp_obj_new_bytearray(sizeof(network_list_buffer[i].operatorId), network_list_buffer[i].operatorId),
-            mp_obj_new_int(network_list_buffer[i].status),
             mp_obj_new_str((char*) op_name, strlen((char*) op_name)),
+            mp_obj_new_int(network_list_buffer[i].status),
         };
         items[i] = mp_obj_new_tuple(sizeof(tuple) / sizeof(mp_obj_t), tuple);
     }
@@ -993,8 +993,15 @@ STATIC mp_obj_t modcellular_register(size_t n_args, const mp_obj_t *args) {
         return mp_const_none;
     }
 
-    mp_obj_t tuple[2] = {
+    uint8_t *op_name;
+    if (!Network_GetOperatorNameById(op_id, &op_name)) {
+        mp_raise_CellularError("Failed to poll operator name");
+        return mp_const_none;
+    }
+
+    mp_obj_t tuple[3] = {
         mp_obj_new_bytearray(sizeof(op_id), op_id),
+        mp_obj_new_str((char*) op_name, strlen((char*) op_name)),
         mp_obj_new_int((uint8_t) op_mode),
     };
 
