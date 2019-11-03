@@ -255,7 +255,7 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
     * `operator_id` (byterray, bool): a 6-byte operator ID of `False` if a de-registration requested;
     * `register_mode` (int): registration mode, see one of the constants above;
 
-  **Returns**: Operator ID (6 bytes) and register mode (int).
+  **Returns**: Operator ID (6 bytes), operator name (str) and register mode (int).
 
   **TODO**: Figure out how (and whether) registration works.
 
