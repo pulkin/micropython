@@ -41,6 +41,7 @@
 #include "api_sms.h"
 #include "api_os.h"
 #include "api_network.h"
+#include "api_inc_network.h"
 
 #include "buffer.h"
 #include "time.h"
@@ -62,6 +63,7 @@
 
 #define MAX_NUMBER_LEN 16
 #define MAX_CALLS_MISSED 15
+#define MAX_CELLS 8
 
 // --------------
 // Vars: statuses
@@ -95,6 +97,13 @@ uint8_t sms_list_buffer_count = 0;
 uint8_t network_list_buffer_len = 0;
 Network_Operator_Info_t *network_list_buffer = NULL;
 
+// -------------------
+// Vars: base stations
+// -------------------
+
+Network_Location_t cells[MAX_CELLS];
+int8_t cells_n = 0;
+
 // -----------
 // Vars: Calls
 // -----------
@@ -113,6 +122,7 @@ void modcellular_init0(void) {
     network_status_updated = 0;
     network_exception = NTW_NO_EXC;
     sms_received_count = 0;
+    cells_n = 0;
 
     // Incoming calls buffer
     Buffer_Init(&calls_missed, calls_missed_buffer, sizeof(calls_missed_buffer));
@@ -294,6 +304,11 @@ void modcellular_notify_call_hangup(API_Event_t* event) {
         Buffer_Puts(&calls_missed, calls_incoming_now, MAX_NUMBER_LEN);
         calls_incoming_now_flag = false;
     }
+}
+
+void modcellular_notify_cell_info(API_Event_t* event) {
+    cells_n = event->param1;
+    memcpy(cells, event->pParam1, MIN(cells_n * sizeof(Network_Location_t), sizeof(cells)));
 }
 
 // -------
@@ -1064,6 +1079,36 @@ STATIC mp_obj_t modcellular_call(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_call_obj, modcellular_call);
 
+STATIC mp_obj_t modcellular_stations(void) {
+    // ========================================
+    // Polls base stations.
+    // ========================================
+    cells_n = -1;
+    if (!Network_GetCellInfoRequst()) {
+        mp_raise_CellularError("Failed to poll base stations");
+        return mp_const_none;
+    }
+    WAIT_UNTIL(cells_n >= 0, TIMEOUT_STATIONS, 100, mp_raise_CellularError("Station poll timeout"));
+
+    mp_obj_t stations[cells_n];
+    for (int i=0; i<cells_n; i++) {
+        mp_obj_t tuple[8] = {
+            mp_obj_new_int(cells[i].sMcc[0] * 100 + cells[i].sMcc[1] * 10 + cells[i].sMcc[2]),
+            mp_obj_new_int(cells[i].sMnc[0] * 100 + cells[i].sMnc[1] * 10 + cells[i].sMnc[2]),
+            mp_obj_new_int(cells[i].sLac),
+            mp_obj_new_int(cells[i].sCellID),
+            mp_obj_new_int(cells[i].iBsic),
+            mp_obj_new_int(cells[i].iRxLev),
+            mp_obj_new_int(cells[i].iRxLevSub),
+            mp_obj_new_int(cells[i].nArfcn),
+        };
+        stations[i] = mp_obj_new_tuple(sizeof(tuple) / sizeof(mp_obj_t), tuple);
+    }
+    return mp_obj_new_tuple(sizeof(stations) / sizeof(mp_obj_t), stations);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_stations_obj, modcellular_stations);
+
 STATIC mp_obj_t modcellular_reset(void) {
     // ========================================
     // Resets network settings to defaults.
@@ -1097,6 +1142,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_scan), (mp_obj_t)&modcellular_scan_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&modcellular_register_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_call), (mp_obj_t)&modcellular_call_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_stations), (mp_obj_t)&modcellular_stations_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
 
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },

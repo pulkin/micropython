@@ -259,6 +259,20 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
 
   **TODO**: Figure out how (and whether) registration works.
 
+* `stations()`
+
+  Lists GSM base stations.
+
+  **Returns**: A tuple of tuples with the following data (all integers):
+    * `mcc`: mobile country code;
+    * `mnc`: mobile network code. These can be both 2-digit and 3-digit; 2-digit codes are multiplied by 10;
+    * `lac`: location area code;
+    * `cell_id`: cell id. The above 4 numbers identify the base station uniquely;
+    * `bsic`: unknown;
+    * `rx_full`: signal strength;
+    * `rx_sub`: signal strength;
+    * `arfcn`: absolute radio frequency channel number.
+
 * `reset()`
 
   Resets network settings to defaults. Disconnects GPRS.

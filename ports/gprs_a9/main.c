@@ -332,6 +332,10 @@ void EventDispatch(API_Event_t* pEvent)
             modcellular_notify_signal(pEvent);
             break;
 
+        case API_EVENT_ID_NETWORK_CELL_INFO:
+            modcellular_notify_cell_info(pEvent);
+            break;
+
         // Call
         // ====
 

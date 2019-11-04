@@ -58,6 +58,7 @@ void modcellular_notify_sms_error(API_Event_t* event);
 void modcellular_notify_sms_receipt(API_Event_t* event);
 
 void modcellular_notify_signal(API_Event_t* event);
+void modcellular_notify_cell_info(API_Event_t* event);
 
 void modcellular_notify_call_incoming(API_Event_t* event);
 void modcellular_notify_call_hangup(API_Event_t* event);
@@ -69,6 +70,7 @@ void modcellular_notify_call_hangup(API_Event_t* event);
 #define TIMEOUT_FLIGHT_MODE 10000
 #define TIMEOUT_LIST_OPERATORS 15000
 #define TIMEOUT_REG 10000
+#define TIMEOUT_STATIONS 2000
 
 #define REQUIRES_NETWORK_REGISTRATION do {if (!network_status) {mp_raise_CellularError("Network is not available: is SIM card inserted?"); return mp_const_none;}} while(0)
 #define REQUIRES_VALID_SMS_STATUS(bits) do {if (bitsum(bits) != 1) {return mp_const_none;}} while(0)
