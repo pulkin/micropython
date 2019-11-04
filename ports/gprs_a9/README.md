@@ -117,13 +117,9 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
     
       Sends the message.
 
-      **Raises**: `CelularError` if not registered on the network or failed to set up/send SMS.
-
     * `withdraw()`
 
       Withdraws SMS from SIM storage. Resets status and index of this object to zero.
-
-      **Raises**: `CellularError` if failed to withdraw.
 
     * `poll()` [staticmethod]
 
@@ -136,8 +132,6 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
       Retrieves SMS from the SIM card.
       
       **Returns**: a list of SMS messages.
-
-      **Raises**: `CellularError` if not registered on the network. This is because network registration process interfers with most other SIM-related operations.
 
 #### Exception classes ####
 
@@ -159,15 +153,11 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
 
   **Returns**: a string with ICCID number.
 
-  **Raises**: `CellularError` if no ICCID number can be retrieved.
-
 * `get_imsi()`
 
   Retrieves the International Mobile Subscriber Identity (IMSI) number of the inserted SIM card.
 
   **Returns**: a string with IMSI number.
-
-  **Raises**: `CellularError` if no IMSI number can be retrieved.
 
 * `network_status_changed()`
 
@@ -187,8 +177,6 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
 
   Retrieves the network exception and raises it, if any.
 
-  **Raises**: One of `CellularError`s occurred during the operation in the background.
-
 * `is_sim_present()`
 
   Checks whether the SIM card is present and ICCID can be retrieved.
@@ -206,8 +194,6 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
   Checks whether registered on the roaming network.
 
   **Returns**: True if roaming.
-
-  **Raises** `CellularError` if not registered on the network.
 
 * `get_signal_quality()`
 
@@ -277,8 +263,6 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
 
   Resets network settings to defaults. Disconnects GPRS.
 
-  **Raises**: `CellularError` if reset failed at any stage.
-
 ##### GPRS #####
 
 * `gprs(apn, user=None, pass=None)`
@@ -298,8 +282,6 @@ Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_
     * pass (str): password;
 
   **Returns**: True if GPRS is operating.
-
-  **Raises**: `CellularError` if not registered on the network or the (de)activation process failed at any stage.
 
   **Note**: there is no way to check whether the credentials supplied are valid.
 
@@ -352,8 +334,6 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
   Retrieves the local IP address.
 
   **Returns**: The local IP address as a string.
-
-  **Raises**: `NetworkError` if no address was assigned.
 
 * `getaddrinfo(host, port, af=AF_INET, type=SOCK_STREAM, proto=IPPROTO_TCP, flags=0)`
 
@@ -445,8 +425,6 @@ This is only available in the A9G module where GPS is a separate chip connected 
 
   Turns the GPS on. Blocks until the GPS module responds.
 
-  **Raises**: `GPSError` if the GPS module does not respond within 10 seconds.
-
 * `off()`
 
   Turns the GPS off.
@@ -457,15 +435,11 @@ This is only available in the A9G module where GPS is a separate chip connected 
 
   **Returns**: the firmware version as a string.
 
-  **Raises**: `GPSError` if the GPS module fails to respond.
-
 * `get_location()`
 
   Retrieves the current GPS location.
 
   **Returns**: latitude and longitude in degrees.
-
-  **Raises**: `GPSError` if the GPS module never responded or is off.
 
 * `get_last_location()`
 
@@ -473,15 +447,11 @@ This is only available in the A9G module where GPS is a separate chip connected 
 
   **Returns**: latitude and longitude in degrees.
 
-  **Raises**: `GPSError` if the GPS module never responded.
-
 * `get_satellites()`
 
   Retrieves the number of satellites visible.
 
   **Returns**: the number of satellites tracked and the number of visible satellites.
-
-  **Raises**: `GPSError` if the GPS module is off.
 
 ### `machine`
 
@@ -582,8 +552,6 @@ I2C_DEFAULT_TIME_OUT
   
   **Returns**: `None` if everything ok.
 
-  **Raises** `I2CError` (see error message for more details)
-  
   **Note**: Different ports can be initialized simultaneously
 
 * `close(id)`
@@ -596,8 +564,6 @@ I2C_DEFAULT_TIME_OUT
   
   **Returns**: `None` if everything ok.
 
-  **Raises** `I2CError` (see error message for more details)
-  
 * `receive(id, slave_address, data_length, [timeout] = I2C_DEFAULT_TIME_OUT)`
 
   Receive data given length from slave device
@@ -611,8 +577,6 @@ I2C_DEFAULT_TIME_OUT
   
   **Returns**: bytes() of given length.
 
-  **Raises** `I2CError` (see error message for more details)
-  
 * `transmit(id, slave_address, data, [timeout] = I2C_DEFAULT_TIME_OUT)`
 
   Transmit given data to slave device
@@ -626,8 +590,6 @@ I2C_DEFAULT_TIME_OUT
   
   **Returns**: None if everything ok.
 
-  **Raises** `I2CError` (see error message for more details)
-  
 * `mem_receive(id, slave_address, memory_address, memory_size, data_length, [timeout] = I2C_DEFAULT_TIME_OUT)`
 
   Read data given length from slave device's memory by its address
@@ -643,8 +605,6 @@ I2C_DEFAULT_TIME_OUT
   
   **Returns**: bytes() of given length.
 
-  **Raises** `I2CError` (see error message for more details)
-  
 * `mem_transmit(id, slave_address, memory_address, memory_size, data, [timeout] = I2C_DEFAULT_TIME_OUT)`
 
   Write given data to slave device's memory by address
@@ -659,8 +619,6 @@ I2C_DEFAULT_TIME_OUT
     * `[timeout]` (int) = 10: timeout of writing in ms
   
   **Returns**: None if everything ok.
-
-  **Raises** `I2CError` (see error message for more details)
 
 ## Notes ##
 
