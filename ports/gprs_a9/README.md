@@ -69,7 +69,7 @@ ampy --port /dev/ttyUSB1 put frozentest.py
 - [x] Cellular misc (IMEI, ICCID, ...): `cellular`
 - [x] GPS: `gps`
 - [x] I2C: `i2c`
-- [ ] SPI: `machine.SPI`
+- [x] SPI: `machine.SPI` (software only)
 - [x] time: `utime`
 - [x] File system
 - [x] GPRS, DNS: `cellular`, `socket`, `ssl`
