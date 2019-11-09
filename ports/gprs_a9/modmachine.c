@@ -27,6 +27,7 @@
  */
 
 #include "modmachine.h"
+#include "extmod/machine_spi.h"
 
 #include "mpconfigport.h"
 #include "stdint.h"
@@ -204,6 +205,9 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_on), (mp_obj_t)&modmachine_watchdog_on_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_off), (mp_obj_t)&modmachine_watchdog_off_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_reset), (mp_obj_t)&modmachine_watchdog_reset_obj },
+    #if MICROPY_PY_MACHINE_SPI
+    { MP_ROM_QSTR(MP_QSTR_SPI), MP_ROM_PTR(&mp_machine_soft_spi_type) },
+    #endif
 
     // Reset reasons
     { MP_ROM_QSTR(MP_QSTR_POWER_ON_CAUSE_KEY),       MP_ROM_INT(POWER_ON_CAUSE_KEY) },

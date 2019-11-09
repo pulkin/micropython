@@ -156,6 +156,10 @@ LIB_SRC_C += \
 	lib/oofatfs/ff.c \
 	lib/oofatfs/ffunicode.c
 
+DRIVERS_SRC_C = $(addprefix drivers/,\
+	bus/softspi.c \
+        )
+
 SRC_S = \
 	gchelper.s
 

@@ -34,6 +34,8 @@
 #include "lib/utils/interrupt_char.h"
 #include "time.h"
 
+#define MP_HAL_PIN_FMT "%u"
+#define mp_hal_pin_name(p) (p)
 void mp_hal_set_interrupt_char(int c);
 
 bool UartInit();

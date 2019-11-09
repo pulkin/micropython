@@ -388,3 +388,14 @@ STATIC const machine_pin_irq_obj_t machine_pin_irq_object[] = {
 //     .call = machine_pin_irq_call,
 //     .locals_dict = (mp_obj_dict_t*)&machine_pin_irq_locals_dict,
 // };
+
+
+void mp_hal_pin_input(mp_hal_pin_obj_t pin_id) {
+    const machine_pin_obj_t *self = MP_OBJ_TO_PTR(pin_id); // &machine_pin_obj[pin_id];
+    GPIO_ChangeMode(self->id, GPIO_MODE_INPUT);
+}
+
+void mp_hal_pin_output(mp_hal_pin_obj_t pin_id) {
+    const machine_pin_obj_t *self = MP_OBJ_TO_PTR(pin_id); // &machine_pin_obj[pin_id];
+    GPIO_ChangeMode(self->id, GPIO_MODE_OUTPUT);
+}
