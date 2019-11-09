@@ -135,7 +135,11 @@ STATIC mp_obj_t machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_
         { MP_QSTR_pull, MP_ARG_OBJ, {.u_obj = mp_const_none}},
         { MP_QSTR_value, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
     };
-    GPIO_config_t gpioObj;
+    GPIO_config_t gpioObj = {
+        .mode=GPIO_MODE_OUTPUT,
+        .pin=GPIO_PIN27,
+        .defaultLevel=GPIO_LEVEL_LOW,
+    };
 
     // parse args
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -150,9 +154,8 @@ STATIC mp_obj_t machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_
         PM_PowerEnable(POWER_TYPE_CAM,true);
 
     // set initial value (do this before configuring mode/pull)
-    if (args[ARG_value].u_obj != MP_OBJ_NULL) {
+    if (args[ARG_value].u_obj != MP_OBJ_NULL)
         gpioObj.defaultLevel = mp_obj_is_true(args[ARG_value].u_obj);
-    }
 
     // configure mode
     if (args[ARG_mode].u_obj != mp_const_none) {
@@ -164,9 +167,9 @@ STATIC mp_obj_t machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_
     }
 
     // configure pull
-    if (args[ARG_pull].u_obj != mp_const_none) {
+    if (args[ARG_pull].u_obj != mp_const_none)
         gpioObj.defaultLevel = mp_obj_get_int(args[ARG_pull].u_obj);
-    }
+
     gpioObj.pin = self->id;
     GPIO_Init(gpioObj);
     return mp_const_none;
@@ -186,12 +189,9 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
         mp_raise_ValueError("invalid pin");
     }
 
-    if (n_args > 1 || n_kw > 0) {
-        // pin mode given, so configure this GPIO
-        mp_map_t kw_args;
-        mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
-        machine_pin_obj_init_helper(self, n_args - 1, args + 1, &kw_args);
-    }
+    mp_map_t kw_args;
+    mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
+    machine_pin_obj_init_helper(self, n_args - 1, args + 1, &kw_args);
 
     return MP_OBJ_FROM_PTR(self);
 }
@@ -204,11 +204,11 @@ STATIC mp_obj_t machine_pin_call(mp_obj_t self_in, size_t n_args, size_t n_kw, c
 
     if (n_args == 0) {
         // get pin
-        GPIO_Get(self->id,&level);
+        GPIO_Get(self->id, &level);
         return MP_OBJ_NEW_SMALL_INT(level);
     } else {
         // set pin
-        GPIO_Set(self->id,mp_obj_is_true(args[0]));
+        GPIO_Set(self->id, mp_obj_is_true(args[0]));
         return mp_const_none;
     }
 }
@@ -310,16 +310,16 @@ STATIC const mp_rom_map_elem_t machine_pin_locals_dict_table[] = {
 
 STATIC mp_uint_t pin_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
     (void)errcode;
-    machine_pin_obj_t *self = self_in;
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(self_in);
     GPIO_LEVEL level;
 
     switch (request) {
         case MP_PIN_READ: {
-            GPIO_Get(self->id,&level);
+            GPIO_Get(self->id, &level);
             return level;
         }
         case MP_PIN_WRITE: {
-            GPIO_Set(self->id,arg);
+            GPIO_Set(self->id, arg);
             return 0;
         }
     }
