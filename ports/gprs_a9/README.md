@@ -93,205 +93,39 @@ Provides cellular functionality.
 As usual, the original API does not give access to radio-level and low-level functionality such as controlling the registration on the cellular network: these are performed in the background automatically.
 The purpose of this module is to have an access to high-level networking (SMS, GPRS, calls) as well as to read the status of various components of cellular networking.
 
-#### Constants ####
-
-Frequencies: `NETWORK_FREQ_BAND_GSM_900P`, `NETWORK_FREQ_BAND_GSM_900E`, `NETWORK_FREQ_BAND_GSM_850`, `NETWORK_FREQ_BAND_DCS_1800`, `NETWORK_FREQ_BAND_PCS_1900`.
-Operator status: `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERATOR_STATUS_CURRENT`, `OPERATOR_STATUS_DISABLED`.
-Network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_AUTO`.
-
-#### Classes ####
-
-* `SMS(phone_number, message)`
-
-  A class for handling SMS.
-
-  **Attrs**:
-
-    * phone_number (str): phone number (sender or destination);
-    * message (str): message contents;
-    * status (int): an integer with status bits;
-    * inbox (bool): incoming message if `True`, outgoing message if `False` or unknown status if `None`;
-    * unread (bool): unread message if `True`, previously read message if `False` or unknown status if `None`;
-    * sent (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
-    * `send()`
-    
-      Sends the message.
-
-    * `withdraw()`
-
-      Withdraws SMS from SIM storage. Resets status and index of this object to zero.
-
-    * `poll()` [staticmethod]
-
-      Polls SMS.
-
-      **Returns**: the number of new SMS received.
-
-    * `list()` [staticmethod]
-
-      Retrieves SMS from the SIM card.
-      
-      **Returns**: a list of SMS messages.
-
-#### Exception classes ####
-
-* `CellularError(message)`
-
-#### Methods ####
-
-##### Status and information #####
-
-* `get_imei()`
-
-  Retrieves the International Mobile Equipment Identity (IMEI) number.
-
-  **Returns**: a string with IMEI number.
-
-* `get_iccid()`
-
-  Retrieves the Integrated Circuit Card ID (ICCID) number of the inserted SIM card.
-
-  **Returns**: a string with ICCID number.
-
-* `get_imsi()`
-
-  Retrieves the International Mobile Subscriber Identity (IMSI) number of the inserted SIM card.
-
-  **Returns**: a string with IMSI number.
-
-* `network_status_changed()`
-
-  Checks whether the network status was changed since the last check.
-
-  **Returns**: `True` if it was changed.
-
-* `get_network_status()`
-
-  Retrieves the network status as an integer.
-
-  **Returns**: `int` representing cellular network status.
-
-  **TODO**: Provide bit-wise specs.
-
-* `poll_network_exception()`
-
-  Retrieves the network exception and raises it, if any.
-
-* `is_sim_present()`
-
-  Checks whether the SIM card is present and ICCID can be retrieved.
-
-  **Returns**: True if SIM card is present.
-
-* `is_network_registered()`
-
-  Checks whether registered on the cellular network.
-
-  **Returns**: True if registered.
-
-* `is_roaming()`
-
-  Checks whether registered on the roaming network.
-
-  **Returns**: True if roaming.
-
-* `get_signal_quality()`
-
-  Retrieves signal quality.
-
-  **Returns**: Two integers, the signal quality (0-31) and RXQUAL. These are replaced by `None` if no signal quality information is available.
-  **Note**: The RXQUAL output is always `None`. Its meaning is unknown.
-
-* `flight_mode(flag)`
-
-  Turn the flight mode on or off. Retrieve the flight mode status.
-
-  **Args**:
-
-    * flag (bool): set or unset the flight mode;
-
-  **Returns**: True if in flight mode.
-
-* `set_bands(bands)`
-
-  Sets frequency bands.
-
-  **Args**:
-
-    * bands (int): a mask specifying frequencies, see constants above.
-      If no argument specified, sets all bands.
-
-* `scan()`
-
-  Lists available operators.
-
-  **Returns**: A list of tuples `(op_id, op_name, op_status)` with operator data.
-  The first element is a 6-byte operator ID.
-  The second element is operator name.
-  The third element is the status of the operator network with respect to this module, see one of the constants above.
-
-  **Note**: Ignores virtual operators.
-
-* `register(operator_id, register_mode)`
-
-  Registers on the network and retrieve the current network ID.
-
-  **Args**:
-
-    * `operator_id` (byterray, bool): a 6-byte operator ID of `False` if a de-registration requested;
-    * `register_mode` (int): registration mode, see one of the constants above;
-
-  **Returns**: Operator ID (6 bytes), operator name (str) and register mode (int).
-
-  **TODO**: Figure out how (and whether) registration works.
-
-* `stations()`
-
-  Lists GSM base stations.
-
-  **Returns**: A tuple of tuples with the following data (all integers):
-    * `mcc`: mobile country code;
-    * `mnc`: mobile network code. These can be both 2-digit and 3-digit; 2-digit codes are multiplied by 10;
-    * `lac`: location area code;
-    * `cell_id`: cell id. The above 4 numbers identify the base station uniquely;
-    * `bsic`: unknown;
-    * `rx_full`: signal strength;
-    * `rx_sub`: signal strength;
-    * `arfcn`: absolute radio frequency channel number.
-
-* `reset()`
-
-  Resets network settings to defaults. Disconnects GPRS.
-
-##### GPRS #####
-
-* `gprs(apn, user=None, pass=None)`
-
-  Activates, deactivates or retrieves the status of GPRS.
-
-  Activate: `cellular.gprs('apn', 'user', 'pass')`
-
-  Deactivate: `cellular.gprs(False)`
-
-  Status: `cellular.gprs()`
-
-  **Args**:
-
-    * apn (str, bool): access point name (APN);
-    * user (str): username;
-    * pass (str): password;
-
-  **Returns**: True if GPRS is operating.
-
-  **Note**: there is no way to check whether the credentials supplied are valid.
-
-##### Calls #####
-
-* `call()`
-
-  Calls and call status.
-
-  **Returns**: A list of calls missed and the incoming call number or `None` if no incoming calls at the moment.
+* frequencies: `NETWORK_FREQ_BAND_GSM_900P`, `NETWORK_FREQ_BAND_GSM_900E`, `NETWORK_FREQ_BAND_GSM_850`, `NETWORK_FREQ_BAND_DCS_1800`, `NETWORK_FREQ_BAND_PCS_1900`;
+* operator status: `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERATOR_STATUS_CURRENT`, `OPERATOR_STATUS_DISABLED`;
+* network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_AUTO`;
+* `SMS(phone_number: str, message: str)`: handles SMS messages;
+  * `.phone_number` (str): phone number (sender or destination);
+  * `.message` (str): message contents;
+  * `.status` (int): integer with status bits;
+  * `.inbox` (bool): incoming message if `True`, outgoing message if `False` or unknown status if `None`;
+  * `.unread` (bool): unread message if `True`, previously read message if `False` or unknown status if `None`;
+  * `.sent` (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
+  * `.send()`: sends a message;
+  * `.withdraw()`: withdraws SMS from SIM storage;
+  * `.poll()` (int) [staticmethod]: the number of new SMS received;
+  * `.list()` (list) [staticmethod]: all SMS from the SIM card;
+* `CellularError(message: str)`
+* `get_imei()` (str): the International Mobile Equipment Identity (IMEI) number;
+* `get_iccid()` (str): the Integrated Circuit Card ID (ICCID) number of the inserted SIM card;
+* `get_imsi()` (str): the International Mobile Subscriber Identity (IMSI) number of the inserted SIM card;
+* `network_status_changed()` (bool): indicates whether the network status changed since the last check;
+* `get_network_status()` (int): cellular network status encoded in an integer. **TODO**: Provide bit-wise specs;
+* `poll_network_exception()`: polls the network exception and raises it, if any;
+* `is_sim_present()` (bool): checks whether a SIM card is present;
+* `is_network_registered()` (bool): checks whether registered on the cellular network;
+* `is_roaming()` (bool): checks whether registered on the roaming network;
+* `get_signal_quality()` (int, int): the signal quality (0-31) and RXQUAL. These are replaced by `None` if no signal quality information is available. **TODO**: The RXQUAL output is always `None`;
+* `flight_mode(flag: bool[optional])` (bool): the flight mode status. Turns in on or off if the argument is specified;
+* `set_bands(bands: int = NETWORK_FREQ_BAND_GSM_900P | NETWORK_FREQ_BAND_GSM_900E | NETWORK_FREQ_BAND_GSM_850 | NETWORK_FREQ_BAND_DCS_1800 | NETWORK_FREQ_BAND_PCS_1900)`: sets frequency bands;
+* `scan()` (list): lists available operators: returns `(op_id: bytearray[6], op_name: str, op_status: int)` for each;
+* `register(operator_id: bytearray[6][optional], register_mode: int[optional])` (op_id: bytearray[6], op_name: str, reg_status: int): registered network operator information. Registers on the network if arguments supplied. **TODO**: Figure out how (and whether) registration works;
+* `stations()` (list): a list of nearby stations: `(mcc, mnc, lac, cell_id, bsic, rx_full, rx_sub, arfcn)`: all ints;
+* `reset()`: resets network settings to defaults. Disconnects GPRS.
+* `gprs(apn: [str, bool][optional], user: str[optional], pass: str[optional])` (bool): activate (3 arguments), deactivate (`gprs(False)`) or obtain the status of GPRS if no arguments supplied;
+* `call()` (list[str], [str, None]): calls missed (1st output) and the incoming call number or `None` if no incoming calls at the moment (2nd output);
 
 ### `usocket` ###
 
