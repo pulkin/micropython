@@ -327,6 +327,12 @@ typedef struct _sms_obj_t {
 } sms_obj_t;
 
 mp_obj_t modcellular_sms_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
+    // ========================================
+    // SMS class.
+    // Args:
+    //     phone_number (str): the phone number, source or destination;
+    //     message (str): message contents;
+    // ========================================
 
     enum { ARG_phone_number, ARG_message };
     static const mp_arg_t allowed_args[] = {
