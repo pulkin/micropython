@@ -93,9 +93,9 @@ Provides cellular functionality.
 As usual, the original API does not give access to radio-level and low-level functionality such as controlling the registration on the cellular network: these are performed in the background automatically.
 The purpose of this module is to have an access to high-level networking (SMS, GPRS, calls) as well as to read the status of various components of cellular networking.
 
-* frequencies: `NETWORK_FREQ_BAND_GSM_900P`, `NETWORK_FREQ_BAND_GSM_900E`, `NETWORK_FREQ_BAND_GSM_850`, `NETWORK_FREQ_BAND_DCS_1800`, `NETWORK_FREQ_BAND_PCS_1900`;
-* operator status: `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERATOR_STATUS_CURRENT`, `OPERATOR_STATUS_DISABLED`;
-* network modes: `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_AUTO`;
+* `NETWORK_FREQ_BAND_GSM_900P`, `NETWORK_FREQ_BAND_GSM_900E`, `NETWORK_FREQ_BAND_GSM_850`, `NETWORK_FREQ_BAND_DCS_1800`, `NETWORK_FREQ_BAND_PCS_1900`, `NETWORK_FREQ_BANDS_ALL`: frequencies;
+* `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERATOR_STATUS_CURRENT`, `OPERATOR_STATUS_DISABLED`: operator statuses;
+* `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_AUTO`: network registration modes;
 * `SMS(phone_number: str, message: str)`: handles SMS messages;
   * `.phone_number` (str): phone number (sender or destination);
   * `.message` (str): message contents;
@@ -118,13 +118,13 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `is_network_registered()` (bool): checks whether registered on the cellular network;
 * `is_roaming()` (bool): checks whether registered on the roaming network;
 * `get_signal_quality()` (int, int): the signal quality (0-31) and RXQUAL. These are replaced by `None` if no signal quality information is available. **TODO**: The RXQUAL output is always `None`;
-* `flight_mode(flag: bool[optional])` (bool): the flight mode status. Turns in on or off if the argument is specified;
-* `set_bands(bands: int = NETWORK_FREQ_BAND_GSM_900P | NETWORK_FREQ_BAND_GSM_900E | NETWORK_FREQ_BAND_GSM_850 | NETWORK_FREQ_BAND_DCS_1800 | NETWORK_FREQ_BAND_PCS_1900)`: sets frequency bands;
+* `flight_mode([flag: bool])` (bool): the flight mode status. Turns in on or off if the argument is specified;
+* `set_bands(bands: int = NETWORK_FREQ_BANDS_ALL)`: sets frequency bands;
 * `scan()` (list): lists available operators: returns `(op_id: bytearray[6], op_name: str, op_status: int)` for each;
-* `register(operator_id: bytearray[6][optional], register_mode: int[optional])` (op_id: bytearray[6], op_name: str, reg_status: int): registered network operator information. Registers on the network if arguments supplied. **TODO**: Figure out how (and whether) registration works;
+* `register([operator_id: bytearray[6], register_mode: int])` (op_id: bytearray[6], op_name: str, reg_status: int): registered network operator information. Registers on the network if arguments supplied. **TODO**: Figure out how (and whether) registration works at all;
 * `stations()` (list): a list of nearby stations: `(mcc, mnc, lac, cell_id, bsic, rx_full, rx_sub, arfcn)`: all ints;
-* `reset()`: resets network settings to defaults. Disconnects GPRS.
-* `gprs(apn: [str, bool][optional], user: str[optional], pass: str[optional])` (bool): activate (3 arguments), deactivate (`gprs(False)`) or obtain the status of GPRS if no arguments supplied;
+* `reset()`: resets network settings to defaults. Disconnects GPRS;
+* `gprs([apn: {str, bool}[, user: str, pass: str]])` (bool): activate (3 arguments), deactivate (`gprs(False)`) or obtain the status of GPRS (on/off) if no arguments supplied;
 * `call()` (list[str], [str, None]): calls missed (1st output) and the incoming call number or `None` if no incoming calls at the moment (2nd output);
 
 ### `usocket` ###
@@ -134,87 +134,31 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 TCP/IP stack over GPRS based on lwIP.
 See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.html) for details.
 
-#### Constants ####
-
-`AF_INET`, `AF_INET6`, `SOCK_STREAM`, `SOCK_DGRAM`, `SOCK_RAW`, `IPPROTO_TCP`, `IPPROTO_UDP`, `IPPROTO_IP`
-
-#### Classes ####
-
-* `socket(af, type, proto)`
-
+* `AF_INET`, `AF_INET6`, `SOCK_STREAM`, `SOCK_DGRAM`, `SOCK_RAW`, `IPPROTO_TCP`, `IPPROTO_UDP`, `IPPROTO_IP`: lwIP constants;
+* `socket(af: int, type: int, proto: int)`: socket class;
     * `close()`
-    * `bind(address)` *not implemented*
-    * `listen([backlog])` *not implemented*
-    * `accept()` *not implemented*
+    * `bind(address)` [not implemented]
+    * `listen([backlog])` [not implemented]
+    * `accept()` [not implemented]
     * `connect(address)`
     * `send(bytes)`
     * `sendall(bytes)`
     * `recv(bufsize)`
     * `sendto(bytes, address)`
     * `recvfrom(bufsize)`
-    * `setsockopt(level, optname, value)` *not implemented*
-    * `settimeout(value)` *not implemented*
-    * `setblocking(flag)` *not implemented*
+    * `setsockopt(level, optname, value)` [not implemented]
+    * `settimeout(value)` [not implemented]
+    * `setblocking(flag)` [not implemented]
     * `makefile(mode, buffering)`
     * `read([size])`
     * `readinto(buf[, nbytes])`
     * `readline()`
     * `write(buf)`
-
-#### Methods ####
-
-* `get_local_ip()`
-
-  Retrieves the local IP address.
-
-  **Returns**: The local IP address as a string.
-
-* `getaddrinfo(host, port, af=AF_INET, type=SOCK_STREAM, proto=IPPROTO_TCP, flags=0)`
-
-  Translates host/port into arguments to socket constructor.
-
-  **Args**:
-
-    * host (str): host name;
-    * port (int): port number;
-    * af (int): address family: `AF_INET` or `AF_INET6`;
-    * type: (int): future socket type: `SOCK_STREAM` or `SOCK_DGRAM`;
-    * proto (int): future protocol: `IPPROTO_TCP` or `IPPROTO_UDP`;
-    * flag (int): additional socket flags;
-
-  **Returns**: a tuple with arguments.
-
-* `inet_ntop(af, bin_addr)`
-
-  *Not implemented*
-
-  Converts a binary address into textual representation.
-
-  **Args**:
-  
-    * af (int): address family: `AF_INET` or `AF_INET6`;
-    * bin_addr (bytearray): binary address;
-
-  **Returns**: a string with the address.
-
-* `inet_pton(af, txt_addr)`
-
-  *Not implemented*
-
-  Converts a text address into binary representation.
-
-  **Args**:
-
-    * af (int): address family: `AF_INET` or `AF_INET6`;
-    * txt_addr (str): address as text;
-
-  **Returns**: a bytearray address.
-
-* `get_num_open()`
-
-  Retrieves the number of open sockets.
-
-  **Returns**: The number of open sockets.
+* `get_local_ip()` (str): the local IP address;
+* `getaddrinfo(host (str), port (str), af (int) = AF_INET, type (int) = SOCK_STREAM, proto (int) = IPPROTO_TCP, flags (int) = 0)` (tuple): translates host/port into arguments to socket constructor;
+* `inet_ntop(af: int, bin_addr: bytearray)` (str) [not implemented]
+* `inet_pton(af: int, txt_addr: str)` (bytearray) [Not implemented]
+* `get_num_open()` (int): the number of open sockets (max 8);
 
 ### `ussl` ###
 
@@ -222,237 +166,54 @@ See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.ht
 
 Provides SSL over GPRS sockets (axtls).
 
-#### Classes ####
-
-* `ssl_socket(af, type, proto)`
-
+* `ssl_socket(af, type, proto)`: ssl socket wrapper;
     * `close()`
-    * `read([size])`
-    * `readinto(buf[, nbytes])`
+    * `read([size: int])`
+    * `readinto(buf[, nbytes: int])`
     * `readline()`
     * `write(buf)`
+* `wrap_socket(sock: socket, server_side: bool = False, keyfile=None, certfile=None, cert_reqs=CERT_NONE, ca_certs=None)` (ssl_socket): wraps a stream socket into ssl. Keyword arguments have never been tested;
 
-#### Methods ####
-
-* `wrap_socket(sock, server_side=False, keyfile=None, certfile=None, cert_reqs=CERT_NONE, ca_certs=None)`
-
-  Takes a stream socket and returns an `SSLSocket`.
-
-  **Args**:
-
-    * sock (`usocket.socket`): the socket to wrap;
-
-  **Returns**: a wrapped SSL socket.
-
-### `gps`
+### `gps` ###
 
 Provides the GPS functionality.
 This is only available in the A9G module where GPS is a separate chip connected via UART2.
 
-#### Exception classes ####
-
-* `GPSError(message)`
-
-#### Methods ####
-
-* `on()`
-
-  Turns the GPS on. Blocks until the GPS module responds.
-
-* `off()`
-
-  Turns the GPS off.
-
-* `get_firmware_version()`
-
-  Retrieves the firmware version.
-
-  **Returns**: the firmware version as a string.
-
-* `get_location()`
-
-  Retrieves the current GPS location.
-
-  **Returns**: latitude and longitude in degrees.
-
-* `get_last_location()`
-
-  Retrieves the last GPS location.
-
-  **Returns**: latitude and longitude in degrees.
-
-* `get_satellites()`
-
-  Retrieves the number of satellites visible.
-
-  **Returns**: the number of satellites tracked and the number of visible satellites.
+* `GPSError(message: str)`
+* `on()`: turns the GPS on;
+* `off()`: turns the GPS off;
+* `get_firmware_version()` (str): retrieves the firmware version;
+* `get_location()` (latitude: float, longitude: float): retrieves the current GPS location;
+* `get_last_location()` (latitude: float, longitude: float): retrieves the last known GPS location without polling the GPS module;
+* `get_satellites()` (tracked: int, visible: int): the numbers of satellites in operation;
 
 ### `machine`
 
 Provides power-related functions: power, watchdogs.
 
-#### Methods ####
-
-* `reset()`
-
-  Hard-resets the module.
-
-* `off()`
-
-  Powers the module down.
-  **Note**: By fact, hard-resets the module, at least when USB-powered.
-  **TODO**: Needs further investigation.
-
-* `idle()`
-
-  Reduces clock rates of the module keeping functionality.
-
-* `get_input_voltage()`
-
-  Retrieves the input voltage and the battery percentage.
-
-  **Returns**: two numbers: the voltage in `mV` and the estimated percentage (Lithium battery discharge controller).
-  **Note**: also works when USB-powered (the second number returned is irrelevant).
-
-* `power_on_cause()`
-
-  Retrieves the reason for powering the module on.
-
-  **Returns**: one of `POWER_ON_CAUSE_ALARM`, `POWER_ON_CAUSE_CHARGE`, `POWER_ON_CAUSE_EXCEPTION`, `POWER_ON_CAUSE_KEY`, `POWER_ON_CAUSE_MAX`, `POWER_ON_CAUSE_RESET`.
-  **Note**: never saw anything except `POWER_ON_CAUSE_CHARGE` returned.
-  **TODO**: needs further investigation.
-
-* `watchdog_on(timeout)`
-
-  Arms the hardware watchdog.
-
-  **Args**:
-
-    * timeout (int): timeout in seconds;
-
-* `watchdog_off()`
-
-  Disarms the hardware watchdog.
-
-* `watchdog_reset()`
-
-  Resets the timer on the hardware watchdog.
+* `POWER_ON_CAUSE_ALARM`, `POWER_ON_CAUSE_CHARGE`, `POWER_ON_CAUSE_EXCEPTION`, `POWER_ON_CAUSE_KEY`, `POWER_ON_CAUSE_MAX`, `POWER_ON_CAUSE_RESET`: power-on flags;
+* `reset()`: hard-resets the module;
+* `off()`: powers the module down. **TODO**: By fact, hard-resets the module, at least when USB-powered. Figure out what's wrong;
+* `idle()`: tunes the clock rate down and turns off peripherials;
+* `get_input_voltage()` (float, float): the input voltage (mV) and the battery level (percents);
+* `power_on_cause()` (int): the power-on flag, one of `POWER_ON_CAUSE_*`.  **TODO**: never saw anything except `POWER_ON_CAUSE_CHARGE` returned, needs investigation;
+* `watchdog_on(timeout: int)`: arms the hardware watchdog with a timeout in seconds;
+* `watchdog_off()`: disarms the hardware watchdog;
+* `watchdog_reset()`: resets the timer on the hardware watchdog;
   
 ### `i2c`
 
 Provides i2c functionality
 (see [sdk docs](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/function-api/iic.html))
 
-#### Exception classes ####
-
+* `I2C_DEFAULT_TIME_OUT`
 * `I2CError(message)`
-
-#### Constants ####
-
-I2C_DEFAULT_TIME_OUT
-
-#### Enums ####
-
-* `id`
-
-  **Options**: `1`, `2`, `3`
-  
-  **Fallback**: `1`
-  
-  **Meaning**: I2C port ids (see devboard layout)
-  
-  
-* `freq`
-
-  **Options**: `100`, `400`
-  
-  **Fallback**: `100`
-  
-  **Meaning**: I2C SCL Frequency 100kHz, 400kHz respectively
-  
-
-#### Methods ####
-
-**Note**: parameters in square brackets are optional
-
-* `init(id, freq)`
-
-  Inintializes i2c on given port id and frequency
-    
-  **Args**:
-
-    * `id` (int): see enums;
-    * `freq` (int): see enums;
-  
-  **Returns**: `None` if everything ok.
-
-  **Note**: Different ports can be initialized simultaneously
-
-* `close(id)`
-
-  Closes i2c on given port id
-  
-  **Args**:
-
-    * `id` (int): see enums;
-  
-  **Returns**: `None` if everything ok.
-
-* `receive(id, slave_address, data_length, [timeout] = I2C_DEFAULT_TIME_OUT)`
-
-  Receive data given length from slave device
-  
-  **Args**:
-
-    * `id` (int): see enums;
-    * `slave_address` (int, hex): slave device communication address;
-    * `data_length` (int): data length needed to be received;
-    * `[timeout]` (int) = 10: timeout of receiving in ms
-  
-  **Returns**: bytes() of given length.
-
-* `transmit(id, slave_address, data, [timeout] = I2C_DEFAULT_TIME_OUT)`
-
-  Transmit given data to slave device
-  
-  **Args**:
-
-    * `id` (int): see enums;
-    * `slave_address` (int, hex): slave device communication address;
-    * `data` (bytes): data needed to be transmitted;
-    * `[timeout]` (int) = 10: timeout of receiving in ms
-  
-  **Returns**: None if everything ok.
-
-* `mem_receive(id, slave_address, memory_address, memory_size, data_length, [timeout] = I2C_DEFAULT_TIME_OUT)`
-
-  Read data given length from slave device's memory by its address
-  
-  **Args**:
-
-    * `id` (int): see enums;
-    * `slave_address` (int, hex): slave device communication address;
-    * `memory_address` (int, hex): slave device memory read address;
-    * `memory_size` (int, hex): slave device memory read size;
-    * `data_length` (int): data length needed to be read;
-    * `[timeout]` (int) = 10: timeout of reading in ms
-  
-  **Returns**: bytes() of given length.
-
-* `mem_transmit(id, slave_address, memory_address, memory_size, data, [timeout] = I2C_DEFAULT_TIME_OUT)`
-
-  Write given data to slave device's memory by address
-  
-  **Args**:
-
-    * `id` (int): see enums;
-    * `slave_address` (int, hex): slave device communication address;
-    * `memory_address` (int, hex): slave device memory write address;
-    * `memory_size` (int, hex): slave device memory write size;
-    * `data` (bytes): data needed to be written;
-    * `[timeout]` (int) = 10: timeout of writing in ms
-  
-  **Returns**: None if everything ok.
+* `init(id: int, freq: int)`: inintializes i2c on the given port id and frequency;
+* `close(id: int)`: closes i2c on the given port id;
+* `receive(id: int, slave_address: int, data_length: int, timeout: int = I2C_DEFAULT_TIME_OUT)` (bytes): receives data;
+* `transmit(id: int, slave_address: int, data: bytes, timeout: int = I2C_DEFAULT_TIME_OUT)`: transmits data;
+* `mem_receive(id: int, slave_address: int, memory_address: int, memory_size: int, data_length: int, timeout: int = I2C_DEFAULT_TIME_OUT)` (bytes): reads memory data;
+* `mem_transmit(id: int, slave_address: int, memory_address: int, memory_size: int, data: bytes, timeout: int = I2C_DEFAULT_TIME_OUT)` writes data to memory;
 
 ## Notes ##
 
