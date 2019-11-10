@@ -65,6 +65,8 @@
 #define MAX_CALLS_MISSED 15
 #define MAX_CELLS 8
 
+#define BANDS_ALL (NETWORK_FREQ_BAND_GSM_900P | NETWORK_FREQ_BAND_GSM_900E | NETWORK_FREQ_BAND_GSM_850 | NETWORK_FREQ_BAND_DCS_1800 | NETWORK_FREQ_BAND_PCS_1900)
+
 // --------------
 // Vars: statuses
 // --------------
@@ -866,7 +868,7 @@ STATIC mp_obj_t modcellular_set_bands(size_t n_args, const mp_obj_t *args) {
     //     bands;
     // ========================================
     if (n_args == 0) {
-        if (!Network_SetFrequencyBand(NETWORK_FREQ_BAND_GSM_900P | NETWORK_FREQ_BAND_GSM_900E | NETWORK_FREQ_BAND_GSM_850 | NETWORK_FREQ_BAND_DCS_1800 | NETWORK_FREQ_BAND_PCS_1900)) {
+        if (!Network_SetFrequencyBand(BANDS_ALL)) {
             mp_raise_CellularError("Failed to reset 2G GSM bands");
             return mp_const_none;
         }
@@ -1150,6 +1152,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_850),  MP_ROM_INT(NETWORK_FREQ_BAND_GSM_850)  },
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_DCS_1800), MP_ROM_INT(NETWORK_FREQ_BAND_DCS_1800) },
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_PCS_1900), MP_ROM_INT(NETWORK_FREQ_BAND_PCS_1900) },
+    { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BANDS_ALL), MP_ROM_INT(BANDS_ALL) },
 
     { MP_ROM_QSTR(MP_QSTR_OPERATOR_STATUS_UNKNOWN), MP_ROM_INT(0) },
     { MP_ROM_QSTR(MP_QSTR_OPERATOR_STATUS_AVAILABLE), MP_ROM_INT(1) },
