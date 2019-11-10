@@ -45,45 +45,46 @@
 
 typedef struct _machine_pin_obj_t {
     mp_obj_base_t base;
+    uint32_t phys_port;
     GPIO_PIN id;
 } machine_pin_obj_t;
 
 STATIC const machine_pin_obj_t machine_pin_obj[] = {
-    {{&machine_pin_type}, GPIO_PIN0},
-    {{&machine_pin_type}, GPIO_PIN1},
-    {{&machine_pin_type}, GPIO_PIN2},
-    {{&machine_pin_type}, GPIO_PIN3},
-    {{&machine_pin_type}, GPIO_PIN4},
-    {{&machine_pin_type}, GPIO_PIN5},
-    {{&machine_pin_type}, GPIO_PIN6},
-    {{&machine_pin_type}, GPIO_PIN7},
-    {{&machine_pin_type}, GPIO_PIN8},
-    {{&machine_pin_type}, GPIO_PIN9},
-    {{&machine_pin_type}, GPIO_PIN10},
-    {{&machine_pin_type}, GPIO_PIN11},
-    {{&machine_pin_type}, GPIO_PIN12},
-    {{&machine_pin_type}, GPIO_PIN13},
-    {{&machine_pin_type}, GPIO_PIN14},
-    {{&machine_pin_type}, GPIO_PIN15},
-    {{&machine_pin_type}, GPIO_PIN16},
-    {{&machine_pin_type}, GPIO_PIN17},
-    {{&machine_pin_type}, GPIO_PIN18},
-    {{&machine_pin_type}, GPIO_PIN19},
-    {{&machine_pin_type}, GPIO_PIN20},
-    {{&machine_pin_type}, GPIO_PIN21},
-    {{&machine_pin_type}, GPIO_PIN22},
-    {{&machine_pin_type}, GPIO_PIN23},
-    {{&machine_pin_type}, GPIO_PIN24},
-    {{&machine_pin_type}, GPIO_PIN25},
-    {{&machine_pin_type}, GPIO_PIN26},
-    {{&machine_pin_type}, GPIO_PIN27},
-    {{&machine_pin_type}, GPIO_PIN28},
-    {{&machine_pin_type}, GPIO_PIN29},
-    {{&machine_pin_type}, GPIO_PIN30},
-    {{&machine_pin_type}, GPIO_PIN31},
-    {{&machine_pin_type}, GPIO_PIN32},
-    {{&machine_pin_type}, GPIO_PIN33},
-    {{&machine_pin_type}, GPIO_PIN34},
+    {{&machine_pin_type},  0, GPIO_PIN0},
+    {{&machine_pin_type},  1, GPIO_PIN1},
+    {{&machine_pin_type},  2, GPIO_PIN2},
+    {{&machine_pin_type},  3, GPIO_PIN3},
+    {{&machine_pin_type},  4, GPIO_PIN4},
+    {{&machine_pin_type},  5, GPIO_PIN5},
+    {{&machine_pin_type},  6, GPIO_PIN6},
+    {{&machine_pin_type},  7, GPIO_PIN7},
+    {{&machine_pin_type},  8, GPIO_PIN8},
+    {{&machine_pin_type},  9, GPIO_PIN9},
+    {{&machine_pin_type}, 10, GPIO_PIN10},
+    {{&machine_pin_type}, 11, GPIO_PIN11},
+    {{&machine_pin_type}, 12, GPIO_PIN12},
+    {{&machine_pin_type}, 13, GPIO_PIN13},
+    {{&machine_pin_type}, 14, GPIO_PIN14},
+    {{&machine_pin_type}, 15, GPIO_PIN15},
+    {{&machine_pin_type}, 16, GPIO_PIN16},
+    {{&machine_pin_type}, 17, GPIO_PIN17},
+    {{&machine_pin_type}, 18, GPIO_PIN18},
+    {{&machine_pin_type}, 19, GPIO_PIN19},
+    {{&machine_pin_type}, 20, GPIO_PIN20},
+    {{&machine_pin_type}, 21, GPIO_PIN21},
+    {{&machine_pin_type}, 22, GPIO_PIN22},
+    {{&machine_pin_type}, 23, GPIO_PIN23},
+    {{&machine_pin_type}, 24, GPIO_PIN24},
+    {{&machine_pin_type}, 25, GPIO_PIN25},
+    {{&machine_pin_type}, 26, GPIO_PIN26},
+    {{&machine_pin_type}, 27, GPIO_PIN27},
+    {{&machine_pin_type}, 28, GPIO_PIN28},
+    {{&machine_pin_type}, 29, GPIO_PIN29},
+    {{&machine_pin_type}, 30, GPIO_PIN30},
+    {{&machine_pin_type}, 31, GPIO_PIN31},
+    {{&machine_pin_type}, 32, GPIO_PIN32},
+    {{&machine_pin_type}, 33, GPIO_PIN33},
+    {{&machine_pin_type}, 34, GPIO_PIN34},
 };
 
 void machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
@@ -214,7 +215,7 @@ STATIC void machine_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_prin
     // Pin.__str__
     // ========================================
     machine_pin_obj_t *self = self_in;
-    mp_printf(print, "Pin(%u)", self->id);
+    mp_printf(print, "Pin(%u)", self->phys_port);
 }
 
 STATIC const mp_rom_map_elem_t machine_pin_locals_dict_table[] = {
@@ -262,11 +263,32 @@ const mp_obj_type_t machine_pin_type = {
 };
 
 void mp_hal_pin_input(mp_hal_pin_obj_t pin_id) {
-    const machine_pin_obj_t *self = MP_OBJ_TO_PTR(pin_id); // &machine_pin_obj[pin_id];
+    const machine_pin_obj_t *self = &machine_pin_obj[pin_id];
     GPIO_ChangeMode(self->id, GPIO_MODE_INPUT);
 }
 
 void mp_hal_pin_output(mp_hal_pin_obj_t pin_id) {
-    const machine_pin_obj_t *self = MP_OBJ_TO_PTR(pin_id); // &machine_pin_obj[pin_id];
+    const machine_pin_obj_t *self = &machine_pin_obj[pin_id];
     GPIO_ChangeMode(self->id, GPIO_MODE_OUTPUT);
 }
+
+int mp_hal_pin_read(mp_hal_pin_obj_t pin_id) {
+    const machine_pin_obj_t *self = &machine_pin_obj[pin_id];
+    GPIO_LEVEL level;
+    GPIO_Get(self->id, &level);
+    return (int) level;
+}
+
+void mp_hal_pin_write(mp_hal_pin_obj_t pin_id, int value) {
+    const machine_pin_obj_t *self = &machine_pin_obj[pin_id];
+    GPIO_Set(self->id, (GPIO_LEVEL) value);
+}
+
+mp_hal_pin_obj_t mp_hal_get_pin_obj(mp_obj_t pin_in) {
+    if (mp_obj_get_type(pin_in) != &machine_pin_type) {
+        mp_raise_ValueError("expecting a pin");
+    }
+    machine_pin_obj_t *self = MP_OBJ_TO_PTR(pin_in);
+    return self->phys_port;
+}
+
