@@ -39,6 +39,9 @@
 #include "api_hal_pm.h"
 #include "api_hal_gpio.h"
 
+#define GPIO_LEVEL_UNSET 255
+// #define GPIO_Set(id, val) do {g_InterfaceVtbl->GPIO_Set((id), (val)); if ((id) == 17) {if ((val) == 0) mp_printf(&mp_plat_print, "comm"); else mp_printf(&mp_plat_print, "data");} else if ((id) == 15) {if ((val) == 0) mp_printf(&mp_plat_print, "("); else mp_printf(&mp_plat_print, ")\n");} else if ((id) == 16) {if ((val) == 0) mp_printf(&mp_plat_print, "-"); else mp_printf(&mp_plat_print, "+");} else if ((id) == 18) {if ((val) == 0) mp_printf(&mp_plat_print, "0"); else mp_printf(&mp_plat_print, "1");} else mp_printf(&mp_plat_print, "%d:%d ", (id), (val));} while(0)
+
 // -------
 // Classes
 // -------
@@ -87,53 +90,48 @@ STATIC const machine_pin_obj_t machine_pin_obj[] = {
     {{&machine_pin_type}, 34, GPIO_PIN34},
 };
 
+void pin_init(GPIO_PIN id, GPIO_MODE mode, GPIO_LEVEL default_level) {
+    GPIO_config_t config = {
+        .pin=id,
+        .mode=mode,
+        .defaultLevel=default_level,
+    };
+
+    // configure the pin for gpio
+    if ((id >= 8) && (id <= 13))
+        PM_PowerEnable(POWER_TYPE_MMC, true);
+    else if ((id >= 14) && (id <= 18))
+        PM_PowerEnable(POWER_TYPE_LCD, true);
+    else if ((id >= 19) && (id <= 24))
+        PM_PowerEnable(POWER_TYPE_CAM, true);
+    
+    GPIO_Init(config);
+}
+
 void machine_pin_obj_init_helper(const machine_pin_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     // ========================================
     // Parses arguments and initializes pins.
     // ========================================
     enum { ARG_mode, ARG_pull, ARG_value };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_mode, MP_ARG_OBJ, {.u_obj = mp_const_none}},
-        { MP_QSTR_pull, MP_ARG_OBJ, {.u_obj = mp_const_none}},
-        { MP_QSTR_value, MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL}},
-    };
-    GPIO_config_t gpioObj = {
-        .mode=GPIO_MODE_OUTPUT,
-        .pin=GPIO_PIN27,
-        .defaultLevel=GPIO_LEVEL_LOW,
+        { MP_QSTR_mode, MP_ARG_INT, {.u_int = GPIO_MODE_INPUT}},
+        { MP_QSTR_pull, MP_ARG_INT, {.u_int = GPIO_LEVEL_UNSET}},
+        { MP_QSTR_value, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = GPIO_LEVEL_UNSET}},
     };
 
     // parse args
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
-    // configure the pin for gpio
-    if( (self->id >= 8) && self->id <=13 )
-        PM_PowerEnable(POWER_TYPE_MMC,true);
-    else if( (self->id >= 14) && self->id <=18 )
-        PM_PowerEnable(POWER_TYPE_LCD,true);
-    else if( (self->id >= 19) && self->id <=24 )
-        PM_PowerEnable(POWER_TYPE_CAM,true);
+    GPIO_LEVEL default_level = GPIO_LEVEL_LOW;
+    
+    if (args[ARG_value].u_int != GPIO_LEVEL_UNSET)
+        default_level = args[ARG_value].u_int;
 
-    // set initial value (do this before configuring mode/pull)
-    if (args[ARG_value].u_obj != MP_OBJ_NULL)
-        gpioObj.defaultLevel = mp_obj_is_true(args[ARG_value].u_obj);
+    if (args[ARG_pull].u_int != GPIO_LEVEL_UNSET)
+        default_level = args[ARG_pull].u_int;
 
-    // configure mode
-    if (args[ARG_mode].u_obj != mp_const_none) {
-        mp_int_t pin_io_mode = mp_obj_get_int(args[ARG_mode].u_obj);
-        if(pin_io_mode & GPIO_MODE_INPUT)
-            gpioObj.mode = GPIO_MODE_INPUT;
-        else
-            gpioObj.mode = GPIO_MODE_OUTPUT;
-    }
-
-    // configure pull
-    if (args[ARG_pull].u_obj != mp_const_none)
-        gpioObj.defaultLevel = mp_obj_get_int(args[ARG_pull].u_obj);
-
-    gpioObj.pin = self->id;
-    GPIO_Init(gpioObj);
+    pin_init(self->id, args[ARG_mode].u_int & GPIO_MODE_INPUT, default_level);
 }
 
 mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
@@ -270,6 +268,7 @@ void mp_hal_pin_input(mp_hal_pin_obj_t pin_id) {
 void mp_hal_pin_output(mp_hal_pin_obj_t pin_id) {
     const machine_pin_obj_t *self = &machine_pin_obj[pin_id];
     GPIO_ChangeMode(self->id, GPIO_MODE_OUTPUT);
+
 }
 
 int mp_hal_pin_read(mp_hal_pin_obj_t pin_id) {
