@@ -32,33 +32,7 @@
 #if MICROPY_PY_FRAMEBUF
 
 #include "ports/stm32/font_petme128_8x8.h"
-
-typedef struct _mp_obj_framebuf_t {
-    mp_obj_base_t base;
-    mp_obj_t buf_obj; // need to store this to prevent GC from reclaiming buf
-    void *buf;
-    uint16_t width, height, stride;
-    uint8_t format;
-} mp_obj_framebuf_t;
-
-typedef void (*setpixel_t)(const mp_obj_framebuf_t*, int, int, uint32_t);
-typedef uint32_t (*getpixel_t)(const mp_obj_framebuf_t*, int, int);
-typedef void (*fill_rect_t)(const mp_obj_framebuf_t *, int, int, int, int, uint32_t);
-
-typedef struct _mp_framebuf_p_t {
-    setpixel_t setpixel;
-    getpixel_t getpixel;
-    fill_rect_t fill_rect;
-} mp_framebuf_p_t;
-
-// constants for formats
-#define FRAMEBUF_MVLSB    (0)
-#define FRAMEBUF_RGB565   (1)
-#define FRAMEBUF_GS2_HMSB (5)
-#define FRAMEBUF_GS4_HMSB (2)
-#define FRAMEBUF_GS8      (6)
-#define FRAMEBUF_MHLSB    (3)
-#define FRAMEBUF_MHMSB    (4)
+#include "extmod/modframebuf.h"
 
 // Functions for MHLSB and MHMSB
 
@@ -469,6 +443,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(framebuf_line_obj, 6, 6, framebuf_lin
 
 STATIC mp_obj_t framebuf_blit(size_t n_args, const mp_obj_t *args) {
     mp_obj_framebuf_t *self = MP_OBJ_TO_PTR(args[0]);
+    if (!mp_obj_is_type(args[1], &mp_type_framebuf)) {
+        mp_raise_ValueError("FrameBuffer expected");
+        return mp_const_none;
+    }
     mp_obj_framebuf_t *source = MP_OBJ_TO_PTR(args[1]);
     mp_int_t x = mp_obj_get_int(args[2]);
     mp_int_t y = mp_obj_get_int(args[3]);
@@ -594,7 +572,7 @@ STATIC const mp_rom_map_elem_t framebuf_locals_dict_table[] = {
 };
 STATIC MP_DEFINE_CONST_DICT(framebuf_locals_dict, framebuf_locals_dict_table);
 
-STATIC const mp_obj_type_t mp_type_framebuf = {
+const mp_obj_type_t mp_type_framebuf = {
     { &mp_type_type },
     .name = MP_QSTR_FrameBuffer,
     .make_new = framebuf_make_new,
