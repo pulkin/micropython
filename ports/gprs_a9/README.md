@@ -86,7 +86,8 @@ ampy --port /dev/ttyUSB1 put frozentest.py
 5. [`machine`](#machine): hardware and power control
 6. [`i2c`](#i2c): i2c implementation
 7. [`st7735`](#ST7735): ST7735 over software SPI display implementation
-8. [Notes](#Notes)
+8. [misc modules](#Misc)
+9. [Notes](#Notes)
 
 ### `cellular`
 
@@ -224,6 +225,14 @@ ST7735 displays over software SPI.
   In addition to drawing routines (the 565 color format is used), implements this:
   * `init()`: runs display initialization;
   * `mode(rotation: int, rgb_bgr: bool)`: sets the display rotation and color order;
+
+## Misc ##
+
+Modules located in the `py` folder.
+
+* `agps`: Assisted GPS services.
+  * `get_location_radiocells()`: uses [radiocells.org](https://radiocells.org/)
+  * `get_location_opencellid(api_key: str)`: uses [opencellid.org](http://opencellid.org) (registration required)
 
 ## Notes ##
 
