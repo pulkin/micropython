@@ -196,6 +196,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_watchdog_reset_obj, modmachine_watch
 STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_umachine) },
     { MP_ROM_QSTR(MP_QSTR_Pin), MP_ROM_PTR(&machine_pin_type) },
+    { MP_ROM_QSTR(MP_QSTR_ADC), MP_ROM_PTR(&machine_adc_type) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modmachine_reset_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_idle), (mp_obj_t)&modmachine_set_idle_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_min_freq), (mp_obj_t)&modmachine_set_min_freq_obj },

@@ -33,6 +33,7 @@
 #include "api_event.h"
 
 extern const mp_obj_type_t machine_pin_type;
+extern const mp_obj_type_t machine_adc_type;
 extern Power_On_Cause_t powerOnCause;
 
 void modmachine_notify_power_on(API_Event_t* event);
