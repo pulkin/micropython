@@ -39,6 +39,7 @@
 #include "api_info.h"
 #include "api_sim.h"
 #include "api_sms.h"
+#include "api_call.h"
 #include "api_os.h"
 #include "api_network.h"
 #include "api_inc_network.h"
@@ -1087,6 +1088,34 @@ STATIC mp_obj_t modcellular_call(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_call_obj, modcellular_call);
 
+STATIC mp_obj_t modcellular_dial(mp_obj_t tn_in) {
+    // ========================================
+    // Dial a number.
+    // Args:
+    //     tn (str, bool): the telephone number
+    //     or False if hangup requested;
+    // ========================================
+    if (mp_obj_is_str(tn_in)) {
+        const char* tn = mp_obj_str_get_str(tn_in);
+        mp_printf(&mp_plat_print, "calling %s\n", tn);
+        if (!CALL_Dial(tn)) {
+            mp_raise_CellularError("Failed to initiate an outgoing call");
+        }
+        return mp_const_none;
+    } else {
+        if (!mp_obj_is_true(tn_in)) {
+            if (!CALL_HangUp()) {
+                mp_raise_CellularError("Failed to hangup call");
+            }
+        } else {
+            mp_raise_ValueError("The argument must be a string or False");
+        }
+        return mp_const_none;
+    }
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_dial_obj, modcellular_dial);
+
 STATIC mp_obj_t modcellular_stations(void) {
     // ========================================
     // Polls base stations.
@@ -1150,6 +1179,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_scan), (mp_obj_t)&modcellular_scan_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&modcellular_register_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_call), (mp_obj_t)&modcellular_call_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_dial), (mp_obj_t)&modcellular_dial_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_stations), (mp_obj_t)&modcellular_stations_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
 
