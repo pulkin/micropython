@@ -24,7 +24,6 @@ def get_location_opencellid(api_key):
             best_count = count
             best = grp
 
-    {"token": "abb242767701a2", "radio": "gsm", "mcc": 204, "mnc": 80, "cells": [{"cid": 45160, "lac": 4471}]}
     c = dict(token=api_key, radio="gsm", mcc=best[0], mnc=best[1], cells=by_op[best])
     r = urequests.post('https://eu1.unwiredlabs.com/v2/process.php', json=c)
     json = r.json()
