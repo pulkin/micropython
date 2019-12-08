@@ -158,6 +158,26 @@ void modcellular_init0(void) {
 
     // Turn off flight mode
     Network_SetFlightMode(0);
+
+    // Set SMS storage
+    if (!SMS_SetFormat(SMS_FORMAT_TEXT, SIM0)) {
+        mp_raise_CellularError("Failed to set SMS format");
+    } 
+
+    SMS_Parameter_t smsParam = {
+        .fo = 17 , // stadard values
+        .vp = 167,
+        .pid= 0  ,
+        .dcs= 8  , // 0:English 7bit, 4:English 8 bit, 8:Unicode 2 Bytes
+    };
+
+    if (!SMS_SetParameter(&smsParam, SIM0)) {
+        mp_raise_CellularError("Failed to set SMS parameters");
+    }
+
+    if (!SMS_SetNewMessageStorage(SMS_STORAGE_SIM_CARD)) {
+        mp_raise_CellularError("Failed to set SMS storage in the SIM card");
+    }
 }
 
 // ----------
@@ -412,28 +432,6 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
 
     const char* destination_c = mp_obj_str_get_str(self->phone_number);
     const char* message_c = mp_obj_str_get_str(self->message);
-
-    if (!SMS_SetFormat(SMS_FORMAT_TEXT, SIM0)) {
-        mp_raise_CellularError("Failed to set SMS format");
-        return mp_const_none;
-    } 
-
-    SMS_Parameter_t smsParam = {
-        .fo = 17 , // stadard values
-        .vp = 167,
-        .pid= 0  ,
-        .dcs= 8  , // 0:English 7bit, 4:English 8 bit, 8:Unicode 2 Bytes
-    };
-
-    if (!SMS_SetParameter(&smsParam, SIM0)) {
-        mp_raise_CellularError("Failed to set SMS parameters");
-        return mp_const_none;
-    }
-
-    if (!SMS_SetNewMessageStorage(SMS_STORAGE_SIM_CARD)) {
-        mp_raise_CellularError("Failed to set SMS storage in the SIM card");
-        return mp_const_none;
-    }
 
     uint8_t* unicode = NULL;
     uint32_t unicodeLen;
