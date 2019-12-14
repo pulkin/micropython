@@ -45,10 +45,15 @@ uint32_t mp_hal_ticks_ms(void);
 uint32_t mp_hal_ticks_us(void);
 void mp_hal_delay_ms(uint32_t ms);
 void mp_hal_delay_us(uint32_t us);
+void mp_hal_delay_us_fast(uint32_t us);
 __attribute__((always_inline)) static inline uint32_t mp_hal_ticks_cpu(void) {
   return clock();
 }
 
+void mp_hal_pin_input(mp_hal_pin_obj_t pin_id);
+void mp_hal_pin_output(mp_hal_pin_obj_t pin_id);
+int mp_hal_pin_read(mp_hal_pin_obj_t pin_id);
+void mp_hal_pin_write(mp_hal_pin_obj_t pin_id, int value);
 
 #endif
 

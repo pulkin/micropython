@@ -253,6 +253,7 @@ typedef long mp_off_t;
 // We need to provide a declaration/definition of alloca()
 #include <stdlib.h>
 
+#define MICROPY_MPHALPORT_H "mphalport.h"
 #define MICROPY_HW_BOARD_NAME   "A9/A9G module"
 #define MICROPY_HW_MCU_NAME     "RDA8955"
 #define MICROPY_PY_SYS_PLATFORM "gprs_a9"
