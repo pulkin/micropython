@@ -315,7 +315,6 @@ mp_lexer_t *mp_lexer_new_from_file(const char *filename) {
 }
 
 mp_import_stat_t mp_import_stat(const char *path) {
-    uint8_t flag = 0;
     char* path0 = (char*)malloc(160);
     memset(path0,0,160);
     API_FS_RealPath(path,path0);
