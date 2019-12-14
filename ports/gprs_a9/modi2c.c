@@ -58,7 +58,7 @@ I2C_ID_t modi2c_private_get_I2C_ID(uint8_t _id) {
     return id;
 }
 
-I2C_FREQ_t modi2c_private_get_I2C_FREQ(uint8_t _frequency) {
+I2C_FREQ_t modi2c_private_get_I2C_FREQ(mp_int_t _frequency) {
     I2C_FREQ_t frequency;
     switch(_frequency) {
         case 400:
@@ -89,6 +89,8 @@ void modi2c_private_throw_I2C_Error(I2C_Error_t error) {
             break;
         case I2C_ERROR_COMMUNICATION_FAILED:
             mp_raise_I2CError("Communication failure");
+            break;
+        default:
             break;
     }
 }

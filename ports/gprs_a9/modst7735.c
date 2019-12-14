@@ -537,7 +537,7 @@ STATIC mp_obj_t modst7735_display_text(size_t n_args, const mp_obj_t *args) {
             chr = 127;
         }
         // get char data
-        const uint8_t *chr_data = &font_petme128_8x8[(chr - 32) * 8];
+        const char* chr_data = &font_petme128_8x8[(chr - 32) * 8];
         // loop over char data
         for (int j = 0; j < 8; j++, x0++) {
             if (0 <= x0 && x0 < self->width) { // clip x

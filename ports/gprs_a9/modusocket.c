@@ -686,7 +686,9 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
             return mp_const_none;
     }
 
-    int flag = args[ARG_flag].u_int;
+    mp_int_t flag = args[ARG_flag].u_int;
+    (void) flag;
+    // TODO: process flags
 
     struct sockaddr_in res;
     if (_socket_getaddrinfo2(host, port, &res) < 0) {
