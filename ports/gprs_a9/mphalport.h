@@ -39,8 +39,8 @@
 #define mp_hal_pin_obj_t uint32_t
 
 void mp_hal_set_interrupt_char(int c);
+void mp_hal_pyrepl_uart_init();
 
-bool UartInit();
 uint32_t mp_hal_ticks_ms(void);
 uint32_t mp_hal_ticks_us(void);
 void mp_hal_delay_ms(uint32_t ms);

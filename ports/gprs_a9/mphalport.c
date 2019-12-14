@@ -40,8 +40,7 @@
 
 #include "py/runtime.h"
 
-bool UartInit()
-{
+void mp_hal_pyrepl_uart_init() {
     UART_Config_t config = {
         .baudRate = UART_BAUD_RATE_115200,
         .dataBits = UART_DATA_BITS_8,
@@ -50,11 +49,8 @@ bool UartInit()
         .rxCallback = NULL,
         .useEvent = true,
     };
-    UART_Init(UART1,config);
-    return true;
+    UART_Init(UART1, config);
 }
-
-
 
 // Send string of given length
 void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {

@@ -161,7 +161,7 @@ void MicroPyTask(void *pData) {
     OS_GetTaskInfo(microPyTaskHandle, &info);
     MicroPy_Event_t* event;
     Buffer_Init(&fifoBuffer, fifoBufferData, sizeof(fifoBufferData));
-    UartInit();
+    mp_hal_pyrepl_uart_init();
 
 soft_reset:
     mp_stack_ctrl_init();
