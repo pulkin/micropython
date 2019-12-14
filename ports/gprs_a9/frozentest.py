@@ -315,6 +315,9 @@ if sim_present:
     print("GPRS")
     print("----------------")
 
+    print("Waiting 5 secs ...")
+    time.sleep(5)
+
     # LEBARA NL credentials
     assert cel.gprs("internet", "", "")
 
