@@ -120,6 +120,8 @@ uint8_t calls_incoming_now_flag = 0;
 STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record);
 STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
 
+NORETURN void mp_raise_CellularError(const char *msg);
+
 void modcellular_init0(void) {
     // Reset statuses
     network_status_updated = 0;
