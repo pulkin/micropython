@@ -68,7 +68,7 @@
 #define MICROPYTHON_HEAP_MAX_SIZE (1024 * 2048)
 #define MICROPYTHON_HEAP_MIN_SIZE (2048)
 
-STATIC char* heap;
+STATIC void* heap;
 
 HANDLE mainTaskHandle  = NULL;
 HANDLE microPyTaskHandle = NULL;
@@ -107,7 +107,7 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 }
 #endif
 
-static char *stack_top;
+STATIC void *stack_top;
 
 void gc_collect(void) {
     //ESP8266-style
@@ -123,20 +123,20 @@ void NORETURN nlr_jump_fail(void *val) {
 }
 
 #if MICROPY_ENABLE_GC
-char* mp_allocate_heap(uint32_t* size) {
+void* mp_allocate_heap(uint32_t* size) {
     uint32_t h_size = MICROPYTHON_HEAP_MAX_SIZE;
-    uint8_t* heap = NULL;
-    while (!heap) {
+    void* ptr = NULL;
+    while (!ptr) {
         if (h_size < MICROPYTHON_HEAP_MIN_SIZE) {
             mp_fatal_error(MP_FATAL_REASON_HEAP_INIT, NULL);
         }
-        heap = OS_Malloc(h_size);
-        if (!heap) {
+        ptr = OS_Malloc(h_size);
+        if (!ptr) {
             h_size = h_size >> 1;
         }
     }
     size[0] = h_size;
-    return (char*)heap;
+    return ptr;
 }
 #endif
 
@@ -165,8 +165,8 @@ void MicroPyTask(void *pData) {
 
 soft_reset:
     mp_stack_ctrl_init();
-    stack_top = info.stackTop + info.stackSize * 4;
-    mp_stack_set_top((void *)stack_top);
+    stack_top = (void*) info.stackTop + info.stackSize * 4;
+    mp_stack_set_top((void *) stack_top);
     mp_stack_set_limit(MICROPYTHON_TASK_STACK_SIZE * 4 - 1024);
 #if MICROPY_ENABLE_GC
     uint32_t heap_size;
