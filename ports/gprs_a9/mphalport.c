@@ -38,6 +38,8 @@
 #include "buffer.h"
 #include "time.h"
 
+#include "py/runtime.h"
+
 bool UartInit()
 {
     UART_Config_t config = {
