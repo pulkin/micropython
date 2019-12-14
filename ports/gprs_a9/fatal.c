@@ -33,6 +33,7 @@
 #include "api_fs.h"
 #include "api_hal_pm.h"
 #include "api_hal_uart.h"
+#include "assert.h"
 
 #include "mpconfigport.h"
 #include "fatal.h"
