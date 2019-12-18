@@ -307,7 +307,10 @@ STATIC mp_uint_t mp_reader_vfs_readbyte(void *data) {
 }
 
 STATIC void mp_reader_vfs_close(void *data) {
-    mp_reader_vfs_t *reader = (mp_reader_vfs_t*)data;
+    // ========================================
+    // close() wrapper
+    // ========================================
+    mp_reader_vfs_t *reader = (mp_reader_vfs_t*) data;
     mp_stream_close(reader->file);
     m_del_obj(mp_reader_vfs_t, reader);
 }

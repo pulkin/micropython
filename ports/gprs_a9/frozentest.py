@@ -3,8 +3,7 @@ test_send_sms = None
 # test_send_sms = "8800"
 
 # Tests filesystem manipulations
-test_fs = False
-# test_fs = True
+test_fs = True
 
 # Operator name expected
 opname_expected = "KPNNL"
