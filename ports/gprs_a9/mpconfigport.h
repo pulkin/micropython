@@ -174,9 +174,9 @@
 #define mp_type_textio                      mp_type_vfs_fat_textio
 
 
-// #define MICROPY_VFS                         (1)
-// #define MICROPY_VFS_FAT                     (1)
-// #define MICROPY_READER_VFS                  (1)
+#define MICROPY_VFS                         (1)
+#define MICROPY_VFS_FAT                     (1)
+#define MICROPY_READER_VFS                  (1)
 
 // use vfs's functions for import stat and builtin open
 #ifdef MICROPY_VFS

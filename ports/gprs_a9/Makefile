@@ -214,7 +214,7 @@ bin: ${BIN}
 	$(Q)${MKDIR} -p ${BIN_PATH}
 	$(Q)${CP} -f ${BIN} ${BIN_PATH}
 	$(Q)${CP} -f ${PLATFORM_ELF_PATH} ${BIN_PATH}
-	$(Q)${OBJCOPY} --strip-symbols=${STRIP_SYMBOL_FILE} -N send_packet -N calloc ${BIN_PATH}/${FIRMWARE_NAME}.elf ${BIN_PATH}/${FIRMWARE_NAME}.elf
+	$(Q)${OBJCOPY} --strip-symbols=${STRIP_SYMBOL_FILE} -N send_packet -N calloc -N ff_oem2uni -N ff_uni2oem ${BIN_PATH}/${FIRMWARE_NAME}.elf ${BIN_PATH}/${FIRMWARE_NAME}.elf
 	$(Q)${ELFCOMBINE_TOOL} -e1 ${BIN_PATH}/${FIRMWARE_NAME}.elf -e2 ${BIN_PATH}/${PLATFORM_ELF_NAME} -o ${BIN_PATH}/${FIRMWARE_NAME}_final.elf
 	$(Q)${RM} -f ${BIN_PATH}/${FIRMWARE_NAME}.elf
 	$(Q)${RM} -f ${BIN_PATH}/${PLATFORM_ELF_NAME}
