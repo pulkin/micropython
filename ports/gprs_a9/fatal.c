@@ -41,7 +41,7 @@
 static const char msg1[] =
     "\r\n==============================="
     "\r\nMicropython experienced a fatal"
-    "\r\n   error and will be halted."
+    "\r\nerror and will be halted."
     "\r\n"
     "\r\n  reason: ";
 static const char msg2[] =

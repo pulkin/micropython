@@ -1,9 +1,8 @@
-# Tests sending SMS
+# Settings
 test_send_sms = None
 # test_send_sms = "8800"
-
-# Tests filesystem manipulations
-test_fs = True
+test_filesystem = True
+test_gprs = False
 
 # Operator name expected
 opname_expected = "KPNNL"
@@ -39,7 +38,7 @@ mem_tot = mem_free + mem_alloc
 print("Free:", mem_free, "alloc:", mem_alloc, "total:", mem_tot)
 assert mem_tot > 512e3
 
-if test_fs:
+if test_filesystem:
     print("================")
     print("filesystem")
     print("================")
@@ -310,95 +309,96 @@ if sim_present:
         sms = cel.SMS(test_send_sms, "hello")
         sms.send()
 
-    print("----------------")
-    print("GPRS")
-    print("----------------")
+    if test_gprs:
+        print("----------------")
+        print("GPRS")
+        print("----------------")
 
-    print("Waiting 5 secs ...")
-    time.sleep(5)
+        print("Waiting 5 secs ...")
+        time.sleep(5)
 
-    # LEBARA NL credentials
-    assert cel.gprs("internet", "", "")
+        # LEBARA NL credentials
+        assert cel.gprs("internet", "", "")
 
-    cb = cel.network_status_changed()
-    print("Status changed:", cb, "->", cel.get_network_status())
-    assert cb
+        cb = cel.network_status_changed()
+        print("Status changed:", cb, "->", cel.get_network_status())
+        assert cb
 
-    import socket as sock
-    loc_ip = sock.get_local_ip()
-    print("Local IP:", loc_ip)
-    assert len(loc_ip.split(".")) == 4
+        import socket as sock
+        loc_ip = sock.get_local_ip()
+        print("Local IP:", loc_ip)
+        assert len(loc_ip.split(".")) == 4
 
-    assert sock.get_num_open() == 0
+        assert sock.get_num_open() == 0
 
-    host = "httpstat.us"
-    port = 80
-    host_ai = sock.getaddrinfo(host, port)[0]
-    print("Addrinfo:", host_ai)
-    assert host_ai[:3] == (sock.AF_INET, sock.SOCK_STREAM, sock.IPPROTO_TCP)
-    assert host_ai[3] == host
-    assert len(host_ai[4][0].split(".")) == 4
-    assert host_ai[4][1] == 80
+        host = "httpstat.us"
+        port = 80
+        host_ai = sock.getaddrinfo(host, port)[0]
+        print("Addrinfo:", host_ai)
+        assert host_ai[:3] == (sock.AF_INET, sock.SOCK_STREAM, sock.IPPROTO_TCP)
+        assert host_ai[3] == host
+        assert len(host_ai[4][0].split(".")) == 4
+        assert host_ai[4][1] == 80
 
-    s = sock.socket()
-    s.connect((host, port))
-    assert sock.get_num_open() == 1
-    assert s.makefile() == s
+        s = sock.socket()
+        s.connect((host, port))
+        assert sock.get_num_open() == 1
+        assert s.makefile() == s
 
-    message = "GET /200 HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n"
-    response_expected = b"HTTP/1.1 200 OK\r\n"
-    message_f = message.format(host)
-    bytes_sent = s.send(message_f[:10])
-    bytes_sent += s.write(message_f[10:20])
-    bytes_sent += s.sendto(message_f[20:30], ("23.99.0.12", 80))
-    print("Socket sent:", bytes_sent)
-    assert bytes_sent == 30
-    s.sendall(message_f[30:])
+        message = "GET /200 HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n"
+        response_expected = b"HTTP/1.1 200 OK\r\n"
+        message_f = message.format(host)
+        bytes_sent = s.send(message_f[:10])
+        bytes_sent += s.write(message_f[10:20])
+        bytes_sent += s.sendto(message_f[20:30], ("23.99.0.12", 80))
+        print("Socket sent:", bytes_sent)
+        assert bytes_sent == 30
+        s.sendall(message_f[30:])
 
-    # Chunk 1: recv
-    response = s.recv(3)
-    # Chunk 2: read
-    response += s.read(3)
-    # Chunk 3: readinto
-    chunk3 = bytearray(len(response_expected) - 6)
-    s.readinto(chunk3)
-    response += chunk3
-    print("Socket recvd:", response)
-    assert response == response_expected
+        # Chunk 1: recv
+        response = s.recv(3)
+        # Chunk 2: read
+        response += s.read(3)
+        # Chunk 3: readinto
+        chunk3 = bytearray(len(response_expected) - 6)
+        s.readinto(chunk3)
+        response += chunk3
+        print("Socket recvd:", response)
+        assert response == response_expected
 
-    line = s.readline()
-    print("... recvd:", line)
-    assert len(line) > 0
-    s.close()
+        line = s.readline()
+        print("... recvd:", line)
+        assert len(line) > 0
+        s.close()
 
-    s = sock.socket()
-    s.connect((host, port))
-    bytes_sent = s.sendto(message_f, ("127.0.0.1", 80))
-    print("Socket sent (2):", bytes_sent)
-    assert bytes_sent == len(message_f)
+        s = sock.socket()
+        s.connect((host, port))
+        bytes_sent = s.sendto(message_f, ("127.0.0.1", 80))
+        print("Socket sent (2):", bytes_sent)
+        assert bytes_sent == len(message_f)
 
-    response, fr = s.recvfrom(len(response_expected))
-    print("Socket recvd (2):", response, fr)
-    assert response == response_expected
-    assert fr == host_ai[4]
-    del s
-    gc.collect()
+        response, fr = s.recvfrom(len(response_expected))
+        print("Socket recvd (2):", response, fr)
+        assert response == response_expected
+        assert fr == host_ai[4]
+        del s
+        gc.collect()
 
-    import ssl
-    port = 443
-    s = sock.socket()
-    s.connect((host, port))
-    s = ssl.wrap_socket(s)
-    s.write(message_f)
-    response = s.read(len(response_expected))
-    print("SSL socket recvd:", response)
-    assert response == response_expected
-    s.close()
+        import ssl
+        port = 443
+        s = sock.socket()
+        s.connect((host, port))
+        s = ssl.wrap_socket(s)
+        s.write(message_f)
+        response = s.read(len(response_expected))
+        print("SSL socket recvd:", response)
+        assert response == response_expected
+        s.close()
 
-    assert sock.get_num_open() == 0
+        assert sock.get_num_open() == 0
 
-    assert cel.gprs()
-    assert not cel.gprs(False)
+        assert cel.gprs()
+        assert not cel.gprs(False)
 
 print("================")
 print("machine")
