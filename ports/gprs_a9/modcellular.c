@@ -162,9 +162,8 @@ void modcellular_init0(void) {
     Network_SetFlightMode(0);
 
     // Set SMS storage
-    if (!SMS_SetFormat(SMS_FORMAT_TEXT, SIM0)) {
-        mp_raise_CellularError("Failed to set SMS format");
-    } 
+    if (!SMS_SetFormat(SMS_FORMAT_TEXT, SIM0))
+        mp_printf(&mp_plat_print, "Warning: modcellular_init0 failed to reset SMS format\n");
 
     SMS_Parameter_t smsParam = {
         .fo = 17 , // stadard values
@@ -173,13 +172,11 @@ void modcellular_init0(void) {
         .dcs= 8  , // 0:English 7bit, 4:English 8 bit, 8:Unicode 2 Bytes
     };
 
-    if (!SMS_SetParameter(&smsParam, SIM0)) {
-        mp_raise_CellularError("Failed to set SMS parameters");
-    }
+    if (!SMS_SetParameter(&smsParam, SIM0))
+        mp_printf(&mp_plat_print, "Warning: modcellular_init0 failed to reset SMS parameters\n");
 
-    if (!SMS_SetNewMessageStorage(SMS_STORAGE_SIM_CARD)) {
-        mp_raise_CellularError("Failed to set SMS storage in the SIM card");
-    }
+    if (!SMS_SetNewMessageStorage(SMS_STORAGE_SIM_CARD))
+        mp_printf(&mp_plat_print, "Warning: modcellular_init0 failed to reset SMS storage\n");
 }
 
 // ----------
@@ -1097,7 +1094,6 @@ STATIC mp_obj_t modcellular_dial(mp_obj_t tn_in) {
     // ========================================
     if (mp_obj_is_str(tn_in)) {
         const char* tn = mp_obj_str_get_str(tn_in);
-        mp_printf(&mp_plat_print, "calling %s\n", tn);
         if (!CALL_Dial(tn)) {
             mp_raise_CellularError("Failed to initiate an outgoing call");
         }
