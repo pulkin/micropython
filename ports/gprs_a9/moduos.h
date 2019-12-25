@@ -26,6 +26,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include "py/runtime.h"
 
 void moduos_init0(void);
+
+extern const mp_obj_type_t mp_type_internal_flash_fileio;
+extern const mp_obj_type_t mp_type_internal_flash_textio;
+
+MP_DECLARE_CONST_FUN_OBJ_KW(internal_flash_open_obj);
 
