@@ -61,6 +61,8 @@ ampy --port /dev/ttyUSB1 put frozentest.py
 ```python
 >>> help()
 >>> import frozentest
+>>> import blink
+blink.blink(1)
 ```
 
 ## Functionality
