@@ -234,9 +234,7 @@ ST7735 displays over software SPI.
 
 Modules located in the `py` folder.
 
-* `agps`: Assisted GPS services.
-  * `get_location_radiocells()`: uses [radiocells.org](https://radiocells.org/)
-  * `get_location_opencellid(api_key: str)`: uses [opencellid.org](http://opencellid.org) (registration required)
+* [`agps`](https://github.com/pulkin/mpy-agps): Assisted GPS services.
 
 ## Notes ##
 
