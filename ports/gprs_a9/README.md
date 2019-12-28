@@ -82,6 +82,8 @@ blink.blink(1)
 - [x] Calls: `cellular`
 - [x] SMS: `cellular.SMS`
 
+Additional libraries: install via [`upip`](https://docs.micropython.org/en/latest/reference/packages.html) (built into the module).
+
 ## API
 
 1. [`cellular`](#cellular): SMS, calls, connectivity
@@ -91,7 +93,7 @@ blink.blink(1)
 5. [`machine`](#machine): hardware and power control
 6. [`i2c`](#i2c): i2c implementation
 7. [`st7735`](#ST7735): ST7735 over software SPI display implementation
-8. [misc modules](#Misc)
+8. [Other modules](#Misc)
 9. [Notes](#Notes)
 
 ### `cellular`
@@ -234,9 +236,13 @@ ST7735 displays over software SPI.
 
 ## Misc ##
 
-Modules located in the `py` folder.
+Built into the firmware:
 
-* [`agps`](https://github.com/pulkin/mpy-agps): Assisted GPS services.
+* [`upip`](https://docs.micropython.org/en/latest/reference/packages.html): package manager over GPRS connection;
+
+Available platform-specific modules (not installed by default):
+
+* [`agps`](https://github.com/pulkin/mpy-agps): assisted GPS services.
 
 ## Notes ##
 
