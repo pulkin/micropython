@@ -45,11 +45,176 @@
 #include "api_fs.h"
 #include "api_hal_spi.h"
 
+#define PATH_IS_FILE 1
+#define PATH_IS_DIR 2
+
 extern const mp_obj_type_t mp_fat_vfs_type;
 
+mp_int_t translate_io_errno(int err) {
+    switch (err) {
+        case ERR_FS_IS_DIRECTORY:
+            return MP_EISDIR;
+        case ERR_FS_NOT_DIRECTORY:
+            return MP_ENOTDIR;
+        case ERR_FS_NO_DIR_ENTRY:
+            return MP_ENOENT;
+        case ERR_FS_OPERATION_NOT_GRANTED:
+            return MP_EIO; // TODO: translate better?
+        case ERR_FS_DIR_NOT_EMPTY:
+            return MP_EBUSY; // TODO: translate better?
+        case ERR_FS_FDS_MAX:
+            return MP_EIO; // TODO: translate better?
+        case ERR_FS_PROCESS_FILE_MAX:
+            return MP_EMFILE;
+        case ERR_FS_FILE_EXIST:
+            return MP_EEXIST;
+        case ERR_FS_NO_BASENAME:
+            return MP_ENOENT;
+        case ERR_FS_BAD_FD:
+            return MP_EBADF;
+        case ERR_FS_NO_MORE_FILES:
+            return MP_ENOENT; // TODO: translate better?
+        case ERR_FS_HAS_MOUNTED:
+            return MP_EEXIST; // TODO: translate better?
+        case ERR_FS_MOUNTED_FS_MAX:
+            return MP_EMFILE;
+        case ERR_FS_UNKNOWN_FILESYSTEM:
+            return MP_EIO;
+        case ERR_FS_INVALID_DIR_ENTRY:
+            return MP_EPERM; // TODO: translate better?
+        case ERR_FS_INVALID_PARAMETER:
+            return MP_EINVAL;
+        case ERR_FS_NOT_SUPPORT:
+            return MP_EIO;
+        case ERR_FS_UNMOUNT_FAILED:
+            return MP_EBUSY;
+        case ERR_FS_NO_MORE_MEMORY:
+            return MP_ENOMEM;
+        case ERR_FS_DEVICE_NOT_REGISTER:
+            return MP_ENXIO;
+        case ERR_FS_DISK_FULL:
+            return MP_ENOSPC;
+        case ERR_FS_NOT_FORMAT:
+            return MP_EIO;
+        case ERR_FS_HAS_FORMATED:
+            return MP_EIO;
+        case ERR_FS_NOT_FIND_SB:
+            return MP_EIO;
+        case ERR_FS_DEVICE_BUSY:
+            return MP_EBUSY;
+        case ERR_FS_OPEN_DEV_FAILED:
+            return MP_EIO;
+        case ERR_FS_ROOT_FULL:
+            return MP_EIO; // TODO: wtf is this?
+        case ERR_FS_ACCESS_REG_FAILED:
+            return MP_EIO; // TODO: poor translation here.
+        case ERR_FS_PATHNAME_PARSE_FAILED:
+            return MP_EINVAL;
+        case ERR_FS_READ_DIR_FAILED:
+            return MP_EIO;
+        case ERR_FS_MOUNT_READ_ROOT_INODE_FAILED:
+            return MP_EIO;
+        case ERR_FS_INVALID_DEV_NUMBER:
+            return MP_ENODEV;
+        case ERR_FS_RENAME_DIFF_PATH:
+            return MP_EISDIR;
+        case ERR_FS_FORMAT_MOUNTING_DEVICE:
+            return MP_EBUSY;
+        case ERR_FS_DATA_DESTROY:
+            return MP_EIO;
+        case ERR_FS_READ_SECTOR_FAILED:
+            return MP_EIO;
+        case ERR_FS_WRITE_SECTOR_FAILED:
+            return MP_EIO;
+        case ERR_FS_READ_FILE_EXCEED:
+            return MP_EIO;
+        case ERR_FS_WRITE_FILE_EXCEED:
+            return MP_EIO;
+        case ERR_FS_FILE_TOO_MORE:
+            return MP_EINVAL;
+        case ERR_FS_FILE_NOT_EXIST:
+            return MP_ENOENT;
+        case ERR_FS_DEVICE_DIFF:
+            return MP_EACCES;
+        case ERR_FS_GET_DEV_INFO_FAILED:
+            return MP_EIO;
+        case ERR_FS_NO_MORE_SB_ITEM:
+            return MP_EIO;
+        case ERR_FS_NOT_MOUNT:
+            return MP_ENXIO;
+        case ERR_FS_NAME_BUFFER_TOO_SHORT:
+            return MP_EINVAL;
+        case ERR_FS_NOT_REGULAR:
+            return MP_EACCES;
+        case ERR_FS_VOLLAB_IS_NULL:
+            return MP_EACCES;
+        default:
+            return 0;
+    }
+}
+
+int maybe_raise_FSError(int errno) {
+    if (errno < -4200000)
+        mp_raise_OSError(translate_io_errno(errno));
+    if (errno < 0)
+        mp_raise_OSError(MP_EIO);
+    return errno;
+}
+
+char path_exists(const char* path) {
+    Dir_t* folder = NULL;
+    if ((folder = API_FS_OpenDir(path))) {
+        API_FS_CloseDir(folder);
+        return PATH_IS_DIR;
+    }
+    int32_t fd;
+    if ((fd = API_FS_Open(path, FS_O_RDONLY, 0)) >= 0) {
+        API_FS_Close(fd);
+        return PATH_IS_FILE;
+    }
+    return 0;
+}
+
+void ensure_not_a_directory(const char* path) {
+    if (path_exists(path) & PATH_IS_DIR)
+        mp_raise_OSError(MP_EISDIR);
+}
+
+void ensure_not_a_file(const char* path) {
+    if (path_exists(path) & PATH_IS_FILE)
+        mp_raise_OSError(MP_EEXIST);
+}
+
+void ensure_is_dir(const char* path) {
+    int x = path_exists(path);
+    if (!x)
+        mp_raise_OSError(MP_ENOENT);
+    if (!(x & PATH_IS_DIR))
+        mp_raise_OSError(MP_ENOTDIR);
+}
+
+void ensure_is_file(const char* path) {
+    int x = path_exists(path);
+    if (!x)
+        mp_raise_OSError(MP_ENOENT);
+    if (!(x & PATH_IS_FILE))
+        mp_raise_OSError(MP_EISDIR);
+}
+
+void ensure_not_exists(const char* path) {
+    if (path_exists(path))
+        mp_raise_OSError(MP_EEXIST);
+}
+
+void ensure_exists(const char* path) {
+    if (!path_exists(path))
+        mp_raise_OSError(MP_ENOENT);
+}
+
 void moduos_init0() {
-    if (API_FS_ChangeDir("/"))
-        mp_printf(&mp_plat_print, "Warning: moduos_init0 failed to chdir to /\n");
+    int errno;
+    if ((errno = API_FS_ChangeDir("/")))
+        mp_printf(&mp_plat_print, "Warning: moduos_init0 failed to chdir to /, error code: %d\n", translate_io_errno(errno));
 }
 
 STATIC const qstr os_uname_info_fields[] = {
@@ -157,7 +322,7 @@ STATIC mp_obj_t internal_flash_ilistdir_it_iternext(mp_obj_t self_in) {
     }
 
     // finallize the iterator
-    API_FS_CloseDir(self->folder);
+    maybe_raise_FSError(API_FS_CloseDir(self->folder));
     self->folder = NULL;
     return MP_OBJ_STOP_ITERATION;
 }
@@ -169,14 +334,8 @@ mp_obj_t moduos_internal_flash_ilistdir(mp_obj_t path_in) {
     //     name (str): folder to list;
     // ========================================
     const char* path = mp_obj_str_get_str(path_in);
-    Dir_t* dir;
-    if (strlen(path))
-        dir = API_FS_OpenDir(path);
-    else
-        dir = API_FS_OpenDir(".");
-    if (!dir)
-        mp_raise_OSError(MP_EIO);
-
+    ensure_is_dir(path);
+    Dir_t* dir = API_FS_OpenDir(path);
     native_vfs_ilistdir_it_t *iter = m_new_obj(native_vfs_ilistdir_it_t);
     iter->base.type = &mp_type_polymorph_iter;
     iter->iternext = internal_flash_ilistdir_it_iternext;
@@ -194,9 +353,8 @@ mp_obj_t moduos_internal_flash_mkdir(mp_obj_t path_in) {
     //     name (str): folder to create;
     // ========================================
     const char* path = mp_obj_str_get_str(path_in);
-    int32_t ret = API_FS_Mkdir(path, 0);
-    if (ret != 0)
-        mp_raise_OSError(MP_EIO);
+    ensure_not_exists(path);
+    maybe_raise_FSError(API_FS_Mkdir(path, 0));
     return mp_const_none;
 }
 
@@ -210,9 +368,8 @@ mp_obj_t moduos_internal_flash_remove(mp_obj_t path_in) {
     //     name (str): file to remove;
     // ========================================
     const char* path = mp_obj_str_get_str(path_in);
-    int32_t ret = API_FS_Delete(path);
-    if (ret != 0)
-        mp_raise_OSError(MP_EIO);
+    ensure_is_file(path);
+    maybe_raise_FSError(API_FS_Delete(path));
     return mp_const_none;
 }
 
@@ -228,9 +385,8 @@ mp_obj_t moduos_internal_flash_rename(mp_obj_t old_path_in, mp_obj_t new_path_in
     // ========================================
     const char* path_old = mp_obj_str_get_str(old_path_in);
     const char* path_new = mp_obj_str_get_str(new_path_in);
-    int32_t ret = API_FS_Rename(path_old, path_new);
-    if (ret != 0)
-        mp_raise_OSError(MP_EIO);
+    ensure_exists(path_old);
+    maybe_raise_FSError(API_FS_Rename(path_old, path_new));
     return mp_const_none;
 }
 
@@ -244,9 +400,8 @@ mp_obj_t moduos_internal_flash_rmdir(mp_obj_t path_in) {
     //     name (str): folder to remove;
     // ========================================
     const char* path = mp_obj_str_get_str(path_in);
-    int32_t ret = API_FS_Rmdir(path);
-    if (ret != 0)
-        mp_raise_OSError(MP_EIO);
+    ensure_is_dir(path);
+    maybe_raise_FSError(API_FS_Rmdir(path));
     return mp_const_none;
 }
 
@@ -260,9 +415,8 @@ mp_obj_t moduos_internal_flash_chdir(mp_obj_t path_in) {
     //     name (str): folder to change to;
     // ========================================
     const char* path = mp_obj_str_get_str(path_in);
-    int32_t ret = API_FS_ChangeDir(path);
-    if (ret != 0)
-        mp_raise_OSError(MP_EIO);
+    ensure_is_dir(path);
+    maybe_raise_FSError(API_FS_ChangeDir(path));
     return mp_const_none;
 }
 
@@ -274,9 +428,7 @@ mp_obj_t moduos_internal_flash_getcwd(void) {
     // Retrieves current folder.
     // ========================================
     char dir[256];
-    uint32_t ret = API_FS_GetCurDir(sizeof(dir), dir);
-    if (ret != 0)
-        mp_raise_OSError(MP_EIO);
+    maybe_raise_FSError(API_FS_GetCurDir(sizeof(dir), dir));
     return mp_obj_new_str(dir, strlen(dir));
 }
 
@@ -304,7 +456,7 @@ mp_obj_t moduos_internal_flash_stat(mp_obj_t path_in) {
         mode = MP_S_IFREG;
 
     } else
-        mp_raise_OSError(MP_EIO);
+        mp_raise_OSError(MP_ENOENT);
 
     mp_obj_t tuple[10] = {
         MP_OBJ_NEW_SMALL_INT(mode),
@@ -330,9 +482,7 @@ mp_obj_t moduos_internal_flash_statvfs(mp_obj_t path_in) {
     // ========================================
     const char* path = mp_obj_str_get_str(path_in);
     API_FS_INFO info;
-    int32_t ret = API_FS_GetFSInfo(path, &info);
-    if (ret != 0)
-        mp_raise_OSError(MP_EIO);
+    maybe_raise_FSError(API_FS_GetFSInfo(path, &info));
     mp_obj_t tuple[2] = {
         mp_obj_new_int(info.totalSize),
         mp_obj_new_int(info.usedSize),

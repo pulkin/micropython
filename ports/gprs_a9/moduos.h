@@ -34,4 +34,6 @@ extern const mp_obj_type_t mp_type_internal_flash_fileio;
 extern const mp_obj_type_t mp_type_internal_flash_textio;
 
 MP_DECLARE_CONST_FUN_OBJ_KW(internal_flash_open_obj);
+int maybe_raise_FSError(int errno);
+int translate_io_errno(int errno);
 

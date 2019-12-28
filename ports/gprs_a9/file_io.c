@@ -56,7 +56,7 @@ STATIC mp_uint_t internal_flash_file_obj_read(mp_obj_t self_in, void *buf, mp_ui
     internal_flash_file_obj_t *self = MP_OBJ_TO_PTR(self_in);
     int32_t ret = API_FS_Read(self->fd, buf, size);
     if (ret < 0) {
-        *errcode = MP_EIO;
+        *errcode = translate_io_errno(ret);
         return MP_STREAM_ERROR;
     }
     return (mp_uint_t) ret;
@@ -69,7 +69,7 @@ STATIC mp_uint_t internal_flash_file_obj_write(mp_obj_t self_in, const void *buf
     internal_flash_file_obj_t *self = MP_OBJ_TO_PTR(self_in);
     int32_t ret = API_FS_Write(self->fd, (uint8_t*) buf, size);
     if (ret < 0) {
-        *errcode = MP_EIO;
+        *errcode = translate_io_errno(ret);
         return MP_STREAM_ERROR;
     }
     if (ret != size) {
@@ -110,13 +110,18 @@ STATIC mp_uint_t internal_flash_file_obj_ioctl(mp_obj_t o_in, mp_uint_t request,
                 break;
         }
 
+        if (ret < 0) {
+            *errcode = translate_io_errno((int) ret);
+            return MP_STREAM_ERROR;
+        }
+
         s->offset = ret;
         return 0;
 
     } else if (request == MP_STREAM_FLUSH) {
         uint32_t ret = API_FS_Flush(self->fd);
-        if (ret != 0) {
-            *errcode = MP_EIO;
+        if (ret < 0) {
+            *errcode = translate_io_errno(ret);
             return MP_STREAM_ERROR;
         }
         return 0;
@@ -125,8 +130,8 @@ STATIC mp_uint_t internal_flash_file_obj_ioctl(mp_obj_t o_in, mp_uint_t request,
         // if fs==NULL then the file is closed and in that case this method is a no-op
         if (self->fd > 0) {
             int32_t ret = API_FS_Close(self->fd);
-            if (ret != 0) {
-                *errcode = MP_EIO;
+            if (ret < 0) {
+                *errcode = translate_io_errno(ret);
                 return MP_STREAM_ERROR;
             } else
                 self->fd = 0;
@@ -183,10 +188,9 @@ STATIC mp_obj_t internal_flash_file_open(const char* file_name, const mp_obj_typ
     internal_flash_file_obj_t *o = m_new_obj_with_finaliser(internal_flash_file_obj_t);
     o->base.type = type;
 
-    int32_t fd = API_FS_Open(file_name, mode, 0);
-    if (fd <= 0) {
-        mp_raise_OSError(MP_EIO);
-    }
+    int32_t fd = maybe_raise_FSError(API_FS_Open(file_name, mode, 0));
+    if (fd <= 0)
+        mp_raise_OSError(MP_ENOENT);
     o->fd = fd;
     return MP_OBJ_FROM_PTR(o);
 }
