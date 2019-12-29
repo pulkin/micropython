@@ -39,6 +39,7 @@
 #include "time.h"
 
 #include "py/runtime.h"
+#include "extmod/misc.h"
 
 void mp_hal_pyrepl_uart_init() {
     UART_Config_t config = {
@@ -54,6 +55,7 @@ void mp_hal_pyrepl_uart_init() {
 
 // Send string of given length
 void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
+    mp_uos_dupterm_tx_strn(str, len);
     UART_Write(UART1,(uint8_t*)str,len);
 }
 

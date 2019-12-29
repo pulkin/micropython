@@ -519,7 +519,7 @@ STATIC const mp_obj_type_t moduos_internal_flash_type = {
 };
 
 #if MICROPY_PY_OS_DUPTERM
-STATIC mp_obj_t os_dupterm_notify(mp_obj_t obj_in) {
+/* STATIC mp_obj_t os_dupterm_notify(mp_obj_t obj_in) {
     (void) obj_in;
     for (;;) {
         int c = mp_uos_dupterm_rx_chr();
@@ -531,7 +531,7 @@ STATIC mp_obj_t os_dupterm_notify(mp_obj_t obj_in) {
     return mp_const_none;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_dupterm_notify_obj, os_dupterm_notify);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_dupterm_notify_obj, os_dupterm_notify);*/
 #endif
 
 STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
@@ -543,7 +543,7 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_urandom), MP_ROM_PTR(&os_urandom_obj) },
     #if MICROPY_PY_OS_DUPTERM
     { MP_ROM_QSTR(MP_QSTR_dupterm), MP_ROM_PTR(&mp_uos_dupterm_obj) },
-    { MP_ROM_QSTR(MP_QSTR_dupterm_notify), MP_ROM_PTR(&os_dupterm_notify_obj) },
+    // { MP_ROM_QSTR(MP_QSTR_dupterm_notify), MP_ROM_PTR(&mp_os_dupterm_notify_obj) },
     #endif
     #if MICROPY_VFS
     { MP_ROM_QSTR(MP_QSTR_ilistdir), MP_ROM_PTR(&mp_vfs_ilistdir_obj) },
