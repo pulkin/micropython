@@ -541,7 +541,7 @@ STATIC mp_obj_t modst7735_display_text(size_t n_args, const mp_obj_t *args) {
         // loop over char data
         for (int j = 0; j < 8; j++, x0++) {
             if (0 <= x0 && x0 < self->width) { // clip x
-                uint vline_data = chr_data[j]; // each byte is a column of 8 pixels, LSB at top
+                uint8_t vline_data = chr_data[j]; // each byte is a column of 8 pixels, LSB at top
                 for (int y = y0; vline_data; vline_data >>= 1, y++) { // scan over vertical column
                     if (vline_data & 1) { // only draw if pixel set
                         if (0 <= y && y < self->height) { // clip y
