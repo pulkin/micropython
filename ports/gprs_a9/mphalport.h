@@ -33,6 +33,7 @@
 #include "stdbool.h"
 #include "lib/utils/interrupt_char.h"
 #include "time.h"
+#include "py/obj.h"
 
 #define MP_HAL_PIN_FMT "%u"
 #define mp_hal_pin_name(p) (p)
@@ -50,6 +51,7 @@ __attribute__((always_inline)) static inline uint32_t mp_hal_ticks_cpu(void) {
   return clock();
 }
 
+mp_hal_pin_obj_t mp_hal_get_pin_obj(mp_obj_t pin_in);
 void mp_hal_pin_input(mp_hal_pin_obj_t pin_id);
 void mp_hal_pin_output(mp_hal_pin_obj_t pin_id);
 int mp_hal_pin_read(mp_hal_pin_obj_t pin_id);
