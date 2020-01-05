@@ -334,6 +334,8 @@ mp_obj_t moduos_internal_flash_ilistdir(mp_obj_t path_in) {
     //     name (str): folder to list;
     // ========================================
     const char* path = mp_obj_str_get_str(path_in);
+    if (strlen(path) == 0)
+        path = ".";
     ensure_is_dir(path);
     Dir_t* dir = API_FS_OpenDir(path);
     native_vfs_ilistdir_it_t *iter = m_new_obj(native_vfs_ilistdir_it_t);
