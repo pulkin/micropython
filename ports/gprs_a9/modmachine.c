@@ -40,6 +40,10 @@
 #include "api_hal_watchdog.h"
 #include "api_hal_adc.h"
 
+void modmachine_init0(void) {
+    modmachine_pin_init0();
+}
+
 // ------
 // Notify
 // ------
