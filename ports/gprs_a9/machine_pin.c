@@ -6,6 +6,7 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 Damien P. George
+ * Copyright (c) 2019 pulkin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +30,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 #include "py/runtime.h"
 #include "py/mphal.h"
 #include "mphalport.h"
@@ -41,6 +41,12 @@
 
 #define GPIO_LEVEL_UNSET 255
 // #define GPIO_Set(id, val) do {g_InterfaceVtbl->GPIO_Set((id), (val)); if ((id) == 17) {if ((val) == 0) mp_printf(&mp_plat_print, "comm"); else mp_printf(&mp_plat_print, "data");} else if ((id) == 15) {if ((val) == 0) mp_printf(&mp_plat_print, "("); else mp_printf(&mp_plat_print, ")\n");} else if ((id) == 16) {if ((val) == 0) mp_printf(&mp_plat_print, "-"); else mp_printf(&mp_plat_print, "+");} else if ((id) == 18) {if ((val) == 0) mp_printf(&mp_plat_print, "0"); else mp_printf(&mp_plat_print, "1");} else mp_printf(&mp_plat_print, "%d:%d ", (id), (val));} while(0)
+
+void modmachine_pin_init0(void) {
+    PM_PowerEnable(POWER_TYPE_MMC, false);
+    PM_PowerEnable(POWER_TYPE_LCD, false);
+    PM_PowerEnable(POWER_TYPE_CAM, false);
+}
 
 // -------
 // Classes
