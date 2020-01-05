@@ -70,11 +70,11 @@ blink.blink(1)
 - [x] GPIO: `machine.Pin`
 - [x] ADC: `machine.ADC`
 - [ ] PWM: `machine.PWM`
-- [x] UART: `machine.UART` (only hardware UART so far)
+- [x] UART: `machine.UART` (hw)
+- [x] SPI: `machine.SPI` (sw)
+- [x] I2C: `i2c` (hw)
 - [x] Cellular misc (IMEI, ICCID, ...): `cellular`
 - [x] GPS: `gps`
-- [x] I2C: `i2c`
-- [x] SPI: `machine.SPI` (software only)
 - [x] time: `utime`
 - [x] File system
 - [x] GPRS, DNS: `cellular`, `socket`, `ssl`
