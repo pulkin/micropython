@@ -42,6 +42,7 @@
 
 void modmachine_init0(void) {
     modmachine_pin_init0();
+    modmachine_uart_init0();
 }
 
 // ------
@@ -202,6 +203,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_umachine) },
     { MP_ROM_QSTR(MP_QSTR_Pin), MP_ROM_PTR(&machine_pin_type) },
     { MP_ROM_QSTR(MP_QSTR_ADC), MP_ROM_PTR(&machine_adc_type) },
+    { MP_ROM_QSTR(MP_QSTR_UART), MP_ROM_PTR(&pyb_uart_type) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modmachine_reset_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_idle), (mp_obj_t)&modmachine_set_idle_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_min_freq), (mp_obj_t)&modmachine_set_min_freq_obj },

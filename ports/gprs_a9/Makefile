@@ -127,6 +127,7 @@ SRC_C = \
 	main.c \
 	posix_helpers.c \
 	fatal.c \
+	uart.c \
 	help.c \
 	modmachine.c \
 	machine_pin.c \
@@ -142,7 +143,8 @@ SRC_C = \
 	modusocket.c \
 	modi2c.c \
 	modst7735.c \
-	machine_adc.c
+	machine_adc.c \
+	machine_uart.c
 
 
 LIB_SRC_C = $(addprefix lib/,\
