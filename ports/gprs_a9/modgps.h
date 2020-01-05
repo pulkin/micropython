@@ -32,6 +32,7 @@
 
 extern const mp_obj_type_t mp_type_CellularError;
 
+void modgps_init0(void);
 void modgps_notify_gps_update(API_Event_t* event);
 
 #define DEFAULT_GPS_TIMEOUT 5

@@ -41,6 +41,10 @@
 #include "gps.h"
 #include "time.h"
 
+void modgps_init0(void) {
+    GPS_Close();
+}
+
 // ------
 // Notify
 // ------
