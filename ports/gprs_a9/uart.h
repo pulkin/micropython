@@ -6,7 +6,7 @@
 #include "api_hal_uart.h"
 
 #define UART_NPORTS (2)
-#define UART_STATIC_RXBUF_LEN (16)
+#define UART_STATIC_RXBUF_LEN (256)
 
 void uart_set_rxbuf(uint8_t uart, uint8_t *buf, int len);
 int uart_get_rxbuf_len(uint8_t uart);

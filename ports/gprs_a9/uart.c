@@ -42,9 +42,6 @@
 // The two ports
 static const UART_Port_t uart_port[] = {UART1, UART2};
 
-// REPL port
-static uint8_t uart_os = 0;
-
 // rx data buffers
 uint8_t uart1_ringbuf_array[UART_STATIC_RXBUF_LEN];
 uint8_t uart2_ringbuf_array[UART_STATIC_RXBUF_LEN];
@@ -100,16 +97,6 @@ void uart_flush(uint8_t uart) {
 
 bool uart_close(uint8_t uart) {
     return UART_Close(uart_port[uart]);
-}
-
-static uint32_t uart_os_write_char(char c) {
-    // python REPL
-    return uart_tx_one_char(uart_os, c);
-}
-
-void uart_os_config(uint8_t uart) {
-    // sets python REPL
-    uart_os = uart;
 }
 
 static void uart_rx_intr_handler(UART_Callback_Param_t param) {

@@ -35,10 +35,11 @@
 #include "py/repl.h"
 #include "py/gc.h"
 #include "py/mperrno.h"
-#include "lib/utils/pyexec.h"
 #include "py/stackctrl.h"
 #include "py/mpstate.h"
 #include "py/mphal.h"
+#include "extmod/misc.h"
+#include "lib/utils/pyexec.h"
 
 #include "stdbool.h"
 #include "api_os.h"
@@ -155,13 +156,11 @@ void MP_WEAK __assert_func(const char *file, int line, const char *func, const c
 */
 
 void MicroPyTask(void *pData) {
-    // The primary event-driven UART loop
 
     OS_Task_Info_t info;
     OS_GetTaskInfo(microPyTaskHandle, &info);
     MicroPy_Event_t* event;
     Buffer_Init(&fifoBuffer, fifoBufferData, sizeof(fifoBufferData));
-    mp_hal_pyrepl_uart_init();
 
 soft_reset:
     mp_stack_ctrl_init();
@@ -198,15 +197,22 @@ soft_reset:
     // if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
     //     pyexec_file("main.py");
     // }
-    pyexec_event_repl_init();
+    {
+        mp_obj_t args[2];
+        args[0] = MP_OBJ_NEW_SMALL_INT(0);
+        args[1] = MP_OBJ_NEW_SMALL_INT(115200);
+        args[0] = pyb_uart_type.make_new(&pyb_uart_type, 2, 0, args);
+        args[1] = MP_OBJ_NEW_SMALL_INT(1);
+        // extern mp_obj_t mp_os_dupterm(size_t n_args, const mp_obj_t *args);
+        mp_uos_dupterm_obj.fun.var(2, args);
+    }
+    // pyexec_event_repl_init();
     
     uint8_t reset = 0;
-    while (1) if (OS_WaitEvent(microPyTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER)) {
+    // while (1) if (OS_WaitEvent(microPyTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER)) {
+    while (1) {
 
-        Trace(1,"microPy task received event:%d",event->id);
-        // PM_SetSysMinFreq(PM_SYS_FREQ_178M);
-
-        switch(event->id) {
+        /* switch(event->id) {
             case MICROPY_EVENT_ID_UART_RECEIVED: {
                 uint8_t c;
                 Trace(1, "micropy task received data length: %d", event->param1);
@@ -223,9 +229,19 @@ soft_reset:
         }
 
         OS_Free(event->pParam1);
-        OS_Free(event);
-        if (reset) break;
-        // PM_SetSysMinFreq(PM_SYS_FREQ_32K);
+        OS_Free(event);*/
+
+        if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
+            if (pyexec_raw_repl() != 0) {
+                break;
+            }
+        } else {
+            if (pyexec_friendly_repl() != 0) {
+                break;
+            }
+        }
+        MICROPY_EVENT_POLL_HOOK
+        OS_SleepUs(1);
     }
 
 #if MICROPY_ENABLE_GC
@@ -357,7 +373,7 @@ void EventDispatch(API_Event_t* pEvent)
         // ====
         case API_EVENT_ID_UART_RECEIVED:
             Trace(1,"UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
-            if(pEvent->param1 == UART1)
+            /*if(pEvent->param1 == UART1)
             {
                 MicroPy_Event_t* event = (MicroPy_Event_t*)OS_Malloc(sizeof(MicroPy_Event_t));
                 if(!event)
@@ -385,8 +401,8 @@ void EventDispatch(API_Event_t* pEvent)
                 memset((void*)event,0,sizeof(MicroPy_Event_t));
                 event->id = MICROPY_EVENT_ID_UART_RECEIVED;
                 event->param1 = len;
-                OS_SendEvent(microPyTaskHandle, (void*)event, OS_TIME_OUT_WAIT_FOREVER, 0);
-            }
+                OS_SendEvent(microPyTaskHandle, (void*) event, OS_TIME_OUT_WAIT_FOREVER, 0);
+            }*/
             break;
 
         // GPS
@@ -412,13 +428,10 @@ void AppMainTask(void *pData)
     {
         if(OS_WaitEvent(mainTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER))
         {
-            // PM_SetSysMinFreq(PM_SYS_FREQ_178M);//set back system min frequency to 178M or higher(/lower) value
             EventDispatch(event);
             OS_Free(event->pParam1);
             OS_Free(event->pParam2);
             OS_Free(event);
-            // PM_SetSysMinFreq(PM_SYS_FREQ_32K);//release system freq to enter sleep mode to save power,
-                                              //system remain runable but slower, and close eripheral not using
         }
     }
 }
@@ -428,16 +441,6 @@ void _Main(void)
     OS_SetUserMainHandle(&mainTaskHandle);
 }
 
-
-int mp_hal_stdin_rx_chr(void) {
-    uint8_t c;
-    for (;;) {
-        if (Buffer_Gets(&fifoBuffer, &c, 1))
-            return c;
-        MICROPY_EVENT_POLL_HOOK
-        OS_Sleep(1);
-    }
-}
 
 
 #if MICROPY_DEBUG_VERBOSE

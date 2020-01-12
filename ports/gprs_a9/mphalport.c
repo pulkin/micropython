@@ -41,38 +41,33 @@
 #include "py/runtime.h"
 #include "extmod/misc.h"
 
-void mp_hal_pyrepl_uart_init() {
-    UART_Config_t config = {
-        .baudRate = UART_BAUD_RATE_115200,
-        .dataBits = UART_DATA_BITS_8,
-        .stopBits = UART_STOP_BITS_1,
-        .parity   = UART_PARITY_NONE,
-        .rxCallback = NULL,
-        .useEvent = true,
-    };
-    UART_Init(UART1, config);
+int mp_hal_stdin_rx_chr(void) {
+    // This should be blocking
+    for (;;) {
+        int c = mp_uos_dupterm_rx_chr();
+        if (c != -1) {
+            return c;
+        }
+        OS_SleepUs(1);
+    }
 }
 
-// Send string of given length
-void mp_hal_stdout_tx_strn(const char *str, mp_uint_t len) {
-    mp_uos_dupterm_tx_strn(str, len);
-    UART_Write(UART1,(uint8_t*)str,len);
-}
-
-// Send zero-terminated string
 void mp_hal_stdout_tx_str(const char *str) {
-    mp_hal_stdout_tx_strn(str, strlen(str));
+    mp_uos_dupterm_tx_strn(str, strlen(str));
 }
 
-// Efficiently convert "\n" to "\r\n"
-void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
+void mp_hal_stdout_tx_strn(const char *str, uint32_t len) {
+    mp_uos_dupterm_tx_strn(str, len);
+}
+
+void mp_hal_stdout_tx_strn_cooked(const char *str, uint32_t len) {
     const char *last = str;
     while (len--) {
         if (*str == '\n') {
             if (str > last) {
-                mp_hal_stdout_tx_strn(last, str - last);
+                mp_uos_dupterm_tx_strn(last, str - last);
             }
-            mp_hal_stdout_tx_strn("\r\n", 2);
+            mp_uos_dupterm_tx_strn("\r\n", 2);
             ++str;
             last = str;
         } else {
@@ -80,7 +75,7 @@ void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
         }
     }
     if (str > last) {
-        mp_hal_stdout_tx_strn(last, str - last);
+        mp_uos_dupterm_tx_strn(last, str - last);
     }
 }
 
@@ -103,8 +98,8 @@ void mp_hal_delay_ms(uint32_t ms) {
 void mp_hal_delay_us(uint32_t us) {
     uint32_t start = clock();
     while ((clock() - start) * 1000 < us * CLOCKS_PER_MSEC) {
+        MICROPY_EVENT_POLL_HOOK
         OS_SleepUs(1);
-        mp_handle_pending();
     }
 }
 

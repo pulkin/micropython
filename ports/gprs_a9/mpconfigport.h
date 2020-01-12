@@ -31,7 +31,7 @@
 
 // Python internal features
 #define MICROPY_ENABLE_COMPILER             (1)
-#define MICROPY_REPL_EVENT_DRIVEN           (1)
+#define MICROPY_REPL_EVENT_DRIVEN           (0)
 #define MICROPY_ENABLE_GC                   (1)
 #define MICROPY_LONGINT_IMPL                (MICROPY_LONGINT_IMPL_MPZ)
 #define MICROPY_FLOAT_IMPL                  (MICROPY_FLOAT_IMPL_DOUBLE)
@@ -144,7 +144,7 @@
 #define MICROPY_PY_UBINASCII_CRC32          (1)
 #define MICROPY_PY_URANDOM                  (1)
 #define MICROPY_PY_URANDOM_EXTRA_FUNCS      (1)
-#define MICROPY_PY_OS_DUPTERM               (1)
+#define MICROPY_PY_OS_DUPTERM               (2)
 #define MICROPY_PY_MACHINE                  (1)
 #define MICROPY_PY_MACHINE_PIN_MAKE_NEW     mp_pin_make_new
 // #define MICROPY_PY_MACHINE_PULSE            (1)
