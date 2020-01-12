@@ -90,7 +90,7 @@ Additional libraries: install via [`upip`](https://docs.micropython.org/en/lates
 4. [`gps`](#gps): everything related to GPS and assisted positioning
 5. [`machine`](#machine): hardware and power control
 6. [`i2c`](#i2c): i2c implementation
-7. [`st7735`](#ST7735): ST7735 over software SPI display implementation
+7. [`st7735`](#ST7735): ST7735 over software SPI display implementation **to be removed**
 8. [Other modules](#Misc)
 9. [Notes](#Notes)
 
