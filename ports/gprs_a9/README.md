@@ -1,9 +1,7 @@
-Your support is important for this port: please consider donating.
-
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2RZCNXCUCP4YG&source=url)
-
 [![Build Status](https://travis-ci.org/pulkin/micropython.svg?branch=master)](https://travis-ci.org/pulkin/micropython)
 [![Build Status](https://dev.azure.com/gpulkin/micropython/_apis/build/status/pulkin.micropython?branchName=master)](https://dev.azure.com/gpulkin/micropython/_build/latest?definitionId=1&branchName=master)
+[[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)]](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2RZCNXCUCP4YG&source=url)
+
 ## The module
 
 ![A9G](https://raw.githubusercontent.com/Ai-Thinker-Open/GPRS_C_SDK/master/doc/assets/pudding_pin.png)
