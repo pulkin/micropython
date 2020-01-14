@@ -37,9 +37,12 @@
 #include "api_hal_uart.h"
 #include "buffer.h"
 #include "time.h"
+#include "uart.h"
 
 #include "py/runtime.h"
 #include "extmod/misc.h"
+
+int uart_attached_to_dupterm[UART_NPORTS];
 
 int mp_hal_stdin_rx_chr(void) {
     // This should be blocking

@@ -29,6 +29,17 @@
 #include "py/obj.h"
 #include "api_event.h"
 
+typedef struct _pyb_uart_obj_t {
+    mp_obj_base_t base;
+    uint8_t uart_id;
+    uint8_t bits;
+    uint8_t parity;
+    uint8_t stop;
+    uint32_t baudrate;
+    uint16_t timeout;       // timeout waiting for first char (in ms)
+    uint16_t timeout_char;  // timeout waiting between chars (in ms)
+} pyb_uart_obj_t;
+
 extern const mp_obj_type_t machine_pin_type;
 extern const mp_obj_type_t machine_adc_type;
 extern const mp_obj_type_t pyb_uart_type;

@@ -29,6 +29,7 @@
  */
 
 #include "moduos.h"
+#include "modmachine.h"
 
 #include <string.h>
 
@@ -520,21 +521,24 @@ STATIC const mp_obj_type_t moduos_internal_flash_type = {
     .locals_dict = (mp_obj_dict_t*)&internal_flash_locals_dict,
 };
 
-#if MICROPY_PY_OS_DUPTERM
-/* STATIC mp_obj_t os_dupterm_notify(mp_obj_t obj_in) {
-    (void) obj_in;
-    for (;;) {
-        int c = mp_uos_dupterm_rx_chr();
-        if (c < 0) {
-            break;
-        }
-        ringbuf_put(&stdin_ringbuf, c);
+mp_obj_t os_dupterm(size_t n_args, const mp_obj_t *args) {
+    // ========================================
+    // Wraps dupterm to track attachment of
+    // built-in UART.
+    // ========================================
+    mp_obj_t prev_obj = mp_uos_dupterm_obj.fun.var(n_args, args);
+    if (mp_obj_get_type(args[0]) == &pyb_uart_type) {
+        pyb_uart_obj_t *uart = MP_OBJ_TO_PTR(args[0]);
+        ++uart_attached_to_dupterm[uart->uart_id];
     }
-    return mp_const_none;
+    if (mp_obj_get_type(prev_obj) == &pyb_uart_type) {
+        pyb_uart_obj_t *uart = MP_OBJ_TO_PTR(prev_obj);
+        --uart_attached_to_dupterm[uart->uart_id];
+    }
+    return prev_obj;
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_dupterm_notify_obj, os_dupterm_notify);*/
-#endif
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(os_dupterm_obj, 1, 2, os_dupterm);
 
 STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_uos) },
@@ -543,11 +547,7 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR_uname), MP_ROM_PTR(&os_uname_obj) },
     { MP_ROM_QSTR(MP_QSTR_urandom), MP_ROM_PTR(&os_urandom_obj) },
-    #if MICROPY_PY_OS_DUPTERM
-    { MP_ROM_QSTR(MP_QSTR_dupterm), MP_ROM_PTR(&mp_uos_dupterm_obj) },
-    // { MP_ROM_QSTR(MP_QSTR_dupterm_notify), MP_ROM_PTR(&mp_os_dupterm_notify_obj) },
-    #endif
-    #if MICROPY_VFS
+    { MP_ROM_QSTR(MP_QSTR_dupterm), MP_ROM_PTR(&os_dupterm_obj) },
     { MP_ROM_QSTR(MP_QSTR_ilistdir), MP_ROM_PTR(&mp_vfs_ilistdir_obj) },
     { MP_ROM_QSTR(MP_QSTR_listdir), MP_ROM_PTR(&mp_vfs_listdir_obj) },
     { MP_ROM_QSTR(MP_QSTR_mkdir), MP_ROM_PTR(&mp_vfs_mkdir_obj) },
@@ -560,10 +560,7 @@ STATIC const mp_rom_map_elem_t os_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_statvfs), MP_ROM_PTR(&mp_vfs_statvfs_obj) },
     { MP_ROM_QSTR(MP_QSTR_mount), MP_ROM_PTR(&mp_vfs_mount_obj) },
     { MP_ROM_QSTR(MP_QSTR_umount), MP_ROM_PTR(&mp_vfs_umount_obj) },
-    #if MICROPY_VFS_FAT
     { MP_ROM_QSTR(MP_QSTR_VfsFat), MP_ROM_PTR(&mp_fat_vfs_type) },
-    #endif
-    #endif
 };
 
 STATIC MP_DEFINE_CONST_DICT(os_module_globals, os_module_globals_table);

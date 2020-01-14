@@ -34,10 +34,13 @@
 #include "lib/utils/interrupt_char.h"
 #include "time.h"
 #include "py/obj.h"
+#include "uart.h"
 
 #define MP_HAL_PIN_FMT "%u"
 #define mp_hal_pin_name(p) (p)
 #define mp_hal_pin_obj_t uint32_t
+
+extern int uart_attached_to_dupterm[UART_NPORTS];
 
 void mp_hal_set_interrupt_char(int c);
 void mp_hal_pyrepl_uart_init();

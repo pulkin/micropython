@@ -32,27 +32,19 @@
 #include "py/stream.h"
 #include "py/mperrno.h"
 #include "py/mphal.h"
-#include "extmod/misc.h"
 
-#include "uart.h"
+#include "mphalport.h"
 #include "modmachine.h"
-
-typedef struct _pyb_uart_obj_t {
-    mp_obj_base_t base;
-    uint8_t uart_id;
-    uint8_t bits;
-    uint8_t parity;
-    uint8_t stop;
-    uint32_t baudrate;
-    uint16_t timeout;       // timeout waiting for first char (in ms)
-    uint16_t timeout_char;  // timeout waiting between chars (in ms)
-} pyb_uart_obj_t;
+#include "moduos.h"
 
 STATIC const char *_parity_name[] = {"None", "1", "0"};
 
 void modmachine_uart_init0(void) {
     UART_Close(UART2);
     UART_Close(UART1);
+
+    uart_attached_to_dupterm[0] = 0;
+    uart_attached_to_dupterm[1] = 0;
 
     // Attach UART to dupterm(1)
     mp_obj_t args[2];
@@ -61,7 +53,7 @@ void modmachine_uart_init0(void) {
     args[0] = pyb_uart_type.make_new(&pyb_uart_type, 2, 0, args);
     args[1] = MP_OBJ_NEW_SMALL_INT(1);
     // extern mp_obj_t mp_os_dupterm(size_t n_args, const mp_obj_t *args);
-    mp_uos_dupterm_obj.fun.var(2, args);
+    os_dupterm(2, args);
 }
 
 /******************************************************************************/

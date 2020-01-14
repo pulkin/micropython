@@ -33,6 +33,8 @@ void moduos_init0(void);
 extern const mp_obj_type_t mp_type_internal_flash_fileio;
 extern const mp_obj_type_t mp_type_internal_flash_textio;
 
+mp_obj_t os_dupterm(size_t n_args, const mp_obj_t *args);
+
 MP_DECLARE_CONST_FUN_OBJ_KW(internal_flash_open_obj);
 int maybe_raise_FSError(int errno);
 int translate_io_errno(int errno);

@@ -102,8 +102,15 @@ bool uart_close(uint8_t uart) {
 static void uart_rx_intr_handler(UART_Callback_Param_t param) {
     // handles rx interrupts
     ringbuf_t *ringbuf = uart_ringbuf + param.port - 1;
-    for (uint32_t i=0; i<param.length; i++)
-        ringbuf_put(ringbuf, param.buf[i]);
+    int* to_dupterm = uart_attached_to_dupterm + param.port - 1;
+    for (uint32_t i=0; i<param.length; i++) {
+        if (param.buf[i] == mp_interrupt_char) {
+            if (*to_dupterm)
+                mp_keyboard_interrupt();
+        }
+        else
+            ringbuf_put(ringbuf, param.buf[i]);
+    }
 }
 
 bool uart_rx_wait(uint8_t uart, uint32_t timeout_us) {
