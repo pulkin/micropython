@@ -32,6 +32,7 @@
 #include "py/stream.h"
 #include "py/mperrno.h"
 #include "py/mphal.h"
+#include "extmod/misc.h"
 
 #include "uart.h"
 #include "modmachine.h"
@@ -51,6 +52,16 @@ STATIC const char *_parity_name[] = {"None", "1", "0"};
 
 void modmachine_uart_init0(void) {
     UART_Close(UART2);
+    UART_Close(UART1);
+
+    // Attach UART to dupterm(1)
+    mp_obj_t args[2];
+    args[0] = MP_OBJ_NEW_SMALL_INT(0);
+    args[1] = MP_OBJ_NEW_SMALL_INT(115200);
+    args[0] = pyb_uart_type.make_new(&pyb_uart_type, 2, 0, args);
+    args[1] = MP_OBJ_NEW_SMALL_INT(1);
+    // extern mp_obj_t mp_os_dupterm(size_t n_args, const mp_obj_t *args);
+    mp_uos_dupterm_obj.fun.var(2, args);
 }
 
 /******************************************************************************/

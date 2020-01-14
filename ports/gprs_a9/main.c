@@ -38,7 +38,6 @@
 #include "py/stackctrl.h"
 #include "py/mpstate.h"
 #include "py/mphal.h"
-#include "extmod/misc.h"
 #include "lib/utils/pyexec.h"
 
 #include "stdbool.h"
@@ -197,15 +196,6 @@ soft_reset:
     // if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
     //     pyexec_file("main.py");
     // }
-    {
-        mp_obj_t args[2];
-        args[0] = MP_OBJ_NEW_SMALL_INT(0);
-        args[1] = MP_OBJ_NEW_SMALL_INT(115200);
-        args[0] = pyb_uart_type.make_new(&pyb_uart_type, 2, 0, args);
-        args[1] = MP_OBJ_NEW_SMALL_INT(1);
-        // extern mp_obj_t mp_os_dupterm(size_t n_args, const mp_obj_t *args);
-        mp_uos_dupterm_obj.fun.var(2, args);
-    }
     // pyexec_event_repl_init();
     
     uint8_t reset = 0;
