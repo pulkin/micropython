@@ -198,7 +198,6 @@ soft_reset:
     // }
     // pyexec_event_repl_init();
     
-    uint8_t reset = 0;
     // while (1) if (OS_WaitEvent(microPyTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER)) {
     while (1) {
 
@@ -247,7 +246,6 @@ soft_reset:
 
 void EventDispatch(API_Event_t* pEvent)
 {
-    uint32_t len = 0;
     switch(pEvent->id)
     {
         case API_EVENT_ID_POWER_ON:
