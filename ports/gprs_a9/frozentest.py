@@ -1,8 +1,9 @@
 # Settings
 test_send_sms = None
 # test_send_sms = "8800"
-test_filesystem = True
-test_gprs = False
+test_networks = False
+test_filesystem = False
+test_gprs = True
 
 # Operator name expected
 opname_expected = "KPNNL"
@@ -188,77 +189,78 @@ print("SIM present:", sim_present)
 
 if sim_present:
 
-    print("----------------")
-    print("Network")
-    print("----------------")
-    print("Resetting ...")
-    cel.reset()
-    print("Waiting 15 secs ...")
-    time.sleep(15)
+    if test_networks:
+        print("----------------")
+        print("Network")
+        print("----------------")
+        print("Resetting ...")
+        cel.reset()
+        print("Waiting 15 secs ...")
+        time.sleep(15)
 
-    cop_id, cop_name, status = cel.register()
-    print("Current operator:", cop_id, cop_name)
-    assert cop_name == opname_expected
+        cop_id, cop_name, status = cel.register()
+        print("Current operator:", cop_id, cop_name)
+        assert cop_name == opname_expected
 
-    print("Scanning ...")
-    ops = cel.scan()
-    print("Operators:", ops)
-    assert len(ops) > 0
+        print("Scanning ...")
+        ops = cel.scan()
+        print("Operators:", ops)
+        assert len(ops) > 0
 
-    for op_id, op_name, op_status in ops:
-        if op_name == opname_expected:
-            assert op_status == cel.OPERATOR_STATUS_CURRENT
-            assert op_id == cop_id
-            break
-    else:
-        raise RuntimeError("Operator '{}' not found".format(opname_expected))
+        for op_id, op_name, op_status in ops:
+            if op_name == opname_expected:
+                assert op_status == cel.OPERATOR_STATUS_CURRENT
+                assert op_id == cop_id
+                break
+        else:
+            raise RuntimeError("Operator '{}' not found".format(opname_expected))
 
-    fm = cel.flight_mode()
-    print("Flight mode:", fm)
+        fm = cel.flight_mode()
+        print("Flight mode:", fm)
 
-    print("Setting flight mode")
-    assert cel.flight_mode(True)  # Switch flight mode on
-    try:
+        print("Setting flight mode")
+        assert cel.flight_mode(True)  # Switch flight mode on
+        try:
+            cel.poll_network_exception()
+        except cel.CellularError as e:
+            print("Exception:", e)
+        else:
+            raise RuntimeError("Exception not raised")
+
+        reg = cel.is_network_registered()
+        print("Ntw registered:", reg)
+        assert not reg
+
+        print("Releasing flight mode")
+        assert not cel.flight_mode(False)  # Switch flight mode off
+        for i in range(10):
+            time.sleep(1)
+            if cel.is_network_registered():
+                break
+
+        reg = cel.is_network_registered()
+        print("Ntw registered:", reg)
+        assert reg
+
+        print("Setting a single wrong band")
+        cel.set_bands(cel.NETWORK_FREQ_BAND_PCS_1900)
         cel.poll_network_exception()
-    except cel.CellularError as e:
-        print("Exception:", e)
-    else:
-        raise RuntimeError("Exception not raised")
+        for i in range(10):
+            time.sleep(1)
+            if not cel.is_network_registered():
+                break
 
-    reg = cel.is_network_registered()
-    print("Ntw registered:", reg)
-    assert not reg
+        reg = cel.is_network_registered()
+        print("Ntw registered:", reg)
+        assert not reg
 
-    print("Releasing flight mode")
-    assert not cel.flight_mode(False)  # Switch flight mode off
-    for i in range(10):
-        time.sleep(1)
-        if cel.is_network_registered():
-            break
-
-    reg = cel.is_network_registered()
-    print("Ntw registered:", reg)
-    assert reg
-
-    print("Setting a single wrong band")
-    cel.set_bands(cel.NETWORK_FREQ_BAND_PCS_1900)
-    cel.poll_network_exception()
-    for i in range(10):
-        time.sleep(1)
-        if not cel.is_network_registered():
-            break
-
-    reg = cel.is_network_registered()
-    print("Ntw registered:", reg)
-    assert not reg
-
-    print("Resetting bands")
-    cel.set_bands()
-    cel.poll_network_exception()
-    for i in range(10):
-        time.sleep(1)
-        if cel.is_network_registered():
-            break
+        print("Resetting bands")
+        cel.set_bands()
+        cel.poll_network_exception()
+        for i in range(10):
+            time.sleep(1)
+            if cel.is_network_registered():
+                break
 
     reg = cel.is_network_registered()
     print("Ntw registered:", reg)

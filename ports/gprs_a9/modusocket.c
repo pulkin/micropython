@@ -441,7 +441,27 @@ STATIC mp_obj_t socket_setsockopt(size_t n_args, const mp_obj_t *args) {
     //     optname (int): option to set;
     //     value (int): value to set;
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
+    (void)n_args; // always 4
+    socket_obj_t *self = MP_OBJ_TO_PTR(args[0]);
+
+    int opt = mp_obj_get_int(args[2]);
+
+    switch (opt) {
+        // level: SOL_SOCKET
+        case SO_REUSEADDR: {
+            int val = mp_obj_get_int(args[3]);
+            int ret = LWIP_SETSOCKOPT(self->fd, SOL_SOCKET, opt, &val, sizeof(int));
+            if (ret != 0) {
+                int errno = LWIP_ERRNO();
+                exception_from_errno(errno);
+            }
+            break;
+        }
+
+        default:
+            mp_printf(&mp_plat_print, "Warning: lwip.setsockopt() option not implemented\n");
+    }
+
     return mp_const_none;
 }
 
@@ -453,7 +473,15 @@ STATIC mp_obj_t socket_settimeout(mp_obj_t self_in, mp_obj_t value) {
     // Args:
     //     timeout (int): timeout in seconds;
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
+    socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if (value == mp_const_none) _socket_settimeout(self, UINT64_MAX);
+    else {
+        #if MICROPY_PY_BUILTINS_FLOAT
+        _socket_settimeout(self, mp_obj_get_float(value) * 1000L);
+        #else
+        _socket_settimeout(self, mp_obj_get_int(value) * 1000);
+        #endif
+    }
     return mp_const_none;
 }
 
@@ -465,7 +493,9 @@ STATIC mp_obj_t socket_setblocking(mp_obj_t self_in, mp_obj_t flag) {
     // Args:
     //     flag (bool): blocking or non-blocking mode;
     // ========================================
-    mp_raise_NotImplementedError("Not implemented yet");
+    socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    if (mp_obj_is_true(flag)) _socket_settimeout(self, UINT64_MAX);
+    else _socket_settimeout(self, 0);
     return mp_const_none;
 }
 
