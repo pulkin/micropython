@@ -68,6 +68,9 @@
 
 #define BANDS_ALL (NETWORK_FREQ_BAND_GSM_900P | NETWORK_FREQ_BAND_GSM_900E | NETWORK_FREQ_BAND_GSM_850 | NETWORK_FREQ_BAND_DCS_1800 | NETWORK_FREQ_BAND_PCS_1900)
 
+#define MCC(x) ((x)[0] * 100 + (x)[1] * 10 + (x)[2])
+#define MNC(x) ((x)[0] * 100 + (x)[1] * 10 + (x)[2])
+
 // --------------
 // Vars: statuses
 // --------------
@@ -627,7 +630,8 @@ STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length
     //     A new SMS object.
     // ========================================
 
-    // TODO: This function is not tested / not used. Consider removing it.
+    // TODO: This function is not tested / not used. It parses
+    // raw event data and assembles a message.
     if (header[0] != '"') {
         return mp_const_none;
     }
@@ -1126,8 +1130,8 @@ STATIC mp_obj_t modcellular_stations(void) {
     mp_obj_t stations[cells_n];
     for (int i=0; i<cells_n; i++) {
         mp_obj_t tuple[8] = {
-            mp_obj_new_int(cells[i].sMcc[0] * 100 + cells[i].sMcc[1] * 10 + cells[i].sMcc[2]),
-            mp_obj_new_int(cells[i].sMnc[0] * 100 + cells[i].sMnc[1] * 10 + cells[i].sMnc[2]),
+            mp_obj_new_int(MCC(cells[i].sMcc)),
+            mp_obj_new_int(MNC(cells[i].sMnc)),
             mp_obj_new_int(cells[i].sLac),
             mp_obj_new_int(cells[i].sCellID),
             mp_obj_new_int(cells[i].iBsic),
@@ -1141,6 +1145,48 @@ STATIC mp_obj_t modcellular_stations(void) {
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_stations_obj, modcellular_stations);
+
+STATIC mp_obj_t modcellular_agps_station_data(void) {
+    // ========================================
+    // Polls base stations and returns mcc, mnc
+    // and a list of lac, cell_id, signal level
+    // for each base station.
+    // ========================================
+    cells_n = -1;
+    if (!Network_GetCellInfoRequst()) {
+        mp_raise_CellularError("Failed to poll base stations");
+        return mp_const_none;
+    }
+    WAIT_UNTIL(cells_n >= 0, TIMEOUT_STATIONS, 100, mp_raise_CellularError("Station poll timeout"));
+
+    if (cells_n == 0) {
+        mp_raise_CellularError("No station data available");
+        return mp_const_none;
+    }
+
+    // just return the first mcc/mnc in the list
+    int mcc = MCC(cells[0].sMcc);
+    int mnc = MNC(cells[0].sMnc);
+    mp_obj_t list = mp_obj_new_list(0, NULL);
+    for (int i=0; i<cells_n; i++) {
+        if (MCC(cells[i].sMcc) == mcc && MNC(cells[i].sMnc) == mnc) {
+            mp_obj_t tuple[3] = {
+                mp_obj_new_int(cells[i].sLac),
+                mp_obj_new_int(cells[i].sCellID),
+                mp_obj_new_int(cells[i].iRxLev),
+            };
+            mp_obj_list_append(list, mp_obj_new_tuple(sizeof(tuple) / sizeof(mp_obj_t), tuple));
+        }
+    }
+    mp_obj_t tuple[3] = {
+        mp_obj_new_int(mcc),
+        mp_obj_new_int(mnc),
+        list,
+    };
+    return mp_obj_new_tuple(3, tuple);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_agps_station_data_obj, modcellular_agps_station_data);
 
 STATIC mp_obj_t modcellular_reset(void) {
     // ========================================
@@ -1177,6 +1223,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_call), (mp_obj_t)&modcellular_call_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_dial), (mp_obj_t)&modcellular_dial_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_stations), (mp_obj_t)&modcellular_stations_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_agps_station_data), (mp_obj_t)&modcellular_agps_station_data_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
 
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },
