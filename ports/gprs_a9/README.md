@@ -82,6 +82,10 @@ blink.blink(1)
 
 Additional libraries: install via [`upip`](https://docs.micropython.org/en/latest/reference/packages.html) (built into the module).
 
+## Examples
+
+See [examples](examples) folder.
+
 ## API
 
 1. [`cellular`](#cellular), `network`: SMS, calls, connectivity
