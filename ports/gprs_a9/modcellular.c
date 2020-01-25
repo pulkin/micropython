@@ -125,6 +125,10 @@ STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length
 
 NORETURN void mp_raise_CellularError(const char *msg);
 
+// ----
+// Init
+// ----
+
 void modcellular_init0(void) {
     // Reset statuses
     network_status_updated = 0;
@@ -310,10 +314,14 @@ void modcellular_notify_sms_receipt(API_Event_t* event) {
     sms_received_count ++;
 }
 
+// Signal level
+
 void modcellular_notify_signal(API_Event_t* event) {
     network_signal_quality = event->param1;
     network_signal_rx_level = event->param2;
 }
+
+// Calls
 
 void modcellular_notify_call_incoming(API_Event_t* event) {
     if (strlen((char*) event->pParam1) > MAX_NUMBER_LEN - 1) {
@@ -330,6 +338,8 @@ void modcellular_notify_call_hangup(API_Event_t* event) {
         calls_incoming_now_flag = false;
     }
 }
+
+// Base stations
 
 void modcellular_notify_cell_info(API_Event_t* event) {
     cells_n = event->param1;

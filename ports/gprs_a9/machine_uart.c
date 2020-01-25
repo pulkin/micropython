@@ -4,6 +4,7 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2016 Damien P. George
+ * Copyright (c) 2020 pulkin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +40,10 @@
 
 STATIC const char *_parity_name[] = {"None", "1", "0"};
 
+// ----
+// Init
+// ----
+
 void modmachine_uart_init0(void) {
     UART_Close(UART2);
     UART_Close(UART1);
@@ -56,10 +61,14 @@ void modmachine_uart_init0(void) {
     os_dupterm(2, args);
 }
 
-/******************************************************************************/
-// MicroPython bindings for UART
+// -------
+// Classes
+// -------
 
 STATIC void pyb_uart_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+    // ========================================
+    // print(UART)
+    // ========================================
     pyb_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "UART(%u, baudrate=%u, bits=%u, parity=%s, stop=%u, rxbuf=%u, timeout=%u, timeout_char=%u)",
         self->uart_id, self->baudrate, self->bits, _parity_name[self->parity],
@@ -67,6 +76,19 @@ STATIC void pyb_uart_print(const mp_print_t *print, mp_obj_t self_in, mp_print_k
 }
 
 STATIC void pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    // ========================================
+    // Prepares UART.
+    // Args:
+    //     baudrate (int): baud rate (communication speed) of UART;
+    //     bits (int)
+    //     parity (int)
+    //     stop (int)
+    //     tx (int): transmit pin;
+    //     rx (int): receive pin;
+    //     rxbuf (int, array): receive buffer or its size;
+    //     timeout (int): default timeout in us for transmission start;
+    //     timeout_char (int): default timeout in us between characters;
+    // ========================================
     enum { ARG_baudrate, ARG_bits, ARG_parity, ARG_stop, ARG_tx, ARG_rx, ARG_rxbuf, ARG_timeout, ARG_timeout_char };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_baudrate, MP_ARG_INT, {.u_int = 0} },
@@ -203,6 +225,20 @@ STATIC void pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const mp_o
 }
 
 STATIC mp_obj_t pyb_uart_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+    // ========================================
+    // Prepares UART.
+    // Args:
+    //     uart_id (int): hardware UART id;
+    //     baudrate (int): baud rate (communication speed) of UART;
+    //     bits (int)
+    //     parity (int)
+    //     stop (int)
+    //     tx (int): transmit pin;
+    //     rx (int): receive pin;
+    //     rxbuf (int, array): receive buffer or its size;
+    //     timeout (int): default timeout in us for transmission start;
+    //     timeout_char (int): default timeout in us between characters;
+    // ========================================
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
 
     // get uart id
@@ -231,12 +267,30 @@ STATIC mp_obj_t pyb_uart_make_new(const mp_obj_type_t *type, size_t n_args, size
 }
 
 STATIC mp_obj_t pyb_uart_init(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+    // ========================================
+    // Initialize UART.
+    // Args:
+    //     baudrate (int): baud rate (communication speed) of UART;
+    //     bits (int)
+    //     parity (int)
+    //     stop (int)
+    //     tx (int): transmit pin;
+    //     rx (int): receive pin;
+    //     rxbuf (int, array): receive buffer or its size;
+    //     timeout (int): default timeout in us for transmission start;
+    //     timeout_char (int): default timeout in us between characters;
+    // ========================================
     pyb_uart_init_helper(args[0], n_args - 1, args + 1, kw_args);
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(pyb_uart_init_obj, 1, pyb_uart_init);
 
 STATIC mp_obj_t pyb_uart_any(mp_obj_t self_in) {
+    // ========================================
+    // Checks if any data ready to be read.
+    // Returns:
+    //     True if any data available.
+    // ========================================
     pyb_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
     return MP_OBJ_NEW_SMALL_INT(uart_rx_any(self->uart_id));
 }
@@ -257,6 +311,9 @@ STATIC const mp_rom_map_elem_t pyb_uart_locals_dict_table[] = {
 STATIC MP_DEFINE_CONST_DICT(pyb_uart_locals_dict, pyb_uart_locals_dict_table);
 
 STATIC mp_uint_t pyb_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t size, int *errcode) {
+    // ========================================
+    // UART.read()
+    // ========================================
     pyb_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
     // make sure we want at least 1 char
@@ -282,6 +339,9 @@ STATIC mp_uint_t pyb_uart_read(mp_obj_t self_in, void *buf_in, mp_uint_t size, i
 }
 
 STATIC mp_uint_t pyb_uart_write(mp_obj_t self_in, const void *buf_in, mp_uint_t size, int *errcode) {
+    // ========================================
+    // UART.write()
+    // ========================================
     pyb_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
     const byte *buf = buf_in;
 
@@ -303,6 +363,9 @@ STATIC mp_uint_t pyb_uart_write(mp_obj_t self_in, const void *buf_in, mp_uint_t 
 }
 
 STATIC mp_uint_t pyb_uart_ioctl(mp_obj_t self_in, mp_uint_t request, mp_uint_t arg, int *errcode) {
+    // ========================================
+    // UART io control (close, etc)
+    // ========================================
     pyb_uart_obj_t *self = self_in;
     mp_uint_t ret;
     if (request == MP_STREAM_POLL) {

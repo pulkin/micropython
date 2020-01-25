@@ -35,9 +35,9 @@
 
 #include "api_hal_uart.h"
 
-// ---------------------
-// UART static variables
-// ---------------------
+// ------------------------------
+// Hardware UART static variables
+// ------------------------------
 
 // The two ports
 static const UART_Port_t uart_port[] = {UART1, UART2};
@@ -77,6 +77,10 @@ UART_Config_t uart_dev[] = {
     }
 };
 
+// -----------------------
+// Hardware UART functions
+// -----------------------
+
 void soft_reset(void);
 void mp_keyboard_interrupt(void);
 
@@ -88,11 +92,6 @@ static bool uart_config(uint8_t uart) {
 uint32_t uart_tx_one_char(uint8_t uart, char c) {
     // Transfers a single char
     return UART_Write(uart_port[uart], (uint8_t*) &c, 1);
-}
-
-void uart_flush(uint8_t uart) {
-    // Flushes
-    (void) uart;
 }
 
 bool uart_close(uint8_t uart) {
