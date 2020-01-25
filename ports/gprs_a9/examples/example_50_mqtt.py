@@ -1,3 +1,8 @@
+# Micropython a9g example
+# Source: https://github.com/pulkin/micropython
+# Author: pulkin
+# Demonstrates how to use mqtt for publishing GPS location
+
 # Get online
 import cellular
 cellular.gprs("internet", "", "")

@@ -1,3 +1,7 @@
+# Micropython a9g example
+# Source: https://github.com/pulkin/micropython
+# Author: pulkin
+# Demonstrates how to use hardware watchdog
 import machine
 import time
 

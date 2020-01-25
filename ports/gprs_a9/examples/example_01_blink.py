@@ -1,3 +1,7 @@
+# Micropython a9g example
+# Source: https://github.com/pulkin/micropython
+# Author: pulkin
+# Demonstrates how to blink the built-in LED on the pudding board
 import machine
 import time
 

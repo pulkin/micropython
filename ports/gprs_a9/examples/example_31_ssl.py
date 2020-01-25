@@ -1,3 +1,7 @@
+# Micropython a9g example
+# Source: https://github.com/pulkin/micropython
+# Author: pulkin
+# Demonstrates how to wrap sockets into ssl tunnel
 import cellular
 import socket
 import ssl

@@ -1,3 +1,7 @@
+# Micropython a9g example
+# Source: https://github.com/pulkin/micropython
+# Author: pulkin
+# Demonstrates how to use TCP sockets
 import cellular
 import socket
 cellular.gprs("internet", "", "")
