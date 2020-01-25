@@ -443,6 +443,8 @@ stages:
         releaseNotes: |
           The latest successful `master` build.
 
+          Updated: $(Date:dd-MM-yyyy)
+
           Firmware files
           --------------
 
