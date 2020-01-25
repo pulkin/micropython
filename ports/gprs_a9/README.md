@@ -192,8 +192,8 @@ This is only available in the A9G module where GPS is a separate chip connected 
 * `on()`: turns the GPS on;
 * `off()`: turns the GPS off;
 * `get_firmware_version()` (str): retrieves the firmware version;
-* `get_location()` (latitude: float, longitude: float): retrieves the current GPS location;
-* `get_last_location()` (latitude: float, longitude: float): retrieves the last known GPS location without polling the GPS module;
+* `get_location()` (longitude: float, latitude: float): retrieves the current GPS location;
+* `get_last_location()` (longitude: float, latitude: float): retrieves the last known GPS location without polling the GPS module;
 * `get_satellites()` (tracked: int, visible: int): the numbers of satellites in operation;
 
 ### `machine`
