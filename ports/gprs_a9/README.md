@@ -84,7 +84,7 @@ Additional libraries: install via [`upip`](https://docs.micropython.org/en/lates
 
 ## API
 
-1. [`cellular`](#cellular): SMS, calls, connectivity
+1. [`cellular`](#cellular), `network`: SMS, calls, connectivity
 2. [`usocket`](#usocket): sockets over GPRS
 3. [`ssl`](#ussl): SSL over sockets
 4. [`gps`](#gps): everything related to GPS and assisted positioning
