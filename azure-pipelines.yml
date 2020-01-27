@@ -443,7 +443,7 @@ stages:
         releaseNotes: |
           The latest successful `master` build.
 
-        Updated: $(Year:yy)-$(Month)-$(DayOfMonth) $(Hours):$(Minutes):$(Seconds)
+          Updated: $(Year:yy)-$(Month)-$(DayOfMonth) $(Hours):$(Minutes):$(Seconds)
 
           Firmware files
           --------------
