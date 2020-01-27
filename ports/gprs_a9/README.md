@@ -199,6 +199,7 @@ This is only available in the A9G module where GPS is a separate chip connected 
 * `get_location()` (longitude: float, latitude: float): retrieves the current GPS location;
 * `get_last_location()` (longitude: float, latitude: float): retrieves the last known GPS location without polling the GPS module;
 * `get_satellites()` (tracked: int, visible: int): the numbers of satellites in operation;
+* `time()` (int): the number of seconds since the epoch (2000). Use `time.localtime` for converting it into date/time values (this conversion may result in `OverflowError` until the GPS module starts reading meaningful satellite data).
 
 ### `machine`
 

@@ -33,12 +33,14 @@
 #include "py/runtime.h"
 #include "py/binary.h"
 #include "py/objexcept.h"
+#include "lib/timeutils/timeutils.h"
 
 #include "api_gps.h"
 #include "api_os.h"
 #include "api_event.h"
 #include "gps_parse.h"
 #include "gps.h"
+#include "minmea.h"
 #include "time.h"
 
 void modgps_init0(void) {
@@ -183,6 +185,24 @@ STATIC mp_obj_t modgps_get_satellites(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modgps_get_satellites_obj, modgps_get_satellites);
 
+STATIC mp_obj_t modgps_time(void) {
+    // ========================================
+    // GPS time.
+    // Returns:
+    //     Seconds since 2000 as int.
+    // ========================================
+    REQUIRES_GPS_ON;
+
+    struct minmea_date date = gpsInfo->rmc.date;
+    struct minmea_time time = gpsInfo->rmc.time;
+
+    mp_uint_t result = timeutils_mktime(date.year + 2000, date.month, date.day, time.hours, time.minutes, time.seconds);
+    // Note: the module may report dates between 1980 and 2000 as well: they will be mapped onto the time frame 2080-2100
+    return mp_obj_new_int_from_uint(result);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modgps_time_obj, modgps_time);
+
 STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__i), MP_OBJ_NEW_QSTR(MP_QSTR_gps) },
 
@@ -194,6 +214,7 @@ STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_location), (mp_obj_t)&modgps_get_location_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_last_location), (mp_obj_t)&modgps_get_last_location_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_satellites), (mp_obj_t)&modgps_get_satellites_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_time), (mp_obj_t)&modgps_time_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_gps_globals, mp_module_gps_globals_table);
