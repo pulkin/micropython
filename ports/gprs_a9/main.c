@@ -183,19 +183,10 @@ soft_reset:
     mp_obj_list_init(mp_sys_argv, 0);
     // Startup scripts
     pyexec_frozen_module("_boot.py");
-    int file_descriptor;
-    if ((file_descriptor = API_FS_Open("boot.py", FS_O_RDONLY, 0)) > 0) {
-        API_FS_Close(file_descriptor);
-        pyexec_file("boot.py");
+    pyexec_file_if_exists("boot.py");
+    if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
+        pyexec_file_if_exists("main.py");
     }
-    if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL && (file_descriptor = API_FS_Open("main.py", FS_O_RDONLY, 0)) > 0) {
-        API_FS_Close(file_descriptor);
-        pyexec_file("main.py");
-    }
-    // pyexec_file("boot.py");
-    // if (pyexec_mode_kind == PYEXEC_MODE_FRIENDLY_REPL) {
-    //     pyexec_file("main.py");
-    // }
     // pyexec_event_repl_init();
     
     // while (1) if (OS_WaitEvent(microPyTaskHandle, (void**)&event, OS_TIME_OUT_WAIT_FOREVER)) {
