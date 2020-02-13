@@ -29,7 +29,7 @@
 	url = https://github.com/hathach/tinyusb
 [submodule "lib/GPRS_C_SDK"]
 	path = lib/GPRS_C_SDK
-	url = https://github.com/petrynchyn/GPRS_C_SDK.git
+	url = https://github.com/pulkin/GPRS_C_SDK.git
 [submodule "lib/csdtk42-linux"]
 	path = lib/csdtk42-linux
 	url = https://github.com/pulkin/csdtk42-linux.git
