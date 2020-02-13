@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 ######################## 1 ################################
 # check path
@@ -19,6 +20,13 @@ fi
 
 ###########################################################
 
+function patch_elf()
+{
+    echo ">> Patching elf"
+    rsync --read-batch=libcsdk-patches/SW_V2129_csdk.elf.patch ../../lib/GPRS_C_SDK/platform/csdk/debug/SW_V2129_csdk.elf
+    md5sum -c --quiet libcsdk-patches/md5
+}
+
 function generate_CSDK_lib()
 {
     echo ">> Generate CSDK lib now"
@@ -38,5 +46,6 @@ function generate_CSDK_lib()
     cd ${curr_path_abs}
 }
 
+patch_elf
 generate_CSDK_lib
 
