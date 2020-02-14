@@ -20,10 +20,11 @@ fi
 
 ###########################################################
 
-function patch_elf()
+function apply_patches()
 {
-    echo ">> Patching elf"
+    echo ">> Patching platform elf and lod"
     rsync --read-batch=libcsdk-patches/SW_V2129_csdk.elf.patch ../../lib/GPRS_C_SDK/platform/csdk/debug/SW_V2129_csdk.elf
+    rsync --read-batch=libcsdk-patches/SW_V2129_csdk.lod.patch ../../lib/GPRS_C_SDK/platform/csdk/debug/SW_V2129_csdk.lod
     md5sum -c --quiet libcsdk-patches/md5
 }
 
@@ -46,6 +47,6 @@ function generate_CSDK_lib()
     cd ${curr_path_abs}
 }
 
-patch_elf
+apply_patches
 generate_CSDK_lib
 
