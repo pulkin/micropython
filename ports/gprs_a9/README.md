@@ -4,7 +4,7 @@
 
 ## Contribute
 
-See [CONTRIBUTE.md](CONTRIBUTE.md) or use the donate button.
+See [CONTRIBUTING.md](CONTRIBUTING.md) or use the donate button.
 
 ## The module
 
