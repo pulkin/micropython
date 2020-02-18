@@ -6,11 +6,11 @@
 
 ## General Information
 
-The [Ai-Thinker A9/A9G series module](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/hardware/pudding-dev-board.html), aka *Pudding*, is a cheap development board with GSM/GPRS (2G) and GPS functionalities. A9 relates to the MCU without a GPS (A9G with a GPS). A SIM card is required to access the internet (dedicated IoT mobile operators exist for such purpose). [MicroPython](https://micropython.org/) is Python for MCUs. It offers a high-level language to program the board. This port provides dedicated GSM/GPRS and GPS MicroPython modules, making the board the perfect candidate for a cheap and effective Internet of Things device.
+The [Ai-Thinker A9/A9G series module](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/hardware/pudding-dev-board.html), aka *Pudding*, is a cheap development board with GSM/GPRS (2G) capabilities. The A9G version offers additional GPS functionalities. A9/A9G are based on the UNISOC RDA8955 MCU. A SIM card is required to allow access to the cellular network (IoT specialized mobile operators offer cheap SIM cards for this purpose). [MicroPython](https://micropython.org/) is Python for MCUs. It offers a high-level language to program the board. This port provides platform-specific GSM/GPRS and GPS MicroPython modules, making this board a perfect candidate for a cheap and effective Internet of Things device.
 
 ## Contribute
 
-See [CONTRIBUTING.md](https://github.com/pulkin/micropython/blob/binary-patches/ports/gprs_a9/CONTRIBUTING.md) or use the donate button.
+See [CONTRIBUTING.md](CONTRIBUTING.md) or use the donate button.
 
 ## Module Pinout and Connections
 
@@ -177,7 +177,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 *Alias: `socket`*
 
 TCP/IP stack over GPRS based on lwIP.
-See [micropython docs](https://docs.micropython.org/en/latest/library/usocket.html) for details.
+See [MicroPython documentation](https://docs.micropython.org/en/latest/library/usocket.html) for details.
 
 * `AF_INET`, `AF_INET6`, `SOCK_STREAM`, `SOCK_DGRAM`, `SOCK_RAW`, `IPPROTO_TCP`, `IPPROTO_UDP`, `IPPROTO_IP`: lwIP constants;
 * `socket(af: int, type: int, proto: int)`: socket class;
