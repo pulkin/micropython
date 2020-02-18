@@ -1,10 +1,13 @@
-Important
+A9/A9G MicroPython Port
 ---------
 
-This repo is only for porting micropython to the GPS+GSM modules A9 and A9G.
-[Go to the port page](https://github.com/pulkin/micropython/tree/master/ports/gprs_a9) or [visit the MicroPython project page.](https://micropython.org/)
+This repository is a port of MicroPython to the GPRS + GPS Ai-Thinker A9/A9G development board. Go to the [port directory](ports/gprs_a9) to learn more or visit the [MicroPython website](https://micropython.org/) for general information.
 
-The build status displays that of the original repo.
+<p align="center">
+  <img src="A9G_development_board.jpg" alt="A9G Development Board"/>
+</p>
+
+Note: The build status displays that of the original repository:
 
 [![Build Status](https://travis-ci.org/micropython/micropython.png?branch=master)](https://travis-ci.org/micropython/micropython) [![Coverage Status](https://coveralls.io/repos/micropython/micropython/badge.png?branch=master)](https://coveralls.io/r/micropython/micropython?branch=master)
 
