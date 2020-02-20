@@ -136,7 +136,7 @@
 #define MICROPY_PY_URE_SUB                  (1)
 #define MICROPY_PY_UHEAPQ                   (1)
 #define MICROPY_PY_UTIMEQ                   (1)
-// #define MICROPY_PY_UHASHLIB                 (1)
+#define MICROPY_PY_UHASHLIB                 (1)
 // #define MICROPY_PY_UHASHLIB_SHA1            (1)
 // #define MICROPY_PY_UHASHLIB_SHA256          (1)
 // #define MICROPY_PY_UCRYPTOLIB               (1)
@@ -221,6 +221,7 @@ extern const struct _mp_obj_module_t st7735_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_collections), (mp_obj_t)&mp_module_collections }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_errno), (mp_obj_t)&mp_module_uerrno }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_hashlib), (mp_obj_t)(&mp_module_uhashlib) }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_heapq), (mp_obj_t)&mp_module_uheapq }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_io), (mp_obj_t)&mp_module_io }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_json), (mp_obj_t)&mp_module_ujson }, \

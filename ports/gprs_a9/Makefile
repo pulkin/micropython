@@ -183,7 +183,6 @@ OBJ += $(addprefix $(BUILD_PATH)/, $(SRC_S:.s=.o))
 OBJ += $(addprefix $(BUILD_PATH)/, $(SRC_MOD:.c=.o))
 OBJ += $(addprefix $(BUILD_PATH)/, $(EXTMOD_SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD_PATH)/, $(DRIVERS_SRC_C:.c=.o))
-OBJ += ../../extmod/crypto-algorithms/sha256.o
 
 # List of sources for qstr extraction
 SRC_QSTR += $(SRC_C)  $(LIB_SRC_C) 
