@@ -136,11 +136,11 @@
 #define MICROPY_PY_URE_SUB                  (1)
 #define MICROPY_PY_UHEAPQ                   (1)
 #define MICROPY_PY_UTIMEQ                   (1)
-#define MICROPY_PY_UHASHLIB                 (1)
+#define MICROPY_PY_UHASHLIB                 (MICROPY_PY_USSL)
 #define MICROPY_PY_UHASHLIB_MD5             (MICROPY_PY_USSL)
 #define MICROPY_PY_UHASHLIB_SHA1            (MICROPY_PY_USSL)
-#define MICROPY_PY_UHASHLIB_SHA256          (1)
-#define MICROPY_PY_UCRYPTOLIB               (1)
+#define MICROPY_PY_UHASHLIB_SHA256          (MICROPY_PY_USSL)
+#define MICROPY_PY_UCRYPTOLIB               (MICROPY_PY_USSL)
 #define MICROPY_PY_UBINASCII                (1)
 #define MICROPY_PY_UBINASCII_CRC32          (1)
 #define MICROPY_PY_URANDOM                  (1)
@@ -207,6 +207,14 @@ extern const struct _mp_obj_module_t usocket_module;
 extern const struct _mp_obj_module_t i2c_module;
 extern const struct _mp_obj_module_t st7735_module;
 
+#if MICROPY_PY_USSL
+#define SSL_BUILTIN_MODULE_WEAK_LINKS    { MP_OBJ_NEW_QSTR(MP_QSTR_ssl), (mp_obj_t)&mp_module_ussl }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_hashlib), (mp_obj_t)(&mp_module_uhashlib) }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_cryptolib), (mp_obj_t)(&mp_module_ucryptolib) },
+#else
+#define SSL_BUILTIN_MODULE_WEAK_LINKS
+#endif
+
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&mp_module_machine }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos), (mp_obj_t)&uos_module }, \
@@ -222,18 +230,17 @@ extern const struct _mp_obj_module_t st7735_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_collections), (mp_obj_t)&mp_module_collections }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_errno), (mp_obj_t)&mp_module_uerrno }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_hashlib), (mp_obj_t)(&mp_module_uhashlib) }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_heapq), (mp_obj_t)&mp_module_uheapq }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_io), (mp_obj_t)&mp_module_io }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_json), (mp_obj_t)&mp_module_ujson }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&uos_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&usocket_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_ssl), (mp_obj_t)&mp_module_ussl }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_time), (mp_obj_t)&utime_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_random), (mp_obj_t)&mp_module_urandom }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_re), (mp_obj_t)&mp_module_ure }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_struct), (mp_obj_t)&mp_module_ustruct }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_zlib), (mp_obj_t)&mp_module_uzlib }, \
+    SSL_BUILTIN_MODULE_WEAK_LINKS \
 
 // type definitions for the specific machine
 
