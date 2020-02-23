@@ -210,7 +210,8 @@ extern const struct _mp_obj_module_t st7735_module;
 #if MICROPY_PY_USSL
 #define SSL_BUILTIN_MODULE_WEAK_LINKS    { MP_OBJ_NEW_QSTR(MP_QSTR_ssl), (mp_obj_t)&mp_module_ussl }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_hashlib), (mp_obj_t)(&mp_module_uhashlib) }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_cryptolib), (mp_obj_t)(&mp_module_ucryptolib) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_cryptolib), (mp_obj_t)(&mp_module_ucryptolib) }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_ssl), (mp_obj_t)(&mp_module_ussl) },
 #else
 #define SSL_BUILTIN_MODULE_WEAK_LINKS
 #endif
