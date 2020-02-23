@@ -169,10 +169,6 @@ SRC_S = \
 
 MICROPY_PY_USSL = 1
 MICROPY_SSL_AXTLS = 1
-MICROPY_PY_UHASHLIB = 1
-MICROPY_PY_UHASHLIB_SHA1 = 1
-MICROPY_PY_UHASHLIB_SHA256 = 1
-MICROPY_PY_UCRYPTOLIB = 1
 AXTLS_DEFS_EXTRA = -Dabort=abort_ -include time.h -DRT_MAX_PLAIN_LENGTH=1024 -DRT_EXTRA=4096
 # include py core make definitions
 include $(TOP)/py/py.mk
@@ -187,7 +183,6 @@ OBJ += $(addprefix $(BUILD_PATH)/, $(SRC_S:.s=.o))
 OBJ += $(addprefix $(BUILD_PATH)/, $(SRC_MOD:.c=.o))
 OBJ += $(addprefix $(BUILD_PATH)/, $(EXTMOD_SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD_PATH)/, $(DRIVERS_SRC_C:.c=.o))
-OBJ += ../../extmod/crypto-algorithms/sha256.o
 
 # List of sources for qstr extraction
 SRC_QSTR += $(SRC_C)  $(LIB_SRC_C) 
