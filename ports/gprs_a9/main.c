@@ -220,8 +220,6 @@ soft_reset:
                 break;
             }
         }
-        MICROPY_EVENT_POLL_HOOK
-        OS_SleepUs(1);
     }
 
 #if MICROPY_ENABLE_GC
@@ -351,8 +349,8 @@ void EventDispatch(API_Event_t* pEvent)
         // UART
         // ====
         case API_EVENT_ID_UART_RECEIVED:
-            Trace(1,"UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
-            /*if(pEvent->param1 == UART1)
+            /*Trace(1,"UART%d received:%d,%s",pEvent->param1,pEvent->param2,pEvent->pParam1);
+            if(pEvent->param1 == UART1)
             {
                 MicroPy_Event_t* event = (MicroPy_Event_t*)OS_Malloc(sizeof(MicroPy_Event_t));
                 if(!event)
