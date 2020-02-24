@@ -30,6 +30,7 @@
 
 #include "moduos.h"
 #include "modmachine.h"
+#include "ram_pointers.h"
 
 #include <string.h>
 
@@ -51,115 +52,9 @@
 
 extern const mp_obj_type_t mp_fat_vfs_type;
 
-mp_int_t translate_io_errno(int err) {
-    switch (err) {
-        case ERR_FS_IS_DIRECTORY:
-            return MP_EISDIR;
-        case ERR_FS_NOT_DIRECTORY:
-            return MP_ENOTDIR;
-        case ERR_FS_NO_DIR_ENTRY:
-            return MP_ENOENT;
-        case ERR_FS_OPERATION_NOT_GRANTED:
-            return MP_EIO; // TODO: translate better?
-        case ERR_FS_DIR_NOT_EMPTY:
-            return MP_EBUSY; // TODO: translate better?
-        case ERR_FS_FDS_MAX:
-            return MP_EIO; // TODO: translate better?
-        case ERR_FS_PROCESS_FILE_MAX:
-            return MP_EMFILE;
-        case ERR_FS_FILE_EXIST:
-            return MP_EEXIST;
-        case ERR_FS_NO_BASENAME:
-            return MP_ENOENT;
-        case ERR_FS_BAD_FD:
-            return MP_EBADF;
-        case ERR_FS_NO_MORE_FILES:
-            return MP_ENOENT; // TODO: translate better?
-        case ERR_FS_HAS_MOUNTED:
-            return MP_EEXIST; // TODO: translate better?
-        case ERR_FS_MOUNTED_FS_MAX:
-            return MP_EMFILE;
-        case ERR_FS_UNKNOWN_FILESYSTEM:
-            return MP_EIO;
-        case ERR_FS_INVALID_DIR_ENTRY:
-            return MP_EPERM; // TODO: translate better?
-        case ERR_FS_INVALID_PARAMETER:
-            return MP_EINVAL;
-        case ERR_FS_NOT_SUPPORT:
-            return MP_EIO;
-        case ERR_FS_UNMOUNT_FAILED:
-            return MP_EBUSY;
-        case ERR_FS_NO_MORE_MEMORY:
-            return MP_ENOMEM;
-        case ERR_FS_DEVICE_NOT_REGISTER:
-            return MP_ENXIO;
-        case ERR_FS_DISK_FULL:
-            return MP_ENOSPC;
-        case ERR_FS_NOT_FORMAT:
-            return MP_EIO;
-        case ERR_FS_HAS_FORMATED:
-            return MP_EIO;
-        case ERR_FS_NOT_FIND_SB:
-            return MP_EIO;
-        case ERR_FS_DEVICE_BUSY:
-            return MP_EBUSY;
-        case ERR_FS_OPEN_DEV_FAILED:
-            return MP_EIO;
-        case ERR_FS_ROOT_FULL:
-            return MP_EIO; // TODO: wtf is this?
-        case ERR_FS_ACCESS_REG_FAILED:
-            return MP_EIO; // TODO: poor translation here.
-        case ERR_FS_PATHNAME_PARSE_FAILED:
-            return MP_EINVAL;
-        case ERR_FS_READ_DIR_FAILED:
-            return MP_EIO;
-        case ERR_FS_MOUNT_READ_ROOT_INODE_FAILED:
-            return MP_EIO;
-        case ERR_FS_INVALID_DEV_NUMBER:
-            return MP_ENODEV;
-        case ERR_FS_RENAME_DIFF_PATH:
-            return MP_EISDIR;
-        case ERR_FS_FORMAT_MOUNTING_DEVICE:
-            return MP_EBUSY;
-        case ERR_FS_DATA_DESTROY:
-            return MP_EIO;
-        case ERR_FS_READ_SECTOR_FAILED:
-            return MP_EIO;
-        case ERR_FS_WRITE_SECTOR_FAILED:
-            return MP_EIO;
-        case ERR_FS_READ_FILE_EXCEED:
-            return MP_EIO;
-        case ERR_FS_WRITE_FILE_EXCEED:
-            return MP_EIO;
-        case ERR_FS_FILE_TOO_MORE:
-            return MP_EINVAL;
-        case ERR_FS_FILE_NOT_EXIST:
-            return MP_ENOENT;
-        case ERR_FS_DEVICE_DIFF:
-            return MP_EACCES;
-        case ERR_FS_GET_DEV_INFO_FAILED:
-            return MP_EIO;
-        case ERR_FS_NO_MORE_SB_ITEM:
-            return MP_EIO;
-        case ERR_FS_NOT_MOUNT:
-            return MP_ENXIO;
-        case ERR_FS_NAME_BUFFER_TOO_SHORT:
-            return MP_EINVAL;
-        case ERR_FS_NOT_REGULAR:
-            return MP_EACCES;
-        case ERR_FS_VOLLAB_IS_NULL:
-            return MP_EACCES;
-        default:
-            return 0;
-    }
-}
-
-int maybe_raise_FSError(int errno) {
-    if (errno < -4200000)
-        mp_raise_OSError(translate_io_errno(errno));
-    if (errno < 0)
-        mp_raise_OSError(MP_EIO);
-    return errno;
+int maybe_raise_FSError(int x) {
+    if (x < 0) mp_raise_OSError(internal_flash_vfs_errno);
+    return x;
 }
 
 char path_exists(const char* path) {
@@ -213,9 +108,7 @@ void ensure_exists(const char* path) {
 }
 
 void moduos_init0() {
-    int errno;
-    if ((errno = API_FS_ChangeDir("/")))
-        mp_printf(&mp_plat_print, "Warning: moduos_init0 failed to chdir to /, error code: %d\n", translate_io_errno(errno));
+    API_FS_ChangeDir("/");
 }
 
 STATIC const qstr os_uname_info_fields[] = {
