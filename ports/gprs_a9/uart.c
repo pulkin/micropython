@@ -65,7 +65,7 @@ UART_Config_t uart_dev[] = {
         .stopBits = UART_STOP_BITS_1,
         .parity = UART_PARITY_NONE,
         .rxCallback = uart_rx_intr_handler,
-        .useEvent = true,
+        .useEvent = false,
     },
     {
         .baudRate = UART_BAUD_RATE_115200,
@@ -73,7 +73,7 @@ UART_Config_t uart_dev[] = {
         .stopBits = UART_STOP_BITS_1,
         .parity = UART_PARITY_NONE,
         .rxCallback = uart_rx_intr_handler,
-        .useEvent = true,
+        .useEvent = false,
     }
 };
 
