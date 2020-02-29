@@ -147,8 +147,8 @@ STATIC mp_obj_t modgps_get_last_location(void) {
     temp = (int)(gpsInfo->rmc.longitude.value/gpsInfo->rmc.longitude.scale/100);
     double longitude = temp+(double)(gpsInfo->rmc.longitude.value - temp*gpsInfo->rmc.longitude.scale*100)/gpsInfo->rmc.longitude.scale/60.0;
     mp_obj_t tuple[2] = {
-        mp_obj_new_float(longitude),
         mp_obj_new_float(latitude),
+        mp_obj_new_float(longitude),
     };
     return mp_obj_new_tuple(2, tuple);
 }
