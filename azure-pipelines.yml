@@ -111,6 +111,12 @@ stages:
         make $(MAKEOPTS) -C ports/unix test
         (cd tests && MICROPY_CPYTHON3=python3 MICROPY_MICROPYTHON=../ports/unix/micropython ./run-perfbench.py 1000 1000)
       displayName: 'Build'
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Collect the build'
+      inputs:
+        targetPath: '$(Build.Repository.LocalPath)/ports/unix/micropython'
+        artifact: 'build_unix'
   
   - job: port_unix_nanbox
     displayName: 'unix nanbox port build and tests'
@@ -427,6 +433,8 @@ stages:
         rm -rf $(Build.BinariesDirectory)/build_gprs_a9
         mv $(Build.BinariesDirectory)/build_esp8266/*.bin $(Build.BinariesDirectory)
         rm -rf $(Build.BinariesDirectory)/build_esp8266
+        mv $(Build.BinariesDirectory)/build_unix/micropython $(Build.BinariesDirectory)
+        rm -rf $(Build.BinariesDirectory)/build_unix
       displayName: 'Sort and filter binaries'
 
     - task: GitHubRelease@0
@@ -447,6 +455,10 @@ stages:
 
           Firmware files
           --------------
+
+          - **unix**
+
+          - [micropython](https://github.com/$(GITHUB_MICROPY_REPO)/releases/download/$(GITHUB_RELEASE_TAG)/micropython)
 
           - **gprs_a9**
 
