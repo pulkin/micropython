@@ -40,8 +40,17 @@
 #include "api_hal_watchdog.h"
 #include "api_hal_adc.h"
 
+STATIC mp_obj_t modmachine_watchdog_off(void) {
+    // ========================================
+    // Disarms the hardware watchdog.
+    // ========================================
+    WatchDog_Close();
+    return mp_const_none;
+}
+
 void modmachine_init0(void) {
     PM_SetSysMinFreq(PM_SYS_FREQ_312M);
+    modmachine_watchdog_off();
     modmachine_pin_init0();
     modmachine_uart_init0();
 }
@@ -179,14 +188,6 @@ STATIC mp_obj_t modmachine_watchdog_on(mp_obj_t timeout) {
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(modmachine_watchdog_on_obj, modmachine_watchdog_on);
-
-STATIC mp_obj_t modmachine_watchdog_off(void) {
-    // ========================================
-    // Disarms the hardware watchdog.
-    // ========================================
-    WatchDog_Close();
-    return mp_const_none;
-}
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_watchdog_off_obj, modmachine_watchdog_off);
 
