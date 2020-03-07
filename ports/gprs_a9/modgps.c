@@ -43,8 +43,10 @@
 #include "minmea.h"
 #include "time.h"
 
+STATIC mp_obj_t modgps_off(void);
+
 void modgps_init0(void) {
-    GPS_Close();
+    modgps_off();
 }
 
 // ------
