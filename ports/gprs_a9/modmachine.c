@@ -40,8 +40,11 @@
 #include "api_hal_watchdog.h"
 #include "api_hal_adc.h"
 
+STATIC mp_obj_t modmachine_watchdog_off(void);
+
 void modmachine_init0(void) {
     PM_SetSysMinFreq(PM_SYS_FREQ_312M);
+    modmachine_watchdog_off();
     modmachine_pin_init0();
     modmachine_uart_init0();
 }
