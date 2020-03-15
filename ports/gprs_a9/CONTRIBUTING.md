@@ -1,6 +1,7 @@
 ## Contributing
 
-Useful information for maintaining this port.
+Besides reporting and fixing bugs, there is a number of issues suitable for new-commers, please consult **Issues** on github.
+This file includes some useful information for maintaining this port.
 
 ### General information
 
