@@ -261,7 +261,7 @@ typedef long mp_off_t;
 #define MP_PLAT_PRINT_STRN(str, len) mp_hal_stdout_tx_strn_cooked(str, len)
 
 // We need to provide a declaration/definition of alloca()
-#include <stdlib.h>
+// #include <stdlib.h>
 
 #define MICROPY_MPHALPORT_H "mphalport.h"
 #define MICROPY_HW_BOARD_NAME   "A9/A9G module"

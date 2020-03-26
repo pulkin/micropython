@@ -91,7 +91,8 @@ typedef struct
 extern mp_uint_t gc_helper_get_regs_and_sp(mp_uint_t*);
 
 #if MICROPY_ENABLE_COMPILER
-void do_str(const char *src, mp_parse_input_kind_t input_kind) {
+/*void do_str(const char *src, mp_parse_input_kind_t input_kind) {
+    mp_printf(&mp_plat_print, "do_str %s\n", src);
     nlr_buf_t nlr;
     if (nlr_push(&nlr) == 0) {
         mp_lexer_t *lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, src, strlen(src), 0);
@@ -104,7 +105,7 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
         // uncaught exception
         mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
     }
-}
+}*/
 #endif
 
 STATIC void *stack_top;
