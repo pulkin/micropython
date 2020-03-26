@@ -51,7 +51,8 @@ int mp_hal_stdin_rx_chr(void) {
         if (c != -1) {
             return c;
         }
-        OS_SleepUs(1);
+        // This has to be sufficiently large to perform background tasks
+        OS_Sleep(10);
     }
 }
 
