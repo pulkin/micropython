@@ -422,6 +422,10 @@ void _Main(void)
 
 
 #if MICROPY_DEBUG_VERBOSE
+
+char trace_debug_buffer[64];
+size_t trace_debug_buffer_len = 0;
+
 int DEBUG_printf(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
@@ -431,14 +435,20 @@ int DEBUG_printf(const char *fmt, ...) {
 }
 
 STATIC void debug_print_strn(void *env, const char *str, size_t len) {
-    (void)env;
-    char p[len+1];
-    // char* p =  (char*)OS_Malloc(len+1);
-    // if(!p)
-    //     return;
-    memcpy(p,str,len);
-    p[len] = 0;
-    Trace(2,p);
+    (void) env;
+
+    for (size_t i=0; i<len; i++) {
+
+        if (trace_debug_buffer_len == sizeof(trace_debug_buffer) - 1 || str[i] == '\n') {
+            // flush
+            Trace(2, trace_debug_buffer);
+            memset(trace_debug_buffer, 0, sizeof(trace_debug_buffer));
+            trace_debug_buffer_len = 0;
+        }
+
+        if (str[i] != '\n') trace_debug_buffer[trace_debug_buffer_len++] = str[i];
+
+    }
 }
 
 const mp_print_t mp_debug_print = {NULL, debug_print_strn};
