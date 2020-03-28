@@ -53,7 +53,7 @@
 extern const mp_obj_type_t mp_fat_vfs_type;
 
 int maybe_raise_FSError(int x) {
-    if (x < 0) mp_raise_OSError(internal_flash_vfs_errno);
+    if (x < 0) mp_raise_OSError(errno);
     return x;
 }
 

@@ -61,7 +61,6 @@
 #define LWIP_IP4ADDR_ATON         CSDK_FUNC(ip4addr_aton)
 #define LWIP_STRERR               CSDK_FUNC(lwip_strerr)
 #define LWIP_ERR_TO_ERRNO         CSDK_FUNC(err_to_errno)
-#define LWIP_ERRNO                CSDK_FUNC(Socket_GetLastError)
 
 #define DNS_GetHostByName2        CSDK_FUNC(DNS_GetHostByName2)
 

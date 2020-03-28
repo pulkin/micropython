@@ -41,6 +41,7 @@
 #include "lib/netutils/netutils.h"
 
 #include "api_network.h"
+#include "ram_pointers.h"
 
 #include "stdio.h"
 
@@ -237,7 +238,7 @@ STATIC mp_obj_t socket_connect(mp_obj_t self_in, mp_obj_t ipv4) {
     MP_THREAD_GIL_ENTER();
 
     if (r < 0) {
-        exception_from_errno(LWIP_ERRNO());
+        exception_from_errno(errno);
     }
 
     return mp_const_none;
@@ -253,7 +254,6 @@ int _socket_send(socket_obj_t *sock, const char *data, size_t datalen) {
         int r = LWIP_WRITE(sock->fd, data + sentlen, datalen - sentlen);
         MP_THREAD_GIL_ENTER();
 
-        int errno = LWIP_ERRNO();
         if (r < 0 && errno != EWOULDBLOCK) exception_from_errno(errno);
         if (r > 0) sentlen += r;
         check_for_exceptions();
@@ -337,7 +337,6 @@ STATIC mp_uint_t _socket_read_data(mp_obj_t self_in, void *buf, size_t size, str
 
         if (r == 0) sock->peer_closed = true;
         if (r >= 0) return r;
-        int errno = LWIP_ERRNO();
         if (errno != EWOULDBLOCK) {
             *errcode = errno;
             return MP_STREAM_ERROR;
@@ -400,7 +399,6 @@ STATIC mp_obj_t socket_sendto(mp_obj_t self_in, mp_obj_t bytes, mp_obj_t address
         int ret = LWIP_SENDTO(self->fd, bufinfo.buf, bufinfo.len, 0, (struct sockaddr*)&to, sizeof(to));
         MP_THREAD_GIL_ENTER();
         if (ret > 0) return mp_obj_new_int_from_uint(ret);
-        int errno = LWIP_ERRNO();
         if (ret == -1 && errno != EWOULDBLOCK) {
             exception_from_errno(errno);
         }
@@ -452,7 +450,6 @@ STATIC mp_obj_t socket_setsockopt(size_t n_args, const mp_obj_t *args) {
             int val = mp_obj_get_int(args[3]);
             int ret = LWIP_SETSOCKOPT(self->fd, SOL_SOCKET, opt, &val, sizeof(int));
             if (ret != 0) {
-                int errno = LWIP_ERRNO();
                 exception_from_errno(errno);
             }
             break;
@@ -531,7 +528,6 @@ STATIC mp_uint_t socket_stream_write(mp_obj_t self_in, const void *buf, mp_uint_
         int r = LWIP_WRITE(sock->fd, buf, size);
         MP_THREAD_GIL_ENTER();
         if (r > 0) return r;
-        int errno = LWIP_ERRNO();
         if (r < 0 && errno != EWOULDBLOCK) { *errcode = errno; return MP_STREAM_ERROR; }
         check_for_exceptions();
     }
@@ -568,7 +564,7 @@ STATIC mp_uint_t socket_stream_ioctl(mp_obj_t self_in, mp_uint_t request, uintpt
         if (socket->fd >= 0) {
             int ret = LWIP_CLOSE(socket->fd);
             if (ret != 0) {
-                *errcode = LWIP_ERRNO();
+                *errcode = errno;
                 return MP_STREAM_ERROR;
             }
             socket->fd = -1;
@@ -722,7 +718,6 @@ STATIC mp_obj_t getaddrinfo(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
 
     struct sockaddr_in res;
     if (_socket_getaddrinfo2(host, port, &res) < 0) {
-        int errno = LWIP_ERRNO();
         exception_from_errno(errno);
     }
 

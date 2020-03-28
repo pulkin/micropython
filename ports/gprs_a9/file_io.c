@@ -57,7 +57,7 @@ STATIC mp_uint_t internal_flash_file_obj_read(mp_obj_t self_in, void *buf, mp_ui
     internal_flash_file_obj_t *self = MP_OBJ_TO_PTR(self_in);
     int32_t ret = API_FS_Read(self->fd, buf, size);
     if (ret < 0) {
-        *errcode = internal_flash_vfs_errno;
+        *errcode = errno;
         return MP_STREAM_ERROR;
     }
     return (mp_uint_t) ret;
@@ -70,7 +70,7 @@ STATIC mp_uint_t internal_flash_file_obj_write(mp_obj_t self_in, const void *buf
     internal_flash_file_obj_t *self = MP_OBJ_TO_PTR(self_in);
     int32_t ret = API_FS_Write(self->fd, (uint8_t*) buf, size);
     if (ret < 0) {
-        *errcode = internal_flash_vfs_errno;
+        *errcode = errno;
         return MP_STREAM_ERROR;
     }
     if (ret != size) {
@@ -112,7 +112,7 @@ STATIC mp_uint_t internal_flash_file_obj_ioctl(mp_obj_t o_in, mp_uint_t request,
         }
 
         if (ret < 0) {
-            *errcode = internal_flash_vfs_errno;
+            *errcode = errno;
             return MP_STREAM_ERROR;
         }
 
@@ -122,7 +122,7 @@ STATIC mp_uint_t internal_flash_file_obj_ioctl(mp_obj_t o_in, mp_uint_t request,
     } else if (request == MP_STREAM_FLUSH) {
         uint32_t ret = API_FS_Flush(self->fd);
         if (ret < 0) {
-            *errcode = internal_flash_vfs_errno;
+            *errcode = errno;
             return MP_STREAM_ERROR;
         }
         return 0;
@@ -132,7 +132,7 @@ STATIC mp_uint_t internal_flash_file_obj_ioctl(mp_obj_t o_in, mp_uint_t request,
         if (self->fd > 0) {
             int32_t ret = API_FS_Close(self->fd);
             if (ret < 0) {
-                *errcode = internal_flash_vfs_errno;
+                *errcode = errno;
                 return MP_STREAM_ERROR;
             } else
                 self->fd = 0;
