@@ -72,6 +72,7 @@ typedef struct _socket_obj_t {
     uint8_t type;
     uint8_t proto;
     bool peer_closed;
+    bool peer_opened;
     unsigned int retries;
 } socket_obj_t;
 
@@ -140,6 +141,7 @@ mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
     socket_obj_t *self = m_new_obj_with_finaliser(socket_obj_t);
     self->base.type = type;
     self->peer_closed = false;
+    self->peer_opened = false;
 
     switch (args[ARG_af].u_int) {
         case AF_INET:
@@ -230,6 +232,11 @@ STATIC mp_obj_t socket_connect(mp_obj_t self_in, mp_obj_t ipv4) {
     // ========================================
     socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
+    // handicap fix of #50: check if connected and raise 106 EISCONN in this case
+    if (self->peer_opened) {
+        mp_raise_OSError(EISCONN);
+    }
+
     struct sockaddr_in res;
     _socket_getaddrinfo(ipv4, &res);
 
@@ -240,6 +247,8 @@ STATIC mp_obj_t socket_connect(mp_obj_t self_in, mp_obj_t ipv4) {
     if (r < 0) {
         exception_from_errno(errno);
     }
+
+    self->peer_opened = true;
 
     return mp_const_none;
 }
@@ -299,44 +308,48 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_sendall_obj, &socket_sendall);
 // XXX this can end up waiting a very long time if the content is dribbled in one character
 // at a time, as the timeout resets each time a recvfrom succeeds ... this is probably not
 // good behaviour.
-STATIC mp_uint_t _socket_read_data(mp_obj_t self_in, void *buf, size_t size, struct sockaddr *from, socklen_t *from_len, int *errcode) {
+STATIC mp_uint_t _socket_read_data(mp_obj_t self_in, void *buf, size_t size,
+    struct sockaddr *from, socklen_t *from_len, int *errcode) {
     socket_obj_t *sock = MP_OBJ_TO_PTR(self_in);
 
     // If the peer closed the connection then the lwIP socket API will only return "0" once
-    // from lwip_recvfrom_r and then block on subsequent calls.  To emulate POSIX behaviour,
+    // from lwip_recvfrom and then block on subsequent calls.  To emulate POSIX behaviour,
     // which continues to return "0" for each call on a closed socket, we set a flag when
     // the peer closed the socket.
     if (sock->peer_closed) {
         return 0;
     }
 
-    struct fd_set fds;
-    struct timeval timeout = {12, 0};
-    FD_ZERO(&fds);
-    FD_SET(sock->fd, &fds);
+    if (!sock->peer_opened) {
+        mp_raise_OSError(ENOTCONN);
+    }
 
     // XXX Would be nicer to use RTC to handle timeouts
     for (int i = 0; i <= sock->retries; ++i) {
-
-        int r = -1;
-        switch (LWIP_SELECT(sock->fd + 1, &fds, NULL, NULL, &timeout)) {
-            case -1:
-                // An error is set already, proceed to raising it
-                break;
-            case 0:
-                continue;
-            default:
-                if (FD_ISSET(sock->fd, &fds)) {
-                    MP_THREAD_GIL_EXIT();
-                    r = LWIP_RECVFROM(sock->fd, buf, size, 0, from, from_len);
-                    MP_THREAD_GIL_ENTER();
-                } else {
-                    continue;
-                }
+        // Poll the socket to see if it has waiting data and only release the GIL if it doesn't.
+        // This ensures higher performance in the case of many small reads, eg for readline.
+        bool release_gil;
+        {
+            fd_set rfds;
+            FD_ZERO(&rfds);
+            FD_SET(sock->fd, &rfds);
+            struct timeval timeout = { .tv_sec = 0, .tv_usec = 0 };
+            int r = LWIP_SELECT(sock->fd + 1, &rfds, NULL, NULL, &timeout);
+            release_gil = r != 1;
         }
-
-        if (r == 0) sock->peer_closed = true;
-        if (r >= 0) return r;
+        if (release_gil) {
+            MP_THREAD_GIL_EXIT();
+        }
+        int r = LWIP_RECVFROM(sock->fd, buf, size, 0, from, from_len);
+        if (release_gil) {
+            MP_THREAD_GIL_ENTER();
+        }
+        if (r == 0) {
+            sock->peer_closed = true;
+        }
+        if (r >= 0) {
+            return r;
+        }
         if (errno != EWOULDBLOCK) {
             *errcode = errno;
             return MP_STREAM_ERROR;
