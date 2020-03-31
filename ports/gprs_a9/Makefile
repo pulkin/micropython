@@ -7,8 +7,6 @@ include ../../py/mkenv.mk
 CSDTK_PATH = ${PATH_MICROPY}/lib/csdtk42-linux
 # mips-elf-* compiler libraries
 export LD_LIBRARY_PATH=$(CSDTK_PATH)/lib:$(CSDTK_PATH)/mingw32/usr/lib
-# TODO: integrate this
-$(shell ./build-libcsdk.sh)
 
 include ${CSDK_PATH}/platform/csdk/memd.def
 include ${CSDK_PATH}/platform/chip/defs/8955_base.def
@@ -194,6 +192,7 @@ all: lod
 lod: ${HEX}
 	$(Q)$(MAKE) targetgen
 	$(Q)$(SRECMAP_TOOL) -c ${MAP_CFG_FILE} -m ${FLSH_MODEL} -b ${TARGET_FILE} ${HEX} ${LODBASE} ${STDOUT_NULL}
+	@echo "$(shell ./build-libcsdk.sh)"
 	$(Q)python $(LODCOMBINE_TOOL) merge --platform $(PLATFORM_LOD_FILE) --app $(LOD_FILE) --out $(WITH_PLT_LOD_FILE)
 	$(ECHO) "BUILD OK"
 
