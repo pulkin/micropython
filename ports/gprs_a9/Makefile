@@ -196,6 +196,7 @@ lod: ${HEX}
 	$(ECHO) "BUILD OK"
 
 ${BIN}: $(OBJ)
+	@echo "$(shell ./build-libcsdk.sh)"
 	$(ECHO) "LINK $@"
 	$(Q)test -f ${LD_FILE} && chmod +w ${LD_FILE} || echo ""
 	$(Q)${LDPP} ${LDPPFLAGS} ${LD_SRC} > ${LD_FILE}
@@ -206,7 +207,6 @@ ${BIN}: $(OBJ)
 	-Map ${MAP}
 
 bin: ${BIN}
-	@echo "$(shell ./build-libcsdk.sh)"
 	$(Q)${MKDIR} -p ${BIN_PATH}
 	$(Q)${CP} -f ${BIN} ${BIN_PATH}
 	$(Q)${CP} -f ${PLATFORM_ELF_PATH} ${BIN_PATH}
