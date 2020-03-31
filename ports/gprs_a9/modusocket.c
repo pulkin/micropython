@@ -72,7 +72,6 @@ typedef struct _socket_obj_t {
     uint8_t type;
     uint8_t proto;
     bool peer_closed;
-    bool peer_opened;
     unsigned int retries;
 } socket_obj_t;
 
@@ -141,7 +140,6 @@ mp_obj_t socket_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
     socket_obj_t *self = m_new_obj_with_finaliser(socket_obj_t);
     self->base.type = type;
     self->peer_closed = false;
-    self->peer_opened = false;
 
     switch (args[ARG_af].u_int) {
         case AF_INET:
@@ -232,11 +230,6 @@ STATIC mp_obj_t socket_connect(mp_obj_t self_in, mp_obj_t ipv4) {
     // ========================================
     socket_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
-    // handicap fix of #50: check if connected and raise 106 EISCONN in this case
-    if (self->peer_opened) {
-        mp_raise_OSError(EISCONN);
-    }
-
     struct sockaddr_in res;
     _socket_getaddrinfo(ipv4, &res);
 
@@ -247,8 +240,6 @@ STATIC mp_obj_t socket_connect(mp_obj_t self_in, mp_obj_t ipv4) {
     if (r < 0) {
         exception_from_errno(errno);
     }
-
-    self->peer_opened = true;
 
     return mp_const_none;
 }
@@ -318,10 +309,6 @@ STATIC mp_uint_t _socket_read_data(mp_obj_t self_in, void *buf, size_t size,
     // the peer closed the socket.
     if (sock->peer_closed) {
         return 0;
-    }
-
-    if (!sock->peer_opened) {
-        mp_raise_OSError(ENOTCONN);
     }
 
     // XXX Would be nicer to use RTC to handle timeouts
