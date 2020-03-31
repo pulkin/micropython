@@ -28,7 +28,7 @@ with open(fname, 'r') as f:
             address = int(line[1:], 16)
             data.append(line)
         else:
-            line_bytes = bytes.fromhex(line)[::-1]
+            line_bytes = bytes.fromhex(line[:-1])[::-1]
             address_to = address + len(line_bytes)
             for address_p, (name, old, new) in patch_list.items():
                 address_p_to = address_p + len(old)
