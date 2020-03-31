@@ -400,7 +400,7 @@ stages:
 
     - script: |
         sudo apt-get update
-        sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1
+        sudo apt-get install build-essential gcc-multilib g++-multilib libzip-dev zlib1g lib32z1 python3
       displayName: 'Install dependencies'
   
     - script: |
