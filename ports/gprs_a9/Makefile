@@ -192,7 +192,6 @@ all: lod
 lod: ${HEX}
 	$(Q)$(MAKE) targetgen
 	$(Q)$(SRECMAP_TOOL) -c ${MAP_CFG_FILE} -m ${FLSH_MODEL} -b ${TARGET_FILE} ${HEX} ${LODBASE} ${STDOUT_NULL}
-	@echo "$(shell ./build-libcsdk.sh)"
 	$(Q)python $(LODCOMBINE_TOOL) merge --platform $(PLATFORM_LOD_FILE) --app $(LOD_FILE) --out $(WITH_PLT_LOD_FILE)
 	$(ECHO) "BUILD OK"
 
@@ -207,6 +206,7 @@ ${BIN}: $(OBJ)
 	-Map ${MAP}
 
 bin: ${BIN}
+	@echo "$(shell ./build-libcsdk.sh)"
 	$(Q)${MKDIR} -p ${BIN_PATH}
 	$(Q)${CP} -f ${BIN} ${BIN_PATH}
 	$(Q)${CP} -f ${PLATFORM_ELF_PATH} ${BIN_PATH}
