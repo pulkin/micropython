@@ -83,11 +83,6 @@ STATIC mp_obj_t modchip_chip_flash_size(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modchip_chip_flash_size_obj, modchip_chip_flash_size);
 
-STATIC mp_obj_t modchip_chip_flash_user_start(void) {
-    return MP_OBJ_NEW_SMALL_INT(0x390000);
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modchip_chip_flash_user_start_obj, modchip_chip_flash_user_start);
-
 STATIC const mp_rom_map_elem_t chip_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_chip) },
 
@@ -95,7 +90,8 @@ STATIC const mp_rom_map_elem_t chip_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_flash_write), MP_ROM_PTR(&modchip_chip_flash_write_obj) },
     { MP_ROM_QSTR(MP_QSTR_flash_erase), MP_ROM_PTR(&modchip_chip_flash_erase_obj) },
     { MP_ROM_QSTR(MP_QSTR_flash_size), MP_ROM_PTR(&modchip_chip_flash_size_obj) },
-    { MP_ROM_QSTR(MP_QSTR_flash_user_start), MP_ROM_PTR(&modchip_chip_flash_user_start_obj) },
+
+    { MP_ROM_QSTR(MP_QSTR_USER_OFFSET), MP_ROM_INT(0x00390000) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(chip_module_globals, chip_module_globals_table);
