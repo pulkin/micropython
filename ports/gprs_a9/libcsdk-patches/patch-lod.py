@@ -21,7 +21,7 @@ with open(fname, 'r') as f:
     for n, line in enumerate(f):
         if line.startswith("#"):
             if line.startswith("#checksum"):
-                data.append(f"#checksum={checksum:08x}\n")
+                data.append("#checksum={:08x}\n".format(checksum))
             else:
                 data.append(line)  # Comment line
         elif line.startswith("@"):
@@ -37,9 +37,9 @@ with open(fname, 'r') as f:
                 if address_o < address_o_to:
                     if patching_in_progress is None:
                         patching_in_progress = address_p
-                        print(f"{name} @ 0x{address_p:08x}")
+                        print("{} @ 0x{:08x}".format(name, address_p))
                     elif patching_in_progress != address_p:
-                        raise RuntimeError(f"Failed to patch 0x{patching_in_progress:08x}: overlapping addresses")
+                        raise RuntimeError("Failed to patch 0x{:08x}: overlapping addresses".format(patching_in_progress))
                     current_patch = line_bytes[address_o - address:address_o_to - address]
                     old_patch = old[address_o - address_p:address_o_to - address_p]
                     new_patch = new[address_o - address_p:address_o_to - address_p]
@@ -49,17 +49,17 @@ with open(fname, 'r') as f:
                                 print("  .", end=" ")
                                 patching_now = False
                             else:
-                                raise RuntimeError(f"Failed to patch 0x{patching_in_progress:08x}: data mismatch")
+                                raise RuntimeError("Failed to patch 0x{:08x}: data mismatch".format(patching_in_progress))
                         elif old_patch == current_patch:
                             if patching_now in (None, True):
                                 print("  ✓", end=" ")
                                 patching_now = True
                                 line_bytes = line_bytes[:address_o - address] + new_patch + line_bytes[address_o_to - address:]
                             else:
-                                raise RuntimeError(f"Failed to patch 0x{patching_in_progress:08x}: data mismatch")
+                                raise RuntimeError("Failed to patch 0x{:08x}: data mismatch".format(patching_in_progress))
                         else:
-                            raise RuntimeError(f"Failed to patch 0x{patching_in_progress:08x}: data mismatch")
-                        print(f"{address_o - address_p:d}:{address_o_to - address_p:d}")
+                            raise RuntimeError("Failed to patch 0x{:08x}: data mismatch".format(patching_in_progress))
+                        print("{:d}:{:d}".format(address_o - address_p, address_o_to - address_p))
                     if address_o_to == address_p_to:
                         patching_in_progress = None
                         patching_now = None
@@ -70,3 +70,4 @@ with open(fname, 'r') as f:
 with open(fname, 'w') as f:
     f.write(''.join(data))
 print("Done")
+
