@@ -43,6 +43,7 @@ typedef struct _pyb_uart_obj_t {
 extern const mp_obj_type_t machine_pin_type;
 extern const mp_obj_type_t machine_adc_type;
 extern const mp_obj_type_t pyb_uart_type;
+extern const mp_obj_type_t pyb_rtc_type;
 extern Power_On_Cause_t powerOnCause;
 
 void modmachine_pin_init0(void);

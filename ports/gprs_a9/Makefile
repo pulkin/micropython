@@ -142,7 +142,8 @@ SRC_C = \
 	modi2c.c \
 	modst7735.c \
 	machine_adc.c \
-	machine_uart.c
+	machine_uart.c \
+	machine_rtc.c
 
 
 LIB_SRC_C = $(addprefix lib/,\
