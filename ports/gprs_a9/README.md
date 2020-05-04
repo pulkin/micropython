@@ -74,6 +74,7 @@ blink.blink(1)
 - [ ] PWM: `machine.PWM`
 - [x] UART: `machine.UART` (hw)
 - [x] SPI: `machine.SPI` (sw)
+- [x] RTC: `machine.RTC`
 - [x] I2C: `i2c` (hw)
 - [x] Cellular misc (IMEI, ICCID, ...): `cellular`
 - [x] GPS: `gps`
