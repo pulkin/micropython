@@ -81,7 +81,7 @@ uint8_t network_exception = NTW_NO_EXC;
 uint8_t network_status_updated = 0;
 uint8_t network_signal_quality = 0;
 uint8_t network_signal_rx_level = 0;
-mp_obj_t network_status_callback = NULL;
+mp_obj_t network_status_callback = mp_const_none;
 
 // Count SMS received
 uint16_t sms_received_count = 0;
@@ -205,7 +205,7 @@ void modcellular_network_status_update(uint8_t new_status, uint8_t new_exception
     if (new_exception) network_exception = new_exception;
     network_status = new_status;
     network_status_updated = 1;
-    if (network_status_callback) mp_sched_schedule(network_status_callback, mp_obj_new_int(network_status));
+    if (network_status_callback && network_status_callback != mp_const_none) mp_sched_schedule(network_status_callback, mp_obj_new_int(network_status));
 }
 
 void modcellular_notify_no_sim(API_Event_t* event) {
