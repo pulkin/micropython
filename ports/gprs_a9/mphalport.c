@@ -53,6 +53,7 @@ int mp_hal_stdin_rx_chr(void) {
         }
         // This has to be sufficiently large to perform background tasks
         OS_Sleep(10);
+        mp_handle_pending();
     }
 }
 
