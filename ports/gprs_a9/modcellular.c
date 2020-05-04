@@ -81,6 +81,7 @@ uint8_t network_exception = NTW_NO_EXC;
 uint8_t network_status_updated = 0;
 uint8_t network_signal_quality = 0;
 uint8_t network_signal_rx_level = 0;
+mp_obj_t network_status_callback = NULL;
 
 // Count SMS received
 uint16_t sms_received_count = 0;
@@ -200,80 +201,69 @@ NORETURN void mp_raise_CellularError(const char *msg) {
 // Notify
 // ------
 
-void modcellular_notify_no_sim(API_Event_t* event) {
-    network_status = 0;
+void modcellular_network_status_update(uint8_t new_status, uint8_t new_exception) {
+    if (new_exception) network_exception = new_exception;
+    network_status = new_status;
     network_status_updated = 1;
-    network_exception = NTW_EXC_NOSIM;
+    if (network_status_callback) mp_sched_schedule(network_status_callback, mp_obj_new_int(network_status));
+}
+
+void modcellular_notify_no_sim(API_Event_t* event) {
+    modcellular_network_status_update(0, NTW_EXC_NOSIM);
 }
 
 void modcellular_notify_sim_drop(API_Event_t* event) {
-    network_status = 0;
-    network_status_updated = 1;
-    network_exception = NTW_EXC_SIM_DROP;
+    modcellular_network_status_update(0, NTW_EXC_SIM_DROP);
 }
 
 // Register
 
 void modcellular_notify_reg_home(API_Event_t* event) {
-    network_status = NTW_REG_BIT;
-    network_status_updated = 1;
+    modcellular_network_status_update(NTW_REG_BIT, 0);
 }
 
 void modcellular_notify_reg_roaming(API_Event_t* event) {
-    network_status = NTW_REG_BIT | NTW_ROAM_BIT;
-    network_status_updated = 1;
+    modcellular_network_status_update(NTW_REG_BIT | NTW_ROAM_BIT, 0);
 }
 
 void modcellular_notify_reg_searching(API_Event_t* event) {
-    network_status = NTW_REG_PROGRESS_BIT;
-    network_status_updated = 1;
+    modcellular_network_status_update(NTW_REG_PROGRESS_BIT, 0);
 }
 
 void modcellular_notify_reg_denied(API_Event_t* event) {
-    network_status = 0;
-    network_status_updated = 1;
-    network_exception = NTW_EXC_REG_DENIED;
+    modcellular_network_status_update(0, NTW_EXC_REG_DENIED);
 }
 
 void modcellular_notify_dereg(API_Event_t* event) {
-    network_status = 0;
-    network_status_updated = 1;
+    modcellular_network_status_update(0, 0);
 }
 
 // Attach
 
 void modcellular_notify_det(API_Event_t* event) {
-    network_status &= ~NTW_ATT_BIT;
-    network_status_updated = 1;
+    modcellular_network_status_update(network_status & ~NTW_ATT_BIT, 0);
 }
 
 void modcellular_notify_att_failed(API_Event_t* event) {
-    network_status &= ~NTW_ATT_BIT;
-    network_status_updated = 1;
-    network_exception = NTW_EXC_ATT_FAILED;
+    modcellular_network_status_update(network_status & ~NTW_ATT_BIT, NTW_EXC_ATT_FAILED);
 }
 
 void modcellular_notify_att(API_Event_t* event) {
-    network_status |= NTW_ATT_BIT;
-    network_status_updated = 1;
+    modcellular_network_status_update(network_status | NTW_ATT_BIT, 0);
 }
 
 // Activate
 
 void modcellular_notify_deact(API_Event_t* event) {
-    network_status &= ~NTW_ACT_BIT;
-    network_status_updated = 1;
+    modcellular_network_status_update(network_status & ~NTW_ACT_BIT, 0);
 }
 
 void modcellular_notify_act_failed(API_Event_t* event) {
-    network_status &= ~NTW_ACT_BIT;
-    network_status_updated = 1;
-    network_exception = NTW_EXC_ACT_FAILED;
+    modcellular_network_status_update(network_status & ~NTW_ACT_BIT, NTW_EXC_ACT_FAILED);
 }
 
 void modcellular_notify_act(API_Event_t* event) {
-    network_status |= NTW_ACT_BIT;
-    network_status_updated = 1;
+    modcellular_network_status_update(network_status | NTW_ACT_BIT, 0);
 }
 
 // Networks
@@ -1208,6 +1198,19 @@ STATIC mp_obj_t modcellular_reset(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_reset_obj, modcellular_reset);
 
+STATIC mp_obj_t modcellular_on_status_event(mp_obj_t callable) {
+    // ========================================
+    // Sets a callback on status event.
+    // Args:
+    //     callback (Callable): a callback to
+    //     execute on status event.
+    // ========================================
+    network_status_callback = callable;
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_status_event_obj, modcellular_on_status_event);
+
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
@@ -1235,6 +1238,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_stations), (mp_obj_t)&modcellular_stations_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_agps_station_data), (mp_obj_t)&modcellular_agps_station_data_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_on_status_event), (mp_obj_t)&modcellular_on_status_event_obj },
 
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900E), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900E) },
