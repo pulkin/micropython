@@ -62,6 +62,9 @@
 #define NTW_EXC_ACT_FAILED 0x06
 #define NTW_EXC_SMS_DROP 0x07
 
+#define SMS_SENT 1
+#define SMS_RECEIVED 2
+
 #define MAX_NUMBER_LEN 16
 #define MAX_CALLS_MISSED 15
 #define MAX_CELLS 8
@@ -290,6 +293,8 @@ void modcellular_notify_sms_list(API_Event_t* event) {
 
 void modcellular_notify_sms_sent(API_Event_t* event) {
     sms_send_flag = 1;
+    if (sms_callback && sms_callback != mp_const_none)
+        mp_sched_schedule(sms_callback, mp_obj_new_int(SMS_SENT));
 }
 
 void modcellular_notify_sms_error(API_Event_t* event) {
@@ -298,7 +303,7 @@ void modcellular_notify_sms_error(API_Event_t* event) {
 
 void modcellular_notify_sms_receipt(API_Event_t* event) {
     if (sms_callback && sms_callback != mp_const_none)
-        mp_sched_schedule(sms_callback, mp_const_none);
+        mp_sched_schedule(sms_callback, mp_obj_new_int(SMS_RECEIVED));
 }
 
 // Signal level
@@ -1235,6 +1240,8 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_NETWORK_MODE_AUTO),        MP_ROM_INT(NETWORK_REGISTER_MODE_AUTO)        },
     { MP_ROM_QSTR(MP_QSTR_NETWORK_MODE_MANUAL_AUTO), MP_ROM_INT(NETWORK_REGISTER_MODE_MANUAL_AUTO) },
     
+    { MP_ROM_QSTR(MP_QSTR_SMS_SENT), MP_ROM_INT(SMS_SENT) },
+    { MP_ROM_QSTR(MP_QSTR_SMS_RECEIVED), MP_ROM_INT(SMS_RECEIVED) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);

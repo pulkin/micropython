@@ -144,8 +144,8 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `gprs([apn: {str, bool}[, user: str, pass: str]])` (bool): activate (3 arguments), deactivate (`gprs(False)`) or obtain the status of GPRS (on/off) if no arguments supplied;
 * `call()` (list[str], [str, None]): calls missed (1st output) and the incoming call number or `None` if no incoming calls at the moment (2nd output);
 * `dial(tn: {str, bool})`: dial a telephone number if string is supplied or hang up a call if `False`;
-* `on_status_event(callback: Callable)`: sets a callback for network status change;
-* `on_sms(callback: Callable)`: sets a callback for SMS;
+* `on_status_event(callback: Callable)`: sets a callback for network status change. The callback is called with a single integer constant indicating the new network state;
+* `on_sms(callback: Callable)`: sets a callback on SMS sent or received. The callback is called with a single integer constant `SMS_SENT` or `SMS_RECEIVED`;
 
 ### `usocket` ###
 
