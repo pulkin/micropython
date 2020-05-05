@@ -133,6 +133,10 @@ NORETURN void mp_raise_CellularError(const char *msg);
 // ----
 
 void modcellular_init0(void) {
+    // Reset callbacks
+    network_status_callback = mp_const_none;
+    sms_callback = mp_const_none;
+
     // Reset statuses
     network_exception = NTW_NO_EXC;
     cells_n = 0;
