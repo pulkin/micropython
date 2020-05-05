@@ -82,8 +82,8 @@ uint8_t network_signal_quality = 0;
 uint8_t network_signal_rx_level = 0;
 mp_obj_t network_status_callback = mp_const_none;
 
-// Count SMS received
-uint16_t sms_received_count = 0;
+// SMS received
+mp_obj_t sms_callback = mp_const_none;
 
 // SMS send flag
 uint8_t sms_send_flag = 0;
@@ -132,7 +132,6 @@ NORETURN void mp_raise_CellularError(const char *msg);
 void modcellular_init0(void) {
     // Reset statuses
     network_exception = NTW_NO_EXC;
-    sms_received_count = 0;
     cells_n = 0;
 
     // Incoming calls buffer
@@ -298,7 +297,8 @@ void modcellular_notify_sms_error(API_Event_t* event) {
 }
 
 void modcellular_notify_sms_receipt(API_Event_t* event) {
-    sms_received_count ++;
+    if (sms_callback && sms_callback != mp_const_none)
+        mp_sched_schedule(sms_callback, mp_const_none);
 }
 
 // Signal level
@@ -511,20 +511,6 @@ STATIC mp_obj_t modcellular_sms_list(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_list_obj, modcellular_sms_list);
 STATIC MP_DEFINE_CONST_STATICMETHOD_OBJ(modcellular_sms_list_static_class_obj, MP_ROM_PTR(&modcellular_sms_list_obj));
 
-STATIC mp_obj_t modcellular_sms_poll(void) {
-    // ========================================
-    // Polls new SMS.
-    // Returns:
-    //     The number of SMS received.
-    // ========================================
-    mp_obj_t result = mp_obj_new_int(sms_received_count);
-    sms_received_count = 0;
-    return result;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_poll_obj, modcellular_sms_poll);
-STATIC MP_DEFINE_CONST_STATICMETHOD_OBJ(modcellular_sms_poll_static_class_obj, MP_ROM_PTR(&modcellular_sms_poll_obj));
-
 STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     // ========================================
     // SMS.[attr]
@@ -559,9 +545,6 @@ STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         // .list[static]
         } else if (attr == MP_QSTR_list) {
             mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_list_static_class_obj), dest);
-        // .poll[static]
-        } else if (attr == MP_QSTR_poll) {
-            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_poll_static_class_obj), dest);
         }
     }
 }
@@ -586,7 +569,6 @@ STATIC const mp_rom_map_elem_t sms_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_send), MP_ROM_PTR(&modcellular_sms_send_obj) },
     { MP_ROM_QSTR(MP_QSTR_withdraw), MP_ROM_PTR(&modcellular_sms_withdraw_obj) },
     { MP_ROM_QSTR(MP_QSTR_list), MP_ROM_PTR(&modcellular_sms_list_static_class_obj) },
-    { MP_ROM_QSTR(MP_QSTR_poll), MP_ROM_PTR(&modcellular_sms_poll_static_class_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(sms_locals_dict, sms_locals_dict_table);
@@ -1195,6 +1177,19 @@ STATIC mp_obj_t modcellular_on_status_event(mp_obj_t callable) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_status_event_obj, modcellular_on_status_event);
 
+STATIC mp_obj_t modcellular_on_sms(mp_obj_t callable) {
+    // ========================================
+    // Sets a callback on SMS (receive).
+    // Args:
+    //     callback (Callable): a callback to
+    //     execute on SMS receive.
+    // ========================================
+    sms_callback = callable;
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_sms_obj, modcellular_on_sms);
+
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
@@ -1222,6 +1217,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_agps_station_data), (mp_obj_t)&modcellular_agps_station_data_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_status_event), (mp_obj_t)&modcellular_on_status_event_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_on_sms), (mp_obj_t)&modcellular_on_sms_obj },
 
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900E), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900E) },

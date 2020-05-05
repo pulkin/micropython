@@ -121,7 +121,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   * `.sent` (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
   * `.send()`: sends a message;
   * `.withdraw()`: withdraws SMS from SIM storage;
-  * `.poll()` (int) [staticmethod]: the number of new SMS received;
+  * ~~`.poll()` (int) [staticmethod]: the number of new SMS received~~ use `on_sms` instead;
   * `.list()` (list) [staticmethod]: all SMS from the SIM card;
 * `CellularError(message: str)`
 * `get_imei()` (str): the International Mobile Equipment Identity (IMEI) number;
@@ -145,6 +145,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `call()` (list[str], [str, None]): calls missed (1st output) and the incoming call number or `None` if no incoming calls at the moment (2nd output);
 * `dial(tn: {str, bool})`: dial a telephone number if string is supplied or hang up a call if `False`;
 * `on_status_event(callback: Callable)`: sets a callback for network status change;
+* `on_sms(callback: Callable)`: sets a callback for SMS;
 
 ### `usocket` ###
 
