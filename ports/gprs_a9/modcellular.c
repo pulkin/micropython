@@ -78,7 +78,6 @@
 // Tracks the status on the network
 uint8_t network_status = 0;
 uint8_t network_exception = NTW_NO_EXC;
-uint8_t network_status_updated = 0;
 uint8_t network_signal_quality = 0;
 uint8_t network_signal_rx_level = 0;
 mp_obj_t network_status_callback = mp_const_none;
@@ -132,7 +131,6 @@ NORETURN void mp_raise_CellularError(const char *msg);
 
 void modcellular_init0(void) {
     // Reset statuses
-    network_status_updated = 0;
     network_exception = NTW_NO_EXC;
     sms_received_count = 0;
     cells_n = 0;
@@ -204,7 +202,6 @@ NORETURN void mp_raise_CellularError(const char *msg) {
 void modcellular_network_status_update(uint8_t new_status, uint8_t new_exception) {
     if (new_exception) network_exception = new_exception;
     network_status = new_status;
-    network_status_updated = 1;
     if (network_status_callback && network_status_callback != mp_const_none) mp_sched_schedule(network_status_callback, mp_obj_new_int(network_status));
 }
 
@@ -702,19 +699,6 @@ STATIC mp_obj_t modcellular_is_sim_present(void) {
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_is_sim_present_obj, modcellular_is_sim_present);
-
-STATIC mp_obj_t modcellular_network_status_changed(void) {
-    // ========================================
-    // Checks whether the network status was updated.
-    // Returns:
-    //     True if it was updated since the last check.
-    // ========================================
-    uint8_t result = network_status_updated;
-    network_status_updated = 0;
-    return mp_obj_new_bool(result);
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_network_status_changed_obj, modcellular_network_status_changed);
 
 STATIC mp_obj_t modcellular_poll_network_exception(void) {
     // ========================================
@@ -1220,7 +1204,6 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&modcellular_get_imei_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_signal_quality), (mp_obj_t)&modcellular_get_signal_quality_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_network_status_changed), (mp_obj_t)&modcellular_network_status_changed_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_poll_network_exception), (mp_obj_t)&modcellular_poll_network_exception_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_network_status), (mp_obj_t)&modcellular_get_network_status_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_is_sim_present), (mp_obj_t)&modcellular_is_sim_present_obj },
