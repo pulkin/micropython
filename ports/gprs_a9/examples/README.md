@@ -57,6 +57,22 @@ Keywords: **URL, requests, HTTP, HTTPS**
 
 Modules: `cellular`, `urequests` (external), `upip`
 
+[example_40_network_events.py](example_40_network_events.py)
+
+Demonstrates how to track GSM network events.
+
+Keywords: **GSM, connect, flight mode**
+
+Modules: `cellular`
+
+[example_41_sms.py](example_41_sms.py)
+
+Demonstrates how to send and receive SMS.
+
+Keywords: **SMS**
+
+Modules: `cellular`
+
 [example_50_mqtt.py](example_50_mqtt.py)
 
 Reports location to a test MQTT server via cellular connection using `umqtt` from [micropython-lib](https://github.com/micropython/micropython-lib).
