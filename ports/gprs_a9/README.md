@@ -127,7 +127,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `get_imei()` (str): the International Mobile Equipment Identity (IMEI) number;
 * `get_iccid()` (str): the Integrated Circuit Card ID (ICCID) number of the inserted SIM card;
 * `get_imsi()` (str): the International Mobile Subscriber Identity (IMSI) number of the inserted SIM card;
-* `network_status_changed()` (bool): indicates whether the network status changed since the last check;
+* ~~`network_status_changed()` (bool): indicates whether the network status changed since the last check~~ use `on_status_event` instead;
 * `get_network_status()` (int): cellular network status encoded in an integer. **TODO**: Provide bit-wise specs;
 * `poll_network_exception()`: polls the network exception and raises it, if any;
 * `is_sim_present()` (bool): checks whether a SIM card is present;
