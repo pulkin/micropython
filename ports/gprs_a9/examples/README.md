@@ -73,6 +73,14 @@ Keywords: **SMS**
 
 Modules: `cellular`
 
+[example_42_event_driven_gprs.py](example_42_event_driven_gprs.py)
+
+Demonstrates how to connect and download in the background using events.
+
+Keywords: **GPRS, background, connection**
+
+Modules: `cellular`, `socket`
+
 [example_50_mqtt.py](example_50_mqtt.py)
 
 Reports location to a test MQTT server via cellular connection using `umqtt` from [micropython-lib](https://github.com/micropython/micropython-lib).
