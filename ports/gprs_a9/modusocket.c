@@ -58,7 +58,7 @@ NORETURN static void exception_from_errno(int _errno) {
 }
 
 static inline void check_for_exceptions(void) {
-    mp_handle_pending();
+    MICROPY_EVENT_POLL_HOOK
 }
 
 // -------

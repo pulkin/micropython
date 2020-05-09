@@ -53,7 +53,7 @@ int mp_hal_stdin_rx_chr(void) {
         }
         // This has to be sufficiently large to perform background tasks
         OS_Sleep(10);
-        mp_handle_pending();
+        MICROPY_EVENT_POLL_HOOK
     }
 }
 
@@ -96,7 +96,7 @@ void mp_hal_delay_ms(uint32_t ms) {
     uint32_t start = clock();
     while (clock() - start < ms * CLOCKS_PER_MSEC) {
         OS_Sleep(1);
-        mp_handle_pending();
+        MICROPY_EVENT_POLL_HOOK
     }
 }
 
