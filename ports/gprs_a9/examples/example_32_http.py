@@ -7,7 +7,7 @@
 import cellular
 cellular.gprs("internet", "", "")
 
-# Import mqtt (download client if necessary)
+# Import requests (download if necessary)
 try:
     import urequests
 except ImportError:
