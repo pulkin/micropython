@@ -141,7 +141,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `stations()` (list): a list of nearby stations: `(mcc, mnc, lac, cell_id, bsic, rx_full, rx_sub, arfcn)`: all ints;
 * `agps_station_data()` (int, int, list): a convenience function returning `(mcc, mnc, [(lac, cell_id, signal_strength), ...])` for use in agps location: all ints;
 * `reset()`: resets network settings to defaults. Disconnects GPRS;
-* `gprs([apn: {str, bool}[, user: str, pass: str]])` (bool): activate (3 arguments), deactivate (`gprs(False)`) or obtain the status of GPRS (on/off) if no arguments supplied;
+* `gprs([apn: {str, bool}[, user: str, pass: str[, timeout: int]]])` (bool): activate (3 or 4 arguments), deactivate (`gprs(False)`) or obtain the status of GPRS (on/off) if no arguments supplied;
 * `call()` (list[str], [str, None]): calls missed (1st output) and the incoming call number or `None` if no incoming calls at the moment (2nd output);
 * `dial(tn: {str, bool})`: dial a telephone number if string is supplied or hang up a call if `False`;
 * `on_status_event(callback: Callable)`: sets a callback for network status change. The callback is called with a single integer constant indicating the new network state;

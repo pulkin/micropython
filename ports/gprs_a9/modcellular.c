@@ -882,6 +882,8 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
     //     or False if GPRS shutdown requested.
     //     user (str): username;
     //     pass (str): password;
+    //     timeout (int): time to wait until
+    //     connected;
     // Returns:
     //     True if GPRS is active, False
     //     otherwise.
@@ -903,10 +905,12 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
             WAIT_UNTIL(!(network_status & NTW_ACT_BIT), TIMEOUT_GPRS_ACTIVATION, 100, mp_raise_CellularError("Network context deactivation timeout"));
         }
 
-    } else if (n_args == 3) {
+    } else if (n_args == 3 || n_args == 4) {
         const char* c_apn = mp_obj_str_get_str(args[0]);
         const char* c_user = mp_obj_str_get_str(args[1]);
         const char* c_pass = mp_obj_str_get_str(args[2]);
+        mp_int_t timeout = TIMEOUT_GPRS_ACTIVATION;
+        if (n_args == 4) timeout = mp_obj_get_int(args[3]);
 
         if (network_status & NTW_ACT_BIT) {
             mp_raise_CellularError("GPRS is already on");
@@ -920,12 +924,11 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
             memcpy(context.userName, c_user, MIN(strlen(c_user) + 1, sizeof(context.userName)));
             memcpy(context.userPasswd, c_pass, MIN(strlen(c_pass) + 1, sizeof(context.userPasswd)));
 
-            
             if (!Network_StartActive(context)) {
                 mp_raise_CellularError("Cannot initiate context activation");
                 return mp_const_none;
             }
-            WAIT_UNTIL(network_status & NTW_ACT_BIT, TIMEOUT_GPRS_ACTIVATION, 100, mp_raise_CellularError("Network context activation timeout"));
+            if (timeout) WAIT_UNTIL(network_status & NTW_ACT_BIT, timeout, 100, mp_raise_CellularError("Network context activation timeout"));
         }
 
     } else if (n_args != 0) {
@@ -935,7 +938,7 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
     return mp_obj_new_bool(network_status & NTW_ACT_BIT);
 }
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_gprs_obj, 0, 3, modcellular_gprs);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_gprs_obj, 0, 4, modcellular_gprs);
 
 STATIC mp_obj_t modcellular_scan(void) {
     // ========================================
