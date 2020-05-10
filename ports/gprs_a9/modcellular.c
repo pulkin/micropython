@@ -44,8 +44,8 @@
 #include "api_network.h"
 #include "api_inc_network.h"
 
-#include "buffer.h"
 #include "time.h"
+#include "py/mperrno.h"
 
 #define NTW_REG_BIT 0x01
 #define NTW_ROAM_BIT 0x02
@@ -54,21 +54,21 @@
 #define NTW_ACT_BIT 0x10
 
 #define NTW_NO_EXC 0
-#define NTW_EXC_NOSIM 0x01
-#define NTW_EXC_REG_DENIED 0x02
-#define NTW_EXC_SMS_SEND 0x03
-#define NTW_EXC_SIM_DROP 0x04
-#define NTW_EXC_ATT_FAILED 0x05
-#define NTW_EXC_ACT_FAILED 0x06
-#define NTW_EXC_SMS_DROP 0x07
+#define NTW_EXC_NOSIM 0x6E01
+#define NTW_EXC_REG_DENIED 0x6E02
+#define NTW_EXC_SMS_SEND 0x6E03
+#define NTW_EXC_SIM_DROP 0x6E04
+#define NTW_EXC_ATT_FAILED 0x6E05
+#define NTW_EXC_ACT_FAILED 0x6E06
+#define NTW_EXC_SMS_DROP 0x6E07
 
-#define NTW_EXC_CALL_NO_DIAL_TONE 0x10
-#define NTW_EXC_CALL_BUSY 0x11
-#define NTW_EXC_CALL_NO_ANSWER 0x12
-#define NTW_EXC_CALL_NO_CARRIER 0x13
-#define NTW_EXC_CALL_TIMEOUT 0x14
-#define NTW_EXC_CALL_INPROGRESS 0x15
-#define NTW_EXC_CALL_UNKNOWN 0x16
+#define NTW_EXC_CALL_NO_DIAL_TONE 0x6E10
+#define NTW_EXC_CALL_BUSY 0x6E11
+#define NTW_EXC_CALL_NO_ANSWER 0x6E12
+#define NTW_EXC_CALL_NO_CARRIER 0x6E13
+#define NTW_EXC_CALL_TIMEOUT 0x6E14
+#define NTW_EXC_CALL_INPROGRESS 0x6E15
+#define NTW_EXC_CALL_UNKNOWN 0x6E16
 
 #define SMS_SENT 1
 #define SMS_RECEIVED 2
@@ -88,7 +88,7 @@
 
 // Tracks the status on the network
 uint8_t network_status = 0;
-uint8_t network_exception = NTW_NO_EXC;
+uint16_t network_exception = NTW_NO_EXC;
 uint8_t network_signal_quality = 0;
 uint8_t network_signal_rx_level = 0;
 mp_obj_t network_status_callback = mp_const_none;
@@ -129,8 +129,6 @@ mp_obj_t call_callback = mp_const_none;
 // SMS parsing
 STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record);
 STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
-
-NORETURN void mp_raise_CellularError(const char *msg);
 
 // ----
 // Init
@@ -197,17 +195,15 @@ void modcellular_init0(void) {
 // Exceptions
 // ----------
 
-MP_DEFINE_EXCEPTION(CellularError, OSError)
-
-NORETURN void mp_raise_CellularError(const char *msg) {
-    mp_raise_msg(&mp_type_CellularError, msg);
+NORETURN void mp_raise_RuntimeError(const char *msg) {
+    mp_raise_msg(&mp_type_RuntimeError, msg);
 }
 
 // ------
 // Notify
 // ------
 
-void modcellular_network_status_update(uint8_t new_status, uint8_t new_exception) {
+void modcellular_network_status_update(uint8_t new_status, uint16_t new_exception) {
     if (new_exception) network_exception = new_exception;
     network_status = new_status;
     if (network_status_callback && network_status_callback != mp_const_none) mp_sched_schedule(network_status_callback, mp_obj_new_int(network_status));
@@ -431,10 +427,8 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
 
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
-    if (self->status != 0) {
-        mp_raise_CellularError("A message with non-zero status cannot be sent");
-        return mp_const_none;
-    }
+    if (self->status != 0)
+        mp_raise_ValueError("A message with non-zero status cannot be sent");
 
     const char* destination_c = mp_obj_str_get_str(self->phone_number);
     const char* message_c = mp_obj_str_get_str(self->message);
@@ -442,16 +436,13 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
     uint8_t* unicode = NULL;
     uint32_t unicodeLen;
 
-    if (!SMS_LocalLanguage2Unicode((uint8_t*)message_c, strlen(message_c), CHARSET_UTF_8, &unicode, &unicodeLen)) {
-        mp_raise_CellularError("Failed to convert to Unicode before sending SMS");
-        return mp_const_none;
-    }
+    if (!SMS_LocalLanguage2Unicode((uint8_t*)message_c, strlen(message_c), CHARSET_UTF_8, &unicode, &unicodeLen))
+        mp_raise_ValueError("Failed to convert to Unicode before sending SMS");
 
     sms_send_flag = 0;
     if (!SMS_SendMessage(destination_c, unicode, unicodeLen, SIM0)) {
         OS_Free(unicode);
-        mp_raise_CellularError("Failed to submit SMS message for sending");
-        return mp_const_none;
+        mp_raise_ValueError("Failed to submit SMS message for sending");
     }
     OS_Free(unicode);
     WAIT_UNTIL(sms_send_flag, TIMEOUT_SMS_SEND, 100, mp_warning(NULL, "Failed to send SMS. The module will continue attempting sending it"));
@@ -470,12 +461,12 @@ STATIC mp_obj_t modcellular_sms_withdraw(mp_obj_t self_in) {
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
     if (self->index == 0 || self->status == 0) {
-        mp_raise_CellularError("Cannot withdraw SMS with zero index/status");
+        mp_raise_ValueError("Cannot withdraw SMS with zero index/status");
         return mp_const_none;
     }
 
     if (!SMS_DeleteMessage(self->index, SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD)) {
-        mp_raise_CellularError("Failed to withdraw SMS");
+        mp_raise_ValueError("Failed to withdraw SMS");
         return mp_const_none;
     }
 
@@ -691,76 +682,17 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_is_sim_present_obj, modcellular_is_
 
 STATIC mp_obj_t modcellular_poll_network_exception(void) {
     // ========================================
-    // Checks whether network exception occurred since the last check.
-    // Returns:
-    //    An integer representing network exception.
+    // Raises a last network exception.
     // ========================================
     uint8_t e = network_exception;
     network_exception = NTW_NO_EXC;
 
     switch (e) {
-
-        case NTW_EXC_NOSIM:
-            mp_raise_CellularError("No SIM card inserted");
-            break;
-
-        case NTW_EXC_REG_DENIED:
-            mp_raise_CellularError("Failed to register on the cellular network");
-            break;
-
-        case NTW_EXC_SMS_SEND:
-            mp_raise_CellularError("SMS was not sent");
-            break;
-
-        case NTW_EXC_SIM_DROP:
-            mp_raise_CellularError("SIM card dropped");
-            break;
-
-        case NTW_EXC_ATT_FAILED:
-            mp_raise_CellularError("Failed to attach to the cellular network");
-            break;
-
-        case NTW_EXC_ACT_FAILED:
-            mp_raise_CellularError("Failed to activate the cellular network");
-            break;
-
-        case NTW_EXC_SMS_DROP:
-            mp_raise_CellularError("SMS message was discarded due to a timeout or a wrong SMS storage information");
-            break;
-
-        case NTW_EXC_CALL_NO_DIAL_TONE:
-            mp_raise_CellularError("No dial tone");
-            break;
-
-        case NTW_EXC_CALL_BUSY:
-            mp_raise_CellularError("Line is busy");
-            break;
-        
-        case NTW_EXC_CALL_NO_ANSWER:
-            mp_raise_CellularError("No answer");
-            break;
-
-        case NTW_EXC_CALL_NO_CARRIER:
-            mp_raise_CellularError("No carrier");
-            break;
-
-        case NTW_EXC_CALL_TIMEOUT:
-            mp_raise_CellularError("Call timeout");
-            break;
-
-        case NTW_EXC_CALL_INPROGRESS:
-            mp_raise_CellularError("Link is being built");
-            break;
-
-        case NTW_EXC_CALL_UNKNOWN:
-            mp_raise_CellularError("Call: unknown error");
-            break;
-
         case NTW_NO_EXC:
             break;
 
         default:
-            mp_raise_msg(&mp_type_RuntimeError, "Unknown network exception occurred");
+            mp_raise_OSError(e);
             break;
 
     }
@@ -815,7 +747,7 @@ STATIC mp_obj_t modcellular_get_iccid(void) {
     if (SIM_GetICCID((uint8_t*)iccid))
         return mp_obj_new_str(iccid, strlen(iccid));
     else {
-        mp_raise_CellularError("No ICCID data available");
+        mp_raise_RuntimeError("No ICCID data available");
         return mp_const_none;
     }
 }
@@ -833,7 +765,7 @@ STATIC mp_obj_t modcellular_get_imsi(void) {
     if (SIM_GetIMSI((uint8_t*)imsi))
         return mp_obj_new_str(imsi, strlen(imsi));
     else {
-        mp_raise_CellularError("No IMSI data available");
+        mp_raise_RuntimeError("No IMSI data available");
         return mp_const_none;
     }
 }
@@ -844,7 +776,7 @@ bool get_flight_mode(void) {
     // Polls flight mode
     bool flag;
     if (!Network_GetFlightMode(&flag)) {
-        mp_raise_CellularError("Failed to retrieve flight mode status");
+        mp_raise_RuntimeError("Failed to retrieve flight mode status");
     }
     return !flag;  // By fact, the meaning of the output is inverse
 }
@@ -859,10 +791,10 @@ STATIC mp_obj_t modcellular_flight_mode(size_t n_args, const mp_obj_t *args) {
     if (n_args == 1) {
         mp_int_t set_flag = mp_obj_get_int(args[0]);
         if (!Network_SetFlightMode(set_flag)) {
-            mp_raise_CellularError("Failed to set flight mode status");
+            mp_raise_RuntimeError("Failed to set flight mode status");
             return mp_const_none;
         }
-        WAIT_UNTIL(set_flag == get_flight_mode(), TIMEOUT_FLIGHT_MODE, 100, mp_raise_CellularError("Flight mode change timeout"));
+        WAIT_UNTIL(set_flag == get_flight_mode(), TIMEOUT_FLIGHT_MODE, 100, mp_raise_OSError(MP_ETIMEDOUT));
     }
     return mp_obj_new_bool(get_flight_mode());
 }
@@ -878,12 +810,12 @@ STATIC mp_obj_t modcellular_set_bands(size_t n_args, const mp_obj_t *args) {
     // ========================================
     if (n_args == 0) {
         if (!Network_SetFrequencyBand(BANDS_ALL)) {
-            mp_raise_CellularError("Failed to reset 2G GSM bands");
+            mp_raise_RuntimeError("Failed to reset 2G GSM bands");
             return mp_const_none;
         }
     } else if (n_args == 1) {
         if (!Network_SetFrequencyBand(mp_obj_get_int(args[0]))) {
-            mp_raise_CellularError("Failed to set 2G GSM bands");
+            mp_raise_RuntimeError("Failed to set 2G GSM bands");
             return mp_const_none;
         }
     }
@@ -916,19 +848,21 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
     // ========================================
     REQUIRES_NETWORK_REGISTRATION;
 
-    if (n_args == 1) {
+    if (n_args == 1 || n_args == 2) {
         mp_int_t flag = mp_obj_get_int(args[0]);
         if (flag != 0) {
             mp_raise_ValueError("Unkown integer argument supplied, zero (or False) expected");
             return mp_const_none;
         }
+        mp_int_t timeout = TIMEOUT_GPRS_ACTIVATION;
+        if (n_args == 2) timeout = mp_obj_get_int(args[1]);
 
         if (network_status & NTW_ACT_BIT) {
             if (!Network_StartDeactive(1)) {
-                mp_raise_CellularError("Cannot initiate context deactivation");
+                mp_raise_RuntimeError("Cannot initiate context deactivation");
                 return mp_const_none;
             }
-            WAIT_UNTIL(!(network_status & NTW_ACT_BIT), TIMEOUT_GPRS_ACTIVATION, 100, mp_raise_CellularError("Network context deactivation timeout"));
+            WAIT_UNTIL(!(network_status & NTW_ACT_BIT), timeout, 100, mp_raise_OSError(MP_ETIMEDOUT));
         }
 
     } else if (n_args == 3 || n_args == 4) {
@@ -939,10 +873,10 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
         if (n_args == 4) timeout = mp_obj_get_int(args[3]);
 
         if (network_status & NTW_ACT_BIT) {
-            mp_raise_CellularError("GPRS is already on");
+            mp_raise_ValueError("GPRS is already on");
             return mp_const_none;
         }
-        WAIT_UNTIL(__is_attached(), TIMEOUT_GPRS_ATTACHMENT, 100, mp_raise_CellularError("Network is not attached: try resetting"));
+        WAIT_UNTIL(__is_attached(), TIMEOUT_GPRS_ATTACHMENT, 100, mp_raise_RuntimeError("Network is not attached: try resetting"));
 
         if (!(network_status & NTW_ACT_BIT)) {
             Network_PDP_Context_t context;
@@ -950,11 +884,9 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
             memcpy(context.userName, c_user, MIN(strlen(c_user) + 1, sizeof(context.userName)));
             memcpy(context.userPasswd, c_pass, MIN(strlen(c_pass) + 1, sizeof(context.userPasswd)));
 
-            if (!Network_StartActive(context)) {
-                mp_raise_CellularError("Cannot initiate context activation");
-                return mp_const_none;
-            }
-            if (timeout) WAIT_UNTIL(network_status & NTW_ACT_BIT, timeout, 100, mp_raise_CellularError("Network context activation timeout"));
+            if (!Network_StartActive(context))
+                mp_raise_RuntimeError("Cannot initiate context activation");
+            if (timeout) WAIT_UNTIL(network_status & NTW_ACT_BIT, timeout, 100, mp_raise_OSError(MP_ETIMEDOUT));
         }
 
     } else if (n_args != 0) {
@@ -972,10 +904,10 @@ STATIC mp_obj_t modcellular_scan(void) {
     // ========================================
     network_list_buffer = NULL;
     if (!Network_GetAvailableOperatorReq()) {
-        mp_raise_CellularError("Failed to poll available operators");
+        mp_raise_RuntimeError("Failed to poll available operators");
         return mp_const_none;
     }
-    WAIT_UNTIL(network_list_buffer != NULL, TIMEOUT_LIST_OPERATORS, 100, mp_raise_CellularError("Network list timeout"));
+    WAIT_UNTIL(network_list_buffer != NULL, TIMEOUT_LIST_OPERATORS, 100, mp_raise_OSError(MP_ETIMEDOUT));
 
     mp_obj_t items[network_list_buffer_len];
     for (int i=0; i < network_list_buffer_len; i++) {
@@ -983,7 +915,7 @@ STATIC mp_obj_t modcellular_scan(void) {
         // Name
         uint8_t *op_name;
         if (!Network_GetOperatorNameById(network_list_buffer[i].operatorId, &op_name)) {
-            mp_raise_CellularError("Failed to poll operator name");
+            mp_raise_RuntimeError("Failed to poll operator name");
             return mp_const_none;
         }
 
@@ -1014,10 +946,10 @@ STATIC mp_obj_t modcellular_register(size_t n_args, const mp_obj_t *args) {
         }
 
         if (!Network_DeRegister()) {
-            mp_raise_CellularError("Failed to request deregistration");
+            mp_raise_RuntimeError("Failed to request deregistration");
             return mp_const_none;
         }
-        WAIT_UNTIL(!(network_status & NTW_REG_BIT), TIMEOUT_REG, 100, mp_raise_CellularError("De-registration timeout"));
+        WAIT_UNTIL(!(network_status & NTW_REG_BIT), TIMEOUT_REG, 100, mp_raise_OSError(MP_ETIMEDOUT));
 
     } else if (n_args == 2) {
         mp_obj_array_t *op_id = MP_OBJ_TO_PTR(args[0]);
@@ -1039,23 +971,23 @@ STATIC mp_obj_t modcellular_register(size_t n_args, const mp_obj_t *args) {
         }
 
         if (!Network_Register((uint8_t*) op_id->items, (Network_Register_Mode_t) op_mode)) {
-            mp_raise_CellularError("Failed to request network registration");
+            mp_raise_RuntimeError("Failed to request network registration");
             return mp_const_none;
         }
-        WAIT_UNTIL(network_status & NTW_REG_BIT, TIMEOUT_REG, 100, mp_raise_CellularError("Registration timeout"));
+        WAIT_UNTIL(network_status & NTW_REG_BIT, TIMEOUT_REG, 100, mp_raise_OSError(MP_ETIMEDOUT));
     }
 
     uint8_t op_id[6];
     Network_Register_Mode_t op_mode;
 
     if (!Network_GetCurrentOperator(op_id, &op_mode)) {
-        mp_raise_CellularError("Failed to poll current operator");
+        mp_raise_RuntimeError("Failed to poll current operator");
         return mp_const_none;
     }
 
     uint8_t *op_name;
     if (!Network_GetOperatorNameById(op_id, &op_name)) {
-        mp_raise_CellularError("Failed to poll operator name");
+        mp_raise_RuntimeError("Failed to poll operator name");
         return mp_const_none;
     }
 
@@ -1080,13 +1012,13 @@ STATIC mp_obj_t modcellular_dial(mp_obj_t tn_in) {
     if (mp_obj_is_str(tn_in)) {
         const char* tn = mp_obj_str_get_str(tn_in);
         if (!CALL_Dial(tn)) {
-            mp_raise_CellularError("Failed to initiate an outgoing call");
+            mp_raise_RuntimeError("Failed to initiate an outgoing call");
         }
         return mp_const_none;
     } else {
         if (!mp_obj_is_true(tn_in)) {
             if (!CALL_HangUp()) {
-                mp_raise_CellularError("Failed to hangup call");
+                mp_raise_RuntimeError("Failed to hangup call");
             }
         } else {
             mp_raise_ValueError("The argument must be a string or False");
@@ -1103,10 +1035,10 @@ STATIC mp_obj_t modcellular_stations(void) {
     // ========================================
     cells_n = -1;
     if (!Network_GetCellInfoRequst()) {
-        mp_raise_CellularError("Failed to poll base stations");
+        mp_raise_RuntimeError("Failed to poll base stations");
         return mp_const_none;
     }
-    WAIT_UNTIL(cells_n >= 0, TIMEOUT_STATIONS, 100, mp_raise_CellularError("Station poll timeout"));
+    WAIT_UNTIL(cells_n >= 0, TIMEOUT_STATIONS, 100, mp_raise_OSError(MP_ETIMEDOUT));
 
     mp_obj_t stations[cells_n];
     for (int i=0; i<cells_n; i++) {
@@ -1135,13 +1067,13 @@ STATIC mp_obj_t modcellular_agps_station_data(void) {
     // ========================================
     cells_n = -1;
     if (!Network_GetCellInfoRequst()) {
-        mp_raise_CellularError("Failed to poll base stations");
+        mp_raise_RuntimeError("Failed to poll base stations");
         return mp_const_none;
     }
-    WAIT_UNTIL(cells_n >= 0, TIMEOUT_STATIONS, 100, mp_raise_CellularError("Station poll timeout"));
+    WAIT_UNTIL(cells_n >= 0, TIMEOUT_STATIONS, 100, mp_raise_OSError(MP_ETIMEDOUT));
 
     if (cells_n == 0) {
-        mp_raise_CellularError("No station data available");
+        mp_raise_RuntimeError("No station data available");
         return mp_const_none;
     }
 
@@ -1221,8 +1153,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_call_obj, modcellular_on_call);
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
-    { MP_OBJ_NEW_QSTR(MP_QSTR_CellularError), (mp_obj_t)MP_ROM_PTR(&mp_type_CellularError) },
-
     { MP_OBJ_NEW_QSTR(MP_QSTR_SMS), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_type) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_imei), (mp_obj_t)&modcellular_get_imei_obj },
@@ -1265,6 +1195,21 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     
     { MP_ROM_QSTR(MP_QSTR_SMS_SENT), MP_ROM_INT(SMS_SENT) },
     { MP_ROM_QSTR(MP_QSTR_SMS_RECEIVED), MP_ROM_INT(SMS_RECEIVED) },
+
+    { MP_ROM_QSTR(MP_QSTR_ENOSIM), MP_ROM_INT(NTW_EXC_NOSIM) },
+    { MP_ROM_QSTR(MP_QSTR_EREGD), MP_ROM_INT(NTW_EXC_REG_DENIED) },
+    { MP_ROM_QSTR(MP_QSTR_ESMSSEND), MP_ROM_INT(NTW_EXC_SMS_SEND) },
+    { MP_ROM_QSTR(MP_QSTR_ESMSDROP), MP_ROM_INT(NTW_EXC_SMS_DROP) },
+    { MP_ROM_QSTR(MP_QSTR_ESIMDROP), MP_ROM_INT(NTW_EXC_SIM_DROP) },
+    { MP_ROM_QSTR(MP_QSTR_EATTACHMENT), MP_ROM_INT(NTW_EXC_ATT_FAILED) },
+    { MP_ROM_QSTR(MP_QSTR_EACTIVATION), MP_ROM_INT(NTW_EXC_ACT_FAILED) },
+    { MP_ROM_QSTR(MP_QSTR_ENODIALTONE), MP_ROM_INT(NTW_EXC_CALL_NO_DIAL_TONE) },
+    { MP_ROM_QSTR(MP_QSTR_EBUSY), MP_ROM_INT(NTW_EXC_CALL_BUSY) },
+    { MP_ROM_QSTR(MP_QSTR_ENOANSWER), MP_ROM_INT(NTW_EXC_CALL_NO_ANSWER) },
+    { MP_ROM_QSTR(MP_QSTR_ENOCARRIER), MP_ROM_INT(NTW_EXC_CALL_NO_CARRIER) },
+    { MP_ROM_QSTR(MP_QSTR_ECALLTIMEOUT), MP_ROM_INT(NTW_EXC_CALL_TIMEOUT) },
+    { MP_ROM_QSTR(MP_QSTR_ECALLINPROGRESS), MP_ROM_INT(NTW_EXC_CALL_INPROGRESS) },
+    { MP_ROM_QSTR(MP_QSTR_ECALLUNKNOWN), MP_ROM_INT(NTW_EXC_CALL_UNKNOWN) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_cellular_globals, mp_module_cellular_globals_table);
