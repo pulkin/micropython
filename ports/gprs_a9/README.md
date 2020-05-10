@@ -128,8 +128,8 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   * `.sent` (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
   * `.send()`: sends a message;
   * `.withdraw()`: withdraws SMS from SIM storage;
-  * ~~`.poll()` (int) [staticmethod]: the number of new SMS received~~ use `on_sms` instead;
   * `.list()` (list) [staticmethod]: all SMS from the SIM card;
+  * ~~`.poll()` (int) [staticmethod]: the number of new SMS received~~ use `on_sms` instead;
 * ~~`CellularError(message: str)`~~ `OSError`, `ValueError`, `RuntimeError` are used instead;
 
 #### Methods
@@ -137,7 +137,6 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `get_imei()` (str): the International Mobile Equipment Identity (IMEI) number;
 * `get_iccid()` (str): the Integrated Circuit Card ID (ICCID) number of the inserted SIM card;
 * `get_imsi()` (str): the International Mobile Subscriber Identity (IMSI) number of the inserted SIM card;
-* ~~`network_status_changed()` (bool): indicates whether the network status changed since the last check~~ use `on_status_event` instead;
 * `get_network_status()` (int): cellular network status encoded in an integer. **TODO**: Provide bit-wise specs;
 * `poll_network_exception()`: polls the network exception and raises it, if any;
 * `is_sim_present()` (bool): checks whether a SIM card is present;
@@ -152,11 +151,12 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `agps_station_data()` (int, int, list): a convenience function returning `(mcc, mnc, [(lac, cell_id, signal_strength), ...])` for use in agps location: all ints;
 * `reset()`: resets network settings to defaults. Disconnects GPRS;
 * `gprs([apn: {str, bool}[, user: str, pass: str[, timeout: int]]])` (bool): activate (3 or 4 arguments), deactivate (`gprs(False)`) or obtain the status of GPRS (on/off) if no arguments supplied;
-* ~~`call()` (list[str], [str, None]): calls missed (1st output) and the incoming call number or `None` if no incoming calls at the moment (2nd output)~~ use `on_call` instead;
 * `dial(tn: {str, bool})`: dial a telephone number if string is supplied or hang up a call if `False`;
 * `on_status_event(callback: Callable)`: sets a callback for network status change. The callback is called with a single integer constant indicating the new network state;
 * `on_sms(callback: Callable)`: sets a callback on SMS sent or received. The callback is called with a single integer constant `SMS_SENT` or `SMS_RECEIVED`;
 * `on_call(callback: Callable)`: sets a callback on call events (incoming, hangup, etc.);
+* ~~`network_status_changed()` (bool): indicates whether the network status changed since the last check~~ use `on_status_event` instead;
+* ~~`call()` (list[str], [str, None]): calls missed (1st output) and the incoming call number or `None` if no incoming calls at the moment (2nd output)~~ use `on_call` instead;
 
 ### `usocket` ###
 
