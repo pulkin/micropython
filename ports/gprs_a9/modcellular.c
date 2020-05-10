@@ -886,7 +886,7 @@ STATIC mp_obj_t modcellular_gprs(size_t n_args, const mp_obj_t *args) {
 
             if (!Network_StartActive(context))
                 mp_raise_RuntimeError("Cannot initiate context activation");
-            if (timeout) WAIT_UNTIL(network_status & NTW_ACT_BIT, timeout, 100, mp_raise_OSError(MP_ETIMEDOUT));
+            WAIT_UNTIL(network_status & NTW_ACT_BIT, timeout, 100, mp_raise_OSError(MP_ETIMEDOUT));
         }
 
     } else if (n_args != 0) {
