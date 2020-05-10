@@ -62,6 +62,14 @@
 #define NTW_EXC_ACT_FAILED 0x06
 #define NTW_EXC_SMS_DROP 0x07
 
+#define NTW_EXC_CALL_NO_DIAL_TONE 0x10
+#define NTW_EXC_CALL_BUSY 0x11
+#define NTW_EXC_CALL_NO_ANSWER 0x12
+#define NTW_EXC_CALL_NO_CARRIER 0x13
+#define NTW_EXC_CALL_TIMEOUT 0x14
+#define NTW_EXC_CALL_INPROGRESS 0x15
+#define NTW_EXC_CALL_UNKNOWN 0x16
+
 #define SMS_SENT 1
 #define SMS_RECEIVED 2
 
@@ -116,11 +124,7 @@ int8_t cells_n = 0;
 // -----------
 // Vars: Calls
 // -----------
-
-Buffer_t calls_missed;
-uint8_t calls_missed_buffer[MAX_NUMBER_LEN * (MAX_CALLS_MISSED + 1)];
-uint8_t calls_incoming_now[MAX_NUMBER_LEN] = {0};
-uint8_t calls_incoming_now_flag = 0;
+mp_obj_t call_callback = mp_const_none;
 
 // SMS parsing
 STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record);
@@ -136,13 +140,11 @@ void modcellular_init0(void) {
     // Reset callbacks
     network_status_callback = mp_const_none;
     sms_callback = mp_const_none;
+    call_callback = mp_const_none;
 
     // Reset statuses
     network_exception = NTW_NO_EXC;
     cells_n = 0;
-
-    // Incoming calls buffer
-    Buffer_Init(&calls_missed, calls_missed_buffer, sizeof(calls_missed_buffer));
 
     uint8_t status;
 
@@ -320,19 +322,15 @@ void modcellular_notify_signal(API_Event_t* event) {
 // Calls
 
 void modcellular_notify_call_incoming(API_Event_t* event) {
-    if (strlen((char*) event->pParam1) > MAX_NUMBER_LEN - 1) {
-        event->pParam1[MAX_NUMBER_LEN] = 0;
-    }
-    uint8_t l = strlen((char*) event->pParam1);
-    memcpy(calls_incoming_now, event->pParam1, l + 1);
-    calls_incoming_now_flag = true;
+    if (call_callback && call_callback != mp_const_none)
+        mp_sched_schedule(call_callback, mp_obj_new_str((char*) event->pParam1, strlen((char*) event->pParam1)));
 }
 
 void modcellular_notify_call_hangup(API_Event_t* event) {
-    if (event->param1) {
-        Buffer_Puts(&calls_missed, calls_incoming_now, MAX_NUMBER_LEN);
-        calls_incoming_now_flag = false;
-    }
+    if (event->param2)
+        network_exception = (uint8_t) event->param2 + 0x0F;
+    if (call_callback && call_callback != mp_const_none)
+        mp_sched_schedule(call_callback, mp_obj_new_bool(event->param1));
 }
 
 // Base stations
@@ -730,6 +728,34 @@ STATIC mp_obj_t modcellular_poll_network_exception(void) {
             mp_raise_CellularError("SMS message was discarded due to a timeout or a wrong SMS storage information");
             break;
 
+        case NTW_EXC_CALL_NO_DIAL_TONE:
+            mp_raise_CellularError("No dial tone");
+            break;
+
+        case NTW_EXC_CALL_BUSY:
+            mp_raise_CellularError("Line is busy");
+            break;
+        
+        case NTW_EXC_CALL_NO_ANSWER:
+            mp_raise_CellularError("No answer");
+            break;
+
+        case NTW_EXC_CALL_NO_CARRIER:
+            mp_raise_CellularError("No carrier");
+            break;
+
+        case NTW_EXC_CALL_TIMEOUT:
+            mp_raise_CellularError("Call timeout");
+            break;
+
+        case NTW_EXC_CALL_INPROGRESS:
+            mp_raise_CellularError("Link is being built");
+            break;
+
+        case NTW_EXC_CALL_UNKNOWN:
+            mp_raise_CellularError("Call: unknown error");
+            break;
+
         case NTW_NO_EXC:
             break;
 
@@ -1044,29 +1070,6 @@ STATIC mp_obj_t modcellular_register(size_t n_args, const mp_obj_t *args) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_register_obj, 0, 2, modcellular_register);
 
-STATIC mp_obj_t modcellular_call(void) {
-    // ========================================
-    // Incoming call number.
-    // ========================================
-    mp_obj_t tuple[Buffer_Size(&calls_missed) / MAX_NUMBER_LEN];
-    char tel_n[MAX_NUMBER_LEN];
-
-    for (int i=0; i<sizeof(tuple) / sizeof(mp_obj_t); i++) {
-        Buffer_Gets(&calls_missed, (uint8_t*) tel_n, MAX_NUMBER_LEN);
-        tuple[i] = mp_obj_new_str(tel_n, strlen(tel_n));
-    }
-
-    mp_obj_t items[2] = {
-        mp_obj_new_list(sizeof(tuple) / sizeof(mp_obj_t), tuple),
-        mp_const_none,
-    };
-    if (calls_incoming_now_flag)
-        items[1] = mp_obj_new_str((char*) calls_incoming_now, strlen((char*) calls_incoming_now));
-    return mp_obj_new_tuple(sizeof(items) / sizeof(mp_obj_t), items);
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_call_obj, modcellular_call);
-
 STATIC mp_obj_t modcellular_dial(mp_obj_t tn_in) {
     // ========================================
     // Dial a number.
@@ -1202,6 +1205,19 @@ STATIC mp_obj_t modcellular_on_sms(mp_obj_t callable) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_sms_obj, modcellular_on_sms);
 
+STATIC mp_obj_t modcellular_on_call(mp_obj_t callable) {
+    // ========================================
+    // Sets a callback on incoming calls.
+    // Args:
+    //     callback (Callable): a callback to
+    //     execute on incoming call.
+    // ========================================
+    call_callback = callable;
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_call_obj, modcellular_on_call);
+
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
@@ -1223,13 +1239,13 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_gprs), (mp_obj_t)&modcellular_gprs_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_scan), (mp_obj_t)&modcellular_scan_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&modcellular_register_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_call), (mp_obj_t)&modcellular_call_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_dial), (mp_obj_t)&modcellular_dial_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_stations), (mp_obj_t)&modcellular_stations_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_agps_station_data), (mp_obj_t)&modcellular_agps_station_data_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_status_event), (mp_obj_t)&modcellular_on_status_event_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_sms), (mp_obj_t)&modcellular_on_sms_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_on_call), (mp_obj_t)&modcellular_on_call_obj },
 
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900E), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900E) },
