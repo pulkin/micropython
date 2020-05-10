@@ -109,10 +109,16 @@ Provides cellular functionality.
 As usual, the original API does not give access to radio-level and low-level functionality such as controlling the registration on the cellular network: these are performed in the background automatically.
 The purpose of this module is to have an access to high-level networking (SMS, GPRS, calls) as well as to read the status of various components of cellular networking.
 
+#### Constants
+
 * `NETWORK_FREQ_BAND_GSM_900P`, `NETWORK_FREQ_BAND_GSM_900E`, `NETWORK_FREQ_BAND_GSM_850`, `NETWORK_FREQ_BAND_DCS_1800`, `NETWORK_FREQ_BAND_PCS_1900`, `NETWORK_FREQ_BANDS_ALL`: frequencies;
 * `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERATOR_STATUS_CURRENT`, `OPERATOR_STATUS_DISABLED`: operator statuses;
 * `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_AUTO`: network registration modes;
+* `SMS_SENT`, `SMS_RECEIVED`: constants for event handler `on_sms`;
 * `ENOSIM`, `EREGD`, `ESMSSEND`, `ESMSDROP`, `ESIMDROP`, `EATTACHMENT`, `EACTIVATION`, `ENODIALTONE`, `EBUSY`, `ENOANSWER`, `ENOCARRIER`, `ECALLTIMEOUT`, `ECALLINPROGRESS`, `ECALLUNKNOWN`: extended codes for `OSError`s raised by the module;
+
+#### Classes
+
 * `SMS(phone_number: str, message: str)`: handles SMS messages;
   * `.phone_number` (str): phone number (sender or destination);
   * `.message` (str): message contents;
@@ -125,6 +131,9 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   * ~~`.poll()` (int) [staticmethod]: the number of new SMS received~~ use `on_sms` instead;
   * `.list()` (list) [staticmethod]: all SMS from the SIM card;
 * ~~`CellularError(message: str)`~~ `OSError`, `ValueError`, `RuntimeError` are used instead;
+
+#### Methods
+
 * `get_imei()` (str): the International Mobile Equipment Identity (IMEI) number;
 * `get_iccid()` (str): the Integrated Circuit Card ID (ICCID) number of the inserted SIM card;
 * `get_imsi()` (str): the International Mobile Subscriber Identity (IMSI) number of the inserted SIM card;
