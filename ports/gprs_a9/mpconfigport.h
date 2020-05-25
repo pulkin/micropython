@@ -1,3 +1,6 @@
+// Options to control how MicroPython is built for this port,
+// overriding defaults in py/mpconfig.h.
+
 #ifndef __MPCONFIGPORT_H
 #define __MPCONFIGPORT_H
 
@@ -8,15 +11,15 @@
 // options to control how MicroPython is built
 
 
-#define MICROPY_DEBUG_VERBOSE       (0)
-#define MICROPY_DEBUG_PRINTER       (&mp_debug_print)
+#define MICROPY_DEBUG_VERBOSE               (0)
+#define MICROPY_DEBUG_PRINTER               (&mp_debug_print)
 
 
-#define MICROPY_OBJ_REPR            (MICROPY_OBJ_REPR_A)
-#define MICROPY_NLR_SETJMP          (1)
+#define MICROPY_OBJ_REPR                    (MICROPY_OBJ_REPR_A)
+#define MICROPY_NLR_SETJMP                  (1)
 
 // memory allocation policies
-#define MICROPY_ALLOC_PATH_MAX      (256)
+#define MICROPY_ALLOC_PATH_MAX              (256)
 
 
 // compiler configuration
@@ -30,6 +33,7 @@
 #define MICROPY_OPT_MPZ_BITWISE             (1)
 
 // Python internal features
+#define MICROPY_PY_SYS_EXC_INFO             (1)
 #define MICROPY_ENABLE_COMPILER             (1)
 #define MICROPY_REPL_EVENT_DRIVEN           (0)
 #define MICROPY_ENABLE_GC                   (1)
@@ -78,6 +82,7 @@
 #define MICROPY_PY_BUILTINS_SET             (1)
 #define MICROPY_PY_BUILTINS_SLICE           (1)
 #define MICROPY_PY_BUILTINS_SLICE_ATTRS     (1)
+#define MICROPY_PY_BUILTINS_SLICE_INDICES   (1)
 #define MICROPY_PY_BUILTINS_FROZENSET       (1)
 #define MICROPY_PY_BUILTINS_PROPERTY        (1)
 #define MICROPY_PY_BUILTINS_RANGE_ATTRS     (1)
@@ -129,6 +134,7 @@
 
 
 // extended modules
+#define MICROPY_PY_UASYNCIO                 (1)
 #define MICROPY_PY_UCTYPES                  (1)
 #define MICROPY_PY_UZLIB                    (1)
 #define MICROPY_PY_UJSON                    (1)
@@ -160,10 +166,7 @@
 // #define MICROPY_SSL_AXTLS                   (1)
 // #define MICROPY_SSL_MBEDTLS                 (1)
 // #define MICROPY_PY_USSL_FINALISER           (1)
-// #define MICROPY_PY_WEBSOCKET                (1)
-// #define MICROPY_PY_WEBREPL                  (1)
 #define MICROPY_PY_FRAMEBUF                 (1)
-// #define MICROPY_PY_USOCKET_EVENTS           (MICROPY_PY_WEBREPL)
 
 
 // fatfs configuration
@@ -205,16 +208,6 @@ extern const struct _mp_obj_module_t cellular_module;
 extern const struct _mp_obj_module_t gps_module;
 extern const struct _mp_obj_module_t usocket_module;
 extern const struct _mp_obj_module_t i2c_module;
-extern const struct _mp_obj_module_t st7735_module;
-
-#if MICROPY_PY_USSL
-#define SSL_BUILTIN_MODULE_WEAK_LINKS    { MP_OBJ_NEW_QSTR(MP_QSTR_ssl), (mp_obj_t)&mp_module_ussl }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_hashlib), (mp_obj_t)(&mp_module_uhashlib) }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_cryptolib), (mp_obj_t)(&mp_module_ucryptolib) }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_ssl), (mp_obj_t)(&mp_module_ussl) },
-#else
-#define SSL_BUILTIN_MODULE_WEAK_LINKS
-#endif
 
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_OBJ_NEW_QSTR(MP_QSTR_machine), (mp_obj_t)&mp_module_machine }, \
@@ -225,23 +218,6 @@ extern const struct _mp_obj_module_t st7735_module;
     { MP_OBJ_NEW_QSTR(MP_QSTR_gps), (mp_obj_t)&gps_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_usocket), (mp_obj_t)&usocket_module }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_i2c), (mp_obj_t)&i2c_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_st7735), (mp_obj_t)&st7735_module }, \
-
-#define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_binascii), (mp_obj_t)&mp_module_ubinascii }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_collections), (mp_obj_t)&mp_module_collections }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_errno), (mp_obj_t)&mp_module_uerrno }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_heapq), (mp_obj_t)&mp_module_uheapq }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_io), (mp_obj_t)&mp_module_io }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_json), (mp_obj_t)&mp_module_ujson }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_os), (mp_obj_t)&uos_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&usocket_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_time), (mp_obj_t)&utime_module }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_random), (mp_obj_t)&mp_module_urandom }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_re), (mp_obj_t)&mp_module_ure }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_struct), (mp_obj_t)&mp_module_ustruct }, \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_zlib), (mp_obj_t)&mp_module_uzlib }, \
-    SSL_BUILTIN_MODULE_WEAK_LINKS \
 
 // type definitions for the specific machine
 
@@ -260,14 +236,10 @@ typedef long mp_off_t;
 
 #define MP_PLAT_PRINT_STRN(str, len) mp_hal_stdout_tx_strn_cooked(str, len)
 
-// We need to provide a declaration/definition of alloca()
-// #include <stdlib.h>
-
 #define MICROPY_MPHALPORT_H "mphalport.h"
 #define MICROPY_HW_BOARD_NAME   "A9/A9G module"
 #define MICROPY_HW_MCU_NAME     "RDA8955"
 #define MICROPY_PY_SYS_PLATFORM "gprs_a9"
-
 
 #define MP_STATE_PORT MP_STATE_VM
 
@@ -280,17 +252,16 @@ typedef long mp_off_t;
 #if MICROPY_PY_THREAD
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
-        extern void mp_handle_pending(void); \
-        mp_handle_pending(); \
-        MICROPY_PY_USOCKET_EVENTS_HANDLER \
+        extern void mp_handle_pending(bool); \
+        mp_handle_pending(true); \
         MP_THREAD_GIL_EXIT(); \
         MP_THREAD_GIL_ENTER(); \
     } while (0);
 #else
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
-        extern void mp_handle_pending(void); \
-        mp_handle_pending(); \
+        extern void mp_handle_pending(bool); \
+        mp_handle_pending(true); \
     } while (0);
 #endif
 
