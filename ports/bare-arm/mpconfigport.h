@@ -43,13 +43,14 @@
 #define MICROPY_PY_STRUCT           (0)
 #define MICROPY_PY_SYS              (0)
 #define MICROPY_CPYTHON_COMPAT      (0)
+#define MICROPY_MODULE_GETATTR      (0)
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 #define MICROPY_USE_INTERNAL_PRINTF (0)
 
 // type definitions for the specific machine
 
-#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void *)((mp_uint_t)(p) | 1))
 
 #define UINT_FMT "%lu"
 #define INT_FMT "%ld"

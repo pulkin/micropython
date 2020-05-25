@@ -55,12 +55,13 @@
 #define MICROPY_PY_SYS              (0)
 #define MICROPY_MODULE_FROZEN_MPY   (1)
 #define MICROPY_CPYTHON_COMPAT      (0)
+#define MICROPY_MODULE_GETATTR      (0)
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 
 // type definitions for the specific machine
 
-#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void *)((mp_uint_t)(p) | 1))
 
 // This port is intended to be 32-bit, but unfortunately, int32_t for
 // different targets may be defined in different ways - either as int

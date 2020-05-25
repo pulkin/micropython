@@ -1,12 +1,4 @@
-Important
----------
-
-This repo is only for porting micropython to the GPS+GSM modules A9 and A9G.
-[Go to the port page](https://github.com/pulkin/micropython/tree/master/ports/gprs_a9) or [visit the MicroPython project page.](https://micropython.org/)
-
-The build status displays that of the original repo.
-
-[![Build Status](https://travis-ci.org/micropython/micropython.png?branch=master)](https://travis-ci.org/micropython/micropython) [![Coverage Status](https://coveralls.io/repos/micropython/micropython/badge.png?branch=master)](https://coveralls.io/r/micropython/micropython?branch=master)
+[![Build Status](https://travis-ci.com/micropython/micropython.png?branch=master)](https://travis-ci.com/micropython/micropython) [![Coverage Status](https://coveralls.io/repos/micropython/micropython/badge.png?branch=master)](https://coveralls.io/r/micropython/micropython?branch=master)
 
 The MicroPython project
 =======================
@@ -94,8 +86,8 @@ Alternatively, fallback implementation based on setjmp/longjmp can be used.
 
 To build (see section below for required dependencies):
 
-    $ git submodule update --init
     $ cd ports/unix
+    $ make submodules
     $ make
 
 Then to give it a try:
@@ -107,7 +99,7 @@ Use `CTRL-D` (i.e. EOF) to exit the shell.
 Learn about command-line options (in particular, how to increase heap size
 which may be needed for larger applications):
 
-    $ ./micropython --help
+    $ ./micropython -h
 
 Run complete testsuite:
 
@@ -135,13 +127,14 @@ Debian/Ubuntu/Mint derivative Linux distros, install `build-essential`
 Other dependencies can be built together with MicroPython. This may
 be required to enable extra features or capabilities, and in recent
 versions of MicroPython, these may be enabled by default. To build
-these additional dependencies, first fetch git submodules for them:
+these additional dependencies, in the port directory you're
+interested in (e.g. `ports/unix/`) first execute:
 
-    $ git submodule update --init
+    $ make submodules
 
-Use the same command to get the latest versions of dependencies, as
-they are updated from time to time. After that, in the port directory
-(e.g. `ports/unix/`), execute:
+This will fetch all the relevant git submodules (sub repositories) that
+the port needs.  Use the same command to get the latest versions of
+submodules as they are updated from time to time. After that execute:
 
     $ make deplibs
 
@@ -151,11 +144,11 @@ options (like cross-compiling), the same set of options should be passed
 to `make deplibs`. To actually enable/disable use of dependencies, edit
 `ports/unix/mpconfigport.mk` file, which has inline descriptions of the options.
 For example, to build SSL module (required for `upip` tool described above,
-and so enabled by dfeault), `MICROPY_PY_USSL` should be set to 1.
+and so enabled by default), `MICROPY_PY_USSL` should be set to 1.
 
 For some ports, building required dependences is transparent, and happens
-automatically. They still need to be fetched with the git submodule command
-above.
+automatically.  But they still need to be fetched with the `make submodules`
+command.
 
 The STM32 version
 -----------------
@@ -167,8 +160,8 @@ https://launchpad.net/gcc-arm-embedded
 
 To build:
 
-    $ git submodule update --init
     $ cd ports/stm32
+    $ make submodules
     $ make
 
 You then need to get your board into DFU mode.  On the pyboard, connect the

@@ -47,6 +47,7 @@ typedef struct mp_dynamic_compiler_t {
     bool opt_cache_map_lookup_in_bytecode;
     bool py_builtins_str_unicode;
     uint8_t native_arch;
+    uint8_t nlr_buf_num_regs;
 } mp_dynamic_compiler_t;
 extern mp_dynamic_compiler_t mp_dynamic_compiler;
 #endif
@@ -97,7 +98,7 @@ typedef struct _mp_state_mem_t {
     size_t gc_collected;
     #endif
 
-    #if MICROPY_PY_THREAD
+    #if MICROPY_PY_THREAD && !MICROPY_PY_THREAD_GIL
     // This is a global mutex used to make the GC thread-safe.
     mp_thread_mutex_t gc_mutex;
     #endif
@@ -188,6 +189,10 @@ typedef struct _mp_state_vm_t {
     struct _mp_vfs_mount_t *vfs_mount_table;
     #endif
 
+    #if MICROPY_PY_BLUETOOTH
+    mp_obj_t bluetooth;
+    #endif
+
     //
     // END ROOT POINTER SECTION
     ////////////////////////////////////////////////////////////
@@ -198,7 +203,7 @@ typedef struct _mp_state_vm_t {
     size_t qstr_last_alloc;
     size_t qstr_last_used;
 
-    #if MICROPY_PY_THREAD
+    #if MICROPY_PY_THREAD && !MICROPY_PY_THREAD_GIL
     // This is a global mutex used to make qstr interning thread-safe.
     mp_thread_mutex_t qstr_mutex;
     #endif
