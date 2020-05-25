@@ -27,5 +27,5 @@
  */
 
 // This file is a fucking shame and it may work only with a particular SDK version
-#define errno (*((volatile int *) 0x820a0c14))
+#define errno (*((volatile int *) 0x820a0cb0))
 
