@@ -23,7 +23,7 @@ fi
 function apply_patches()
 {
     echo ">> patching csdk lod"
-    ./libcsdk-patches/patch-lod.py ../../lib/GPRS_C_SDK/platform/csdk/debug/SW_V2129_csdk.lod
+    ./libcsdk-patches/patch-lod.py ../../lib/GPRS_C_SDK/platform/csdk/debug/SW_V2131_csdk.lod
 }
 
 function generate_CSDK_lib()

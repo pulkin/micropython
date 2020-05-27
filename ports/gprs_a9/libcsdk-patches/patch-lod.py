@@ -4,10 +4,10 @@ import sys, re
 fname, = sys.argv[1:]
 nop = "0065"
 patch_list = {
-    0x08185a14: ("Issue 28 -- user name", bytes.fromhex('c0c2c1c2c2c2c3c2'), bytes.fromhex('c0c2' + (nop * 3))),
-    0x08185a46: ("Issue 28 -- password", bytes.fromhex('a0c2a1c2a2c2a3c2'), bytes.fromhex('a0c2' + (nop * 3))),
-    0x08185a74: ("Issue 28 -- APN", bytes.fromhex('80c281c282c283c2'), bytes.fromhex('80c2' + (nop * 3))),
-    0x0817aa3e: ("Issue 50 -- double socket.connect", bytes.fromhex('701836ea'), bytes.fromhex(nop * 2)),
+    0x08187034: ("Issue 28 -- user name (ApiPdpContextToCFWPdpContext)", bytes.fromhex('c0c2c1c2c2c2c3c2'), bytes.fromhex('c0c2' + (nop * 3))),
+    0x08187066: ("Issue 28 -- password (ApiPdpContextToCFWPdpContext)", bytes.fromhex('a0c2a1c2a2c2a3c2'), bytes.fromhex('a0c2' + (nop * 3))),
+    0x08187094: ("Issue 28 -- APN (ApiPdpContextToCFWPdpContext)", bytes.fromhex('80c281c282c283c2'), bytes.fromhex('80c2' + (nop * 3))),
+    0x0817c05a: ("Issue 50 -- double socket.connect (tcp_connect)", bytes.fromhex('7018ccec'), bytes.fromhex(nop * 2)),
 }
 keys_l = sorted(patch_list.keys())
 
