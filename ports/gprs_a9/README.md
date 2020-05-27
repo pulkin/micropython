@@ -99,9 +99,8 @@ See [examples](examples) folder.
 4. [`gps`](#gps): everything related to GPS and assisted positioning
 5. [`machine`](#machine): hardware and power control
 6. [`i2c`](#i2c): i2c implementation
-7. [`st7735`](#ST7735): ST7735 over software SPI display implementation **to be removed**
-8. [Other modules](#Misc)
-9. [Notes](#Notes)
+7. [Other modules](#Misc)
+8. [Notes](#Notes)
 
 ### `cellular`
 
@@ -246,15 +245,6 @@ Provides i2c functionality
 * `transmit(id: int, slave_address: int, data: bytes, timeout: int = I2C_DEFAULT_TIME_OUT)`: transmits data;
 * `mem_receive(id: int, slave_address: int, memory_address: int, memory_size: int, data_length: int, timeout: int = I2C_DEFAULT_TIME_OUT)` (bytes): reads memory data;
 * `mem_transmit(id: int, slave_address: int, memory_address: int, memory_size: int, data: bytes, timeout: int = I2C_DEFAULT_TIME_OUT)` writes data to memory;
-
-### `st7735`
-
-ST7735 displays over software SPI.
-
-* `Display(spi: SPI, dc: Pin, reset: Pin, cs: Pin, width: int, height: int)`: a [framebuffer](https://docs.micropython.org/en/latest/library/framebuf.html) class for displays.
-  In addition to drawing routines (the 565 color format is used), implements this:
-  * `init()`: runs display initialization;
-  * `mode(rotation: int, rgb_bgr: bool)`: sets the display rotation and color order;
 
 ## Misc ##
 

@@ -140,7 +140,6 @@ SRC_C = \
 	modgps.c \
 	modusocket.c \
 	modi2c.c \
-	modst7735.c \
 	machine_adc.c \
 	machine_uart.c \
 	machine_rtc.c
