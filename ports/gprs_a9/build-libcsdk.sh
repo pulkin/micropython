@@ -45,6 +45,4 @@ function generate_CSDK_lib()
     cd ${curr_path_abs}
 }
 
-apply_patches
 generate_CSDK_lib
-

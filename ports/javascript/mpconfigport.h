@@ -36,14 +36,14 @@
 #define MICROPY_QSTR_BYTES_IN_HASH  (2)
 #define MICROPY_ALLOC_PATH_MAX      (256)
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)
-#define MICROPY_EMIT_X64            (0) //BROKEN
-#define MICROPY_EMIT_THUMB          (0) //BROKEN
+#define MICROPY_EMIT_X64            (0) // BROKEN
+#define MICROPY_EMIT_THUMB          (0) // BROKEN
 #define MICROPY_EMIT_INLINE_THUMB   (0)
 #define MICROPY_COMP_MODULE_CONST   (0)
 #define MICROPY_COMP_CONST          (1)
 #define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN (1)
 #define MICROPY_COMP_TRIPLE_TUPLE_ASSIGN (0)
-#define MICROPY_MEM_STATS           (0) //BROKEN
+#define MICROPY_MEM_STATS           (0) // BROKEN
 #define MICROPY_DEBUG_PRINTERS      (0)
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_GC_ALLOC_THRESHOLD  (1)
@@ -131,27 +131,12 @@ extern const struct _mp_obj_module_t mp_module_utime;
 #define MICROPY_PORT_BUILTIN_MODULES \
     { MP_ROM_QSTR(MP_QSTR_utime), MP_ROM_PTR(&mp_module_utime) }, \
 
-#define MICROPY_PORT_BUILTIN_MODULE_WEAK_LINKS \
-    { MP_ROM_QSTR(MP_QSTR_binascii), MP_ROM_PTR(&mp_module_ubinascii) }, \
-    { MP_ROM_QSTR(MP_QSTR_collections), MP_ROM_PTR(&mp_module_collections) }, \
-    { MP_ROM_QSTR(MP_QSTR_re), MP_ROM_PTR(&mp_module_ure) }, \
-    { MP_ROM_QSTR(MP_QSTR_zlib), MP_ROM_PTR(&mp_module_uzlib) }, \
-    { MP_ROM_QSTR(MP_QSTR_json), MP_ROM_PTR(&mp_module_ujson) }, \
-    { MP_ROM_QSTR(MP_QSTR_heapq), MP_ROM_PTR(&mp_module_uheapq) }, \
-    { MP_ROM_QSTR(MP_QSTR_hashlib), MP_ROM_PTR(&mp_module_uhashlib) }, \
-    { MP_ROM_QSTR(MP_QSTR_io), MP_ROM_PTR(&mp_module_io) }, \
-    { MP_ROM_QSTR(MP_QSTR_random), MP_ROM_PTR(&mp_module_urandom) }, \
-    { MP_ROM_QSTR(MP_QSTR_time), MP_ROM_PTR(&mp_module_utime) }, \
-    { MP_ROM_QSTR(MP_QSTR_select), MP_ROM_PTR(&mp_module_uselect) }, \
-    { MP_ROM_QSTR(MP_QSTR_struct), MP_ROM_PTR(&mp_module_ustruct) }, \
-    { MP_ROM_QSTR(MP_QSTR_errno), MP_ROM_PTR(&mp_module_uerrno) }, \
-
-//#define MICROPY_EVENT_POLL_HOOK {ets_event_poll();}
+// #define MICROPY_EVENT_POLL_HOOK {ets_event_poll();}
 #if MICROPY_PY_THREAD
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
-        extern void mp_handle_pending(void); \
-        mp_handle_pending(); \
+        extern void mp_handle_pending(bool); \
+        mp_handle_pending(true); \
         if (pyb_thread_enabled) { \
             MP_THREAD_GIL_EXIT(); \
             pyb_thread_yield(); \
@@ -164,8 +149,8 @@ extern const struct _mp_obj_module_t mp_module_utime;
 #else
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
-        extern void mp_handle_pending(void); \
-        mp_handle_pending(); \
+        extern void mp_handle_pending(bool); \
+        mp_handle_pending(true); \
     } while (0);
 
 #define MICROPY_THREAD_YIELD()
@@ -177,13 +162,13 @@ extern const struct _mp_obj_module_t mp_module_utime;
         vm_hook_divisor = MICROPY_VM_HOOK_COUNT; \
         extern void mp_js_hook(void); \
         mp_js_hook(); \
-    }
+}
 #define MICROPY_VM_HOOK_LOOP MICROPY_VM_HOOK_POLL
 #define MICROPY_VM_HOOK_RETURN MICROPY_VM_HOOK_POLL
 
 // type definitions for the specific machine
 
-//#define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
+// #define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))
 
 // This port is intended to be 32-bit, but unfortunately, int32_t for
 // different targets may be defined in different ways - either as int

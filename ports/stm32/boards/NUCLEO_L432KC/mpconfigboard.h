@@ -4,11 +4,13 @@
 #define MICROPY_EMIT_THUMB          (0)
 #define MICROPY_EMIT_INLINE_THUMB   (0)
 #define MICROPY_PY_BUILTINS_COMPLEX (0)
+#define MICROPY_PY_GENERATOR_PEND_THROW (0)
 #define MICROPY_PY_USOCKET          (0)
 #define MICROPY_PY_NETWORK          (0)
 #define MICROPY_PY_STM              (0)
 #define MICROPY_PY_PYB_LEGACY       (0)
-#define MICROPY_VFS_FAT             (0)
+#define MICROPY_PY_UHEAPQ           (0)
+#define MICROPY_PY_UTIMEQ           (0)
 
 #define MICROPY_HW_ENABLE_INTERNAL_FLASH_STORAGE (0)
 #define MICROPY_HW_ENABLE_RTC       (1)
@@ -24,6 +26,9 @@
 #define MICROPY_HW_CLK_PLLR (2)
 #define MICROPY_HW_CLK_PLLP (7)
 #define MICROPY_HW_CLK_PLLQ (2)
+
+// The board has an external 32kHz crystal
+#define MICROPY_HW_RTC_USE_LSE      (1)
 
 // UART config
 #define MICROPY_HW_UART1_TX     (pin_B6)

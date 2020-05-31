@@ -38,7 +38,6 @@
 #include "ftp.h"
 #include "pybwdt.h"
 #include "modusocket.h"
-#include "mpexception.h"
 #include "modnetwork.h"
 #include "modwlan.h"
 
@@ -88,7 +87,7 @@ void TASK_Servers (void *pvParameters) {
     telnet_init();
     ftp_init();
 
-    for ( ;; ) {
+    for ( ;;) {
 
         if (servers_data.do_enable) {
             // enable network services
@@ -97,16 +96,14 @@ void TASK_Servers (void *pvParameters) {
             // now set/clear the flags
             servers_data.enabled = true;
             servers_data.do_enable = false;
-        }
-        else if (servers_data.do_disable) {
+        } else if (servers_data.do_disable) {
             // disable network services
             telnet_disable();
             ftp_disable();
             // now clear the flags
             servers_data.do_disable = false;
             servers_data.enabled = false;
-        }
-        else if (servers_data.do_reset) {
+        } else if (servers_data.do_reset) {
             // resetting the servers is needed to prevent half-open sockets
             servers_data.do_reset = false;
             if (servers_data.enabled) {
@@ -120,8 +117,7 @@ void TASK_Servers (void *pvParameters) {
 
         if (cycle) {
             telnet_run();
-        }
-        else {
+        } else {
             ftp_run();
         }
 
@@ -187,7 +183,7 @@ void servers_close_socket (int16_t *sd) {
 
 void servers_set_login (char *user, char *pass) {
     if (strlen(user) > SERVERS_USER_PASS_LEN_MAX || strlen(pass) > SERVERS_USER_PASS_LEN_MAX) {
-        mp_raise_ValueError(mpexception_value_invalid_arguments);
+        mp_raise_ValueError(MP_ERROR_TEXT("invalid argument(s) value"));
     }
     memcpy(servers_user, user, SERVERS_USER_PASS_LEN_MAX);
     memcpy(servers_pass, pass, SERVERS_USER_PASS_LEN_MAX);
@@ -196,7 +192,7 @@ void servers_set_login (char *user, char *pass) {
 void servers_set_timeout (uint32_t timeout) {
     if (timeout < SERVERS_MIN_TIMEOUT_MS) {
         // timeout is too low
-        mp_raise_ValueError(mpexception_value_invalid_arguments);
+        mp_raise_ValueError(MP_ERROR_TEXT("invalid argument(s) value"));
     }
     servers_data.timeout = timeout;
 }

@@ -1,4 +1,4 @@
-mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))  #获取当前正在执行的makefile的绝对路径
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))  
 PATH_CURR := $(strip $(patsubst %/, %, $(dir ${mkfile_path})))
 PATH_MICROPY := $(strip $(patsubst %/ports/, %, $(dir ${PATH_CURR})))
 CSDK_PATH := ${PATH_MICROPY}/lib/GPRS_C_SDK
@@ -25,14 +25,20 @@ $(info Compile Version:$(CFG_RELEASE))
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h
 
+#############################################
 
+# MicroPython feature configurations
+MICROPY_PY_USSL = 1
+MICROPY_SSL_AXTLS = 1
+AXTLS_DEFS_EXTRA = -Dabort=abort_ -include time.h -DRT_MAX_PLAIN_LENGTH=1024 -DRT_EXTRA=4096
+
+FROZEN_MANIFEST ?= boards/manifest.py
+
+# include py core make definitions
+include $(TOP)/py/py.mk
 
 #############################################
 
-
-FROZEN_MPY_DIR ?= modules
-
-#############################################
 CROSS_COMPILE = $(CSDTK_PATH)/bin/mips-elf-
 MAKE = make
 LD  := $(CROSS_COMPILE)ld
@@ -86,14 +92,9 @@ LDFLAGS	+= -L${LIBGCC_PATH} -lgcc
 LDFLAGS += --warn-common  --error-unresolved-symbols 
 FULL_SRC_OBJECTS := 
 LD_OPTIONAL_OBJECTS := 
-########################################3###
+
 INC += -I.
 INC += -I$(TOP)
-# INC += -I$(TOP)/lib/axtls/crypto
-# INC += -I$(TOP)/lib/axtls/ssl
-# INC += -I$(TOP)/extmod/axtls-include
-# INC += -I$(TOP)/extmod/crypto-algorithms
-# INC += -I$(TOP)/lib/netutils
 INC += -I$(BUILD_PATH_ABS)
 INC += -I${CSDK_PATH}/include \
        -I${CSDK_PATH}/include/std_inc \
@@ -118,8 +119,6 @@ CFLAGS = $(INC) -Wshadow \
 CFLAGS += $(CFLAGS_MOD)
 
 ASFLAGS = --warn -EL -march=xcpu -mtune=xcpu
-
-LIBS =
 
 SRC_C = \
 	main.c \
@@ -147,11 +146,11 @@ SRC_C = \
 
 LIB_SRC_C = $(addprefix lib/,\
 	mp-readline/readline.c \
+	netutils/netutils.c \
+	timeutils/timeutils.c \
 	utils/pyexec.c \
 	utils/interrupt_char.c \
 	utils/sys_stdio_mphal.c \
-	timeutils/timeutils.c \
-	netutils/netutils.c \
 	)
 
 LIB_SRC_C += \
@@ -164,12 +163,6 @@ DRIVERS_SRC_C = $(addprefix drivers/,\
 
 SRC_S = \
 	gchelper.s
-
-MICROPY_PY_USSL = 1
-MICROPY_SSL_AXTLS = 1
-AXTLS_DEFS_EXTRA = -Dabort=abort_ -include time.h -DRT_MAX_PLAIN_LENGTH=1024 -DRT_EXTRA=4096
-# include py core make definitions
-include $(TOP)/py/py.mk
 
 OBJ_MP =
 OBJ_MP += $(PY_O)
@@ -244,10 +237,6 @@ targetgen:
 	@${ECHO} "#############################################"    >> $(TARGET_FILE)
 	@${ECHO} "# others"                                  	    >> $(TARGET_FILE)
 	@${ECHO} "#############################################"    >> $(TARGET_FILE)
-
-
-
-
 
 
 include $(TOP)/py/mkrules.mk

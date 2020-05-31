@@ -14,15 +14,23 @@ include ../../py/mkenv.mk
 -include mpconfigport.mk
 include $(BOARD_DIR)/mpconfigboard.mk
 
-# qstr definitions (must come before including py.mk)
-QSTR_DEFS = qstrdefsport.h $(BUILD)/pins_qstr.h $(BUILD)/modstm_qstr.h
-QSTR_GLOBAL_DEPENDENCIES = mpconfigboard_common.h $(BOARD_DIR)/mpconfigboard.h
+# Files that are generated and needed before the QSTR build.
+QSTR_GENERATED_HEADERS = $(BUILD)/pins_qstr.h $(BUILD)/modstm_qstr.h
 
-# directory containing scripts to be frozen as bytecode
-FROZEN_MPY_DIR ?= modules
+# qstr definitions (must come before including py.mk)
+QSTR_DEFS = qstrdefsport.h $(QSTR_GENERATED_HEADERS)
+QSTR_GLOBAL_DEPENDENCIES = mpconfigboard_common.h $(BOARD_DIR)/mpconfigboard.h $(QSTR_GENERATED_HEADERS)
+
+# MicroPython feature configurations
+MICROPY_ROM_TEXT_COMPRESSION ?= 1
+
+# File containing description of content to be frozen into firmware.
+FROZEN_MANIFEST ?= boards/manifest.py
 
 # include py core make definitions
 include $(TOP)/py/py.mk
+
+GIT_SUBMODULES = lib/lwip lib/mbedtls lib/mynewt-nimble lib/stm32lib
 
 MCU_SERIES_UPPER = $(shell echo $(MCU_SERIES) | tr '[:lower:]' '[:upper:]')
 CMSIS_MCU_LOWER = $(shell echo $(CMSIS_MCU) | tr '[:upper:]' '[:lower:]')
@@ -32,13 +40,13 @@ CMSIS_DIR=$(TOP)/lib/stm32lib/CMSIS/STM32$(MCU_SERIES_UPPER)xx/Include
 HAL_DIR=lib/stm32lib/STM32$(MCU_SERIES_UPPER)xx_HAL_Driver
 USBDEV_DIR=usbdev
 #USBHOST_DIR=usbhost
-FATFS_DIR=lib/oofatfs
 DFU=$(TOP)/tools/dfu.py
 # may need to prefix dfu-util with sudo
 USE_PYDFU ?= 1
 PYDFU ?= $(TOP)/tools/pydfu.py
 DFU_UTIL ?= dfu-util
-DEVICE=0483:df11
+BOOTLOADER_DFU_USB_VID ?= 0x0483
+BOOTLOADER_DFU_USB_PID ?= 0xDF11
 STFLASH ?= st-flash
 OPENOCD ?= openocd
 OPENOCD_CONFIG ?= boards/openocd_stm32f4.cfg
@@ -62,13 +70,18 @@ INC += -Ilwip_inc
 CFLAGS_CORTEX_M = -mthumb
 
 # Select hardware floating-point support
+SUPPORTS_HARDWARE_FP_SINGLE = 0
+SUPPORTS_HARDWARE_FP_DOUBLE = 0
 ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),STM32F765xx STM32F767xx STM32F769xx STM32H743xx))
 CFLAGS_CORTEX_M += -mfpu=fpv5-d16 -mfloat-abi=hard
+SUPPORTS_HARDWARE_FP_SINGLE = 1
+SUPPORTS_HARDWARE_FP_DOUBLE = 1
 else
 ifeq ($(MCU_SERIES),$(filter $(MCU_SERIES),f0 l0))
 CFLAGS_CORTEX_M += -msoft-float
 else
 CFLAGS_CORTEX_M += -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+SUPPORTS_HARDWARE_FP_SINGLE = 1
 endif
 endif
 
@@ -81,7 +94,7 @@ CFLAGS_MCU_l4 = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4
 CFLAGS_MCU_h7 = $(CFLAGS_CORTEX_M) -mtune=cortex-m7 -mcpu=cortex-m7
 CFLAGS_MCU_wb = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4
 
-CFLAGS = $(INC) -Wall -Wpointer-arith -Werror -std=gnu99 -nostdlib $(CFLAGS_MOD) $(CFLAGS_EXTRA)
+CFLAGS += $(INC) -Wall -Wpointer-arith -Werror -Wdouble-promotion -Wfloat-conversion -std=gnu99 -nostdlib $(CFLAGS_MOD) $(CFLAGS_EXTRA)
 CFLAGS += -D$(CMSIS_MCU)
 CFLAGS += $(CFLAGS_MCU_$(MCU_SERIES))
 CFLAGS += $(COPT)
@@ -89,6 +102,15 @@ CFLAGS += -I$(BOARD_DIR)
 CFLAGS += -DSTM32_HAL_H='<stm32$(MCU_SERIES)xx_hal.h>'
 CFLAGS += -DMICROPY_HW_VTOR=$(TEXT0_ADDR)
 
+# Configure for nan-boxing object model if requested
+ifeq ($(NANBOX),1)
+CFLAGS += -DMP_CONFIGFILE='"mpconfigport_nanbox.h"'
+ifneq ($(MICROPY_FLOAT_IMPL),none)
+MICROPY_FLOAT_IMPL = double
+endif
+endif
+
+# Configure floating point support
 ifeq ($(MICROPY_FLOAT_IMPL),double)
 CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_DOUBLE
 else
@@ -96,7 +118,7 @@ ifeq ($(MICROPY_FLOAT_IMPL),none)
 CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_NONE
 else
 CFLAGS += -DMICROPY_FLOAT_IMPL=MICROPY_FLOAT_IMPL_FLOAT
-CFLAGS += -fsingle-precision-constant -Wdouble-promotion
+CFLAGS += -fsingle-precision-constant
 endif
 endif
 
@@ -119,15 +141,14 @@ endif
 # Options for mpy-cross
 MPY_CROSS_FLAGS += -march=armv7m
 
-SRC_LIB = $(addprefix lib/,\
+LIB_SRC_C = $(addprefix lib/,\
 	libc/string0.c \
-	oofatfs/ff.c \
-	oofatfs/ffunicode.c \
 	mp-readline/readline.c \
 	netutils/netutils.c \
 	netutils/trace.c \
 	netutils/dhcpserver.c \
 	timeutils/timeutils.c \
+	utils/gchelper_native.c \
 	utils/pyexec.c \
 	utils/interrupt_char.c \
 	utils/sys_stdio_mphal.c \
@@ -135,7 +156,7 @@ SRC_LIB = $(addprefix lib/,\
 	)
 
 ifeq ($(MICROPY_FLOAT_IMPL),double)
-SRC_LIBM = $(addprefix lib/libm_dbl/,\
+LIBM_SRC_C = $(addprefix lib/libm_dbl/,\
 	__cos.c \
 	__expo2.c \
 	__fpclassify.c \
@@ -173,14 +194,18 @@ SRC_LIBM = $(addprefix lib/libm_dbl/,\
 	scalbn.c \
 	sin.c \
 	sinh.c \
-	sqrt.c \
 	tan.c \
 	tanh.c \
 	tgamma.c \
 	trunc.c \
 	)
+ifeq ($(SUPPORTS_HARDWARE_FP_DOUBLE),1)
+LIBM_SRC_C += lib/libm_dbl/thumb_vfp_sqrt.c
 else
-SRC_LIBM = $(addprefix lib/libm/,\
+LIBM_SRC_C += lib/libm_dbl/sqrt.c
+endif
+else
+LIBM_SRC_C = $(addprefix lib/libm/,\
 	math.c \
 	acoshf.c \
 	asinfacosf.c \
@@ -197,6 +222,7 @@ SRC_LIBM = $(addprefix lib/libm/,\
 	kf_tan.c \
 	log1pf.c \
 	nearbyintf.c \
+	roundf.c \
 	sf_cos.c \
 	sf_erf.c \
 	sf_frexp.c \
@@ -207,11 +233,18 @@ SRC_LIBM = $(addprefix lib/libm/,\
 	wf_lgamma.c \
 	wf_tgamma.c \
 	)
-ifeq ($(MCU_SERIES),$(filter $(MCU_SERIES),f0 l0))
-SRC_LIBM += lib/libm/ef_sqrt.c
+ifeq ($(SUPPORTS_HARDWARE_FP_SINGLE),1)
+LIBM_SRC_C += lib/libm/thumb_vfp_sqrtf.c
 else
-SRC_LIBM += lib/libm/thumb_vfp_sqrtf.c
+LIBM_SRC_C += lib/libm/ef_sqrt.c
 endif
+endif
+
+LIBM_O = $(addprefix $(BUILD)/, $(LIBM_SRC_C:.c=.o))
+
+# Too many warnings in libm_dbl, disable for now.
+ifeq ($(MICROPY_FLOAT_IMPL),double)
+$(LIBM_O): CFLAGS := $(filter-out -Wdouble-promotion -Wfloat-conversion, $(CFLAGS))
 endif
 
 EXTMOD_SRC_C = $(addprefix extmod/,\
@@ -238,8 +271,10 @@ SRC_C = \
 	irq.c \
 	pendsv.c \
 	systick.c  \
+	softtimer.c  \
 	powerctrl.c \
 	powerctrlboot.c \
+	rfcore.c \
 	pybthread.c \
 	factoryreset.c \
 	timer.c \
@@ -256,6 +291,8 @@ SRC_C = \
 	qspi.c \
 	uart.c \
 	can.c \
+	fdcan.c \
+	pyb_can.c \
 	usb.c \
 	wdt.c \
 	eth.c \
@@ -264,6 +301,7 @@ SRC_C = \
 	machine_adc.c \
 	machine_i2c.c \
 	machine_spi.c \
+	machine_timer.c \
 	machine_uart.c \
 	modmachine.c \
 	modpyb.c \
@@ -377,6 +415,12 @@ SRC_USBDEV = $(addprefix $(USBDEV_DIR)/,\
 	class/src/usbd_msc_scsi.c \
 	)
 
+ifeq ($(MICROPY_PY_BLUETOOTH),1)
+CFLAGS_MOD += -DMICROPY_PY_BLUETOOTH=1
+CFLAGS_MOD += -DMICROPY_PY_BLUETOOTH_ENABLE_CENTRAL_MODE=1
+CFLAGS_MOD += -DMICROPY_PY_BLUETOOTH_GATTS_ON_READ_CALLBACK=1
+endif
+
 ifeq ($(MICROPY_PY_NETWORK_CYW43),1)
 CFLAGS_MOD += -DMICROPY_PY_NETWORK_CYW43=1
 SRC_C += sdio.c
@@ -389,6 +433,10 @@ ifneq ($(MICROPY_PY_WIZNET5K),0)
 WIZNET5K_DIR=drivers/wiznet5k
 INC += -I$(TOP)/$(WIZNET5K_DIR)
 CFLAGS_MOD += -DMICROPY_PY_WIZNET5K=$(MICROPY_PY_WIZNET5K) -D_WIZCHIP_=$(MICROPY_PY_WIZNET5K)
+ifeq ($(MICROPY_PY_LWIP),1)
+# When using MACRAW mode (with lwIP), maximum buffer space must be used for the raw socket
+CFLAGS_MOD += -DWIZCHIP_USE_MAX_BUFFER
+endif
 SRC_MOD += network_wiznet5k.c modnwwiznet5k.c
 SRC_MOD += $(addprefix $(WIZNET5K_DIR)/,\
 	ethernet/w$(MICROPY_PY_WIZNET5K)/w$(MICROPY_PY_WIZNET5K).c \
@@ -426,10 +474,36 @@ CFLAGS_MOD += -DMBEDTLS_CONFIG_FILE='"mbedtls/mbedtls_config.h"'
 SRC_MOD += mbedtls/mbedtls_port.c
 endif
 
+ifeq ($(MICROPY_PY_BLUETOOTH),1)
+
+SRC_C += modbluetooth_hci.c
+
+ifeq ($(MICROPY_BLUETOOTH_NIMBLE),1)
+ifeq ($(MICROPY_BLUETOOTH_BTSTACK),1)
+$(error Cannot enable both NimBLE and BTstack at the same time)
+endif
+endif
+
+ifeq ($(MICROPY_BLUETOOTH_NIMBLE),1)
+include $(TOP)/extmod/nimble/nimble.mk
+SRC_C += nimble.c
+endif
+
+ifeq ($(MICROPY_BLUETOOTH_BTSTACK),1)
+include $(TOP)/extmod/btstack/btstack.mk
+SRC_C += btstack.c
+endif
+
+ifeq ($(MICROPY_PY_NETWORK_CYW43),1)
+DRIVERS_SRC_C += drivers/cyw43/cywbt.c
+endif
+
+endif
+
 OBJ =
 OBJ += $(PY_O)
-OBJ += $(addprefix $(BUILD)/, $(SRC_LIB:.c=.o))
-OBJ += $(addprefix $(BUILD)/, $(SRC_LIBM:.c=.o))
+OBJ += $(addprefix $(BUILD)/, $(LIB_SRC_C:.c=.o))
+OBJ += $(LIBM_O)
 OBJ += $(addprefix $(BUILD)/, $(EXTMOD_SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(DRIVERS_SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
@@ -448,7 +522,7 @@ $(BUILD)/lib/libc/string0.o: COPT += -O2
 # If we compile these using -O0 then it won't fit. So if you really want these
 # to be compiled with -O0, then edit boards/common.ld (in the .isr_vector section)
 # and comment out the following lines.
-$(BUILD)/$(FATFS_DIR)/ff.o: COPT += -Os
+$(BUILD)/$(OOFATFS_DIR)/ff.o: COPT += -Os
 $(filter $(PY_BUILD)/../extmod/vfs_fat_%.o, $(PY_O)): COPT += -Os
 $(PY_BUILD)/formatfloat.o: COPT += -Os
 $(PY_BUILD)/parsenum.o: COPT += -Os
@@ -461,13 +535,13 @@ $(TOP)/lib/stm32lib/README.md:
 	$(ECHO) "stm32lib submodule not found, fetching it now..."
 	(cd $(TOP) && git submodule update --init lib/stm32lib)
 
-ifneq ($(FROZEN_DIR),)
+ifneq ($(FROZEN_MANIFEST)$(FROZEN_DIR),)
 # To use frozen source modules, put your .py files in a subdirectory (eg scripts/)
 # and then invoke make with FROZEN_DIR=scripts (be sure to build from scratch).
 CFLAGS += -DMICROPY_MODULE_FROZEN_STR
 endif
 
-ifneq ($(FROZEN_MPY_DIR),)
+ifneq ($(FROZEN_MANIFEST)$(FROZEN_MPY_DIR),)
 # To use frozen bytecode, put your .py files in a subdirectory (eg frozen/) and
 # then invoke make with FROZEN_MPY_DIR=frozen (be sure to build from scratch).
 CFLAGS += -DMICROPY_QSTR_EXTRA_POOL=mp_qstr_frozen_const_pool
@@ -479,9 +553,9 @@ endif
 deploy: $(BUILD)/firmware.dfu
 	$(ECHO) "Writing $< to the board"
 ifeq ($(USE_PYDFU),1)
-	$(Q)$(PYTHON) $(PYDFU) -u $<
+	$(Q)$(PYTHON) $(PYDFU) --vid $(BOOTLOADER_DFU_USB_VID) --pid $(BOOTLOADER_DFU_USB_PID) -u $<
 else
-	$(Q)$(DFU_UTIL) -a 0 -d $(DEVICE) -D $<
+	$(Q)$(DFU_UTIL) -a 0 -d $(BOOTLOADER_DFU_USB_VID):$(BOOTLOADER_DFU_USB_PID) -D $<
 endif
 
 # A board should specify TEXT0_ADDR if to use a different location than the
@@ -505,7 +579,7 @@ deploy-openocd: $(BUILD)/firmware.dfu
 $(BUILD)/firmware.dfu: $(BUILD)/firmware.elf
 	$(ECHO) "Create $@"
 	$(Q)$(OBJCOPY) -O binary $(addprefix -j ,$(TEXT0_SECTIONS)) $^ $(BUILD)/firmware.bin
-	$(Q)$(PYTHON) $(DFU) -b $(TEXT0_ADDR):$(BUILD)/firmware.bin $@
+	$(Q)$(PYTHON) $(DFU) -D $(BOOTLOADER_DFU_USB_VID):$(BOOTLOADER_DFU_USB_PID) -b $(TEXT0_ADDR):$(BUILD)/firmware.bin $@
 
 else
 # TEXT0_ADDR and TEXT1_ADDR are specified so split firmware between these locations
@@ -527,7 +601,7 @@ $(BUILD)/firmware.dfu: $(BUILD)/firmware.elf
 	$(ECHO) "GEN $@"
 	$(Q)$(OBJCOPY) -O binary $(addprefix -j ,$(TEXT0_SECTIONS)) $^ $(BUILD)/firmware0.bin
 	$(Q)$(OBJCOPY) -O binary $(addprefix -j ,$(TEXT1_SECTIONS)) $^ $(BUILD)/firmware1.bin
-	$(Q)$(PYTHON) $(DFU) -b $(TEXT0_ADDR):$(BUILD)/firmware0.bin -b $(TEXT1_ADDR):$(BUILD)/firmware1.bin $@
+	$(Q)$(PYTHON) $(DFU) -D $(BOOTLOADER_DFU_USB_VID):$(BOOTLOADER_DFU_USB_PID) -b $(TEXT0_ADDR):$(BUILD)/firmware0.bin -b $(TEXT1_ADDR):$(BUILD)/firmware1.bin $@
 
 endif
 
@@ -566,7 +640,7 @@ GEN_CDCINF_FILE = $(HEADER_BUILD)/pybcdc.inf
 GEN_CDCINF_HEADER = $(HEADER_BUILD)/pybcdc_inf.h
 
 # List of sources for qstr extraction
-SRC_QSTR += $(SRC_C) $(SRC_MOD) $(SRC_LIB) $(EXTMOD_SRC_C)
+SRC_QSTR += $(SRC_C) $(SRC_MOD) $(LIB_SRC_C) $(EXTMOD_SRC_C)
 # Append any auto-generated sources that are needed by sources listed in
 # SRC_QSTR
 SRC_QSTR_AUTO_DEPS += $(GEN_CDCINF_HEADER)
@@ -607,7 +681,7 @@ CMSIS_MCU_HDR = $(CMSIS_DIR)/$(CMSIS_MCU_LOWER).h
 modmachine.c: $(GEN_PLLFREQTABLE_HDR)
 $(GEN_PLLFREQTABLE_HDR): $(PLLVALUES) | $(HEADER_BUILD)
 	$(ECHO) "GEN $@"
-	$(Q)$(PYTHON) $(PLLVALUES) -c $(if $(filter $(MCU_SERIES),f7),--relax-pll48,) file:$(BOARD_DIR)/stm32$(MCU_SERIES)xx_hal_conf.h > $@
+	$(Q)$(PYTHON) $(PLLVALUES) -c -m $(MCU_SERIES) file:$(BOARD_DIR)/stm32$(MCU_SERIES)xx_hal_conf.h > $@
 
 $(BUILD)/modstm.o: $(GEN_STMCONST_HDR)
 # Use a pattern rule here so that make will only call make-stmconst.py once to
