@@ -93,6 +93,25 @@ See [examples](examples) folder.
 
 ## API
 
+Full module list
+```python
+>>> help('modules')
+__main__          math              ubinascii         urandom
+_boot             micropython       ucollections      ure
+_uasyncio         network           ucryptolib        uselect
+builtins          ntptime           uctypes           usocket
+cellular          sys               uerrno            ussl
+chip              uarray            uhashlib          ustruct
+cmath             uasyncio/__init__ uheapq            utime
+framebuf          uasyncio/core     uio               utimeq
+gc                uasyncio/event    ujson             uzlib
+gps               uasyncio/funcs    uos
+i2c               uasyncio/lock     upip
+machine           uasyncio/stream   upip_utarfile
+```
+
+Featured:
+
 1. [`cellular`](#cellular), `network`: SMS, calls, connectivity
 2. [`usocket`](#usocket): sockets over GPRS
 3. [`ssl`](#ussl): SSL over sockets
