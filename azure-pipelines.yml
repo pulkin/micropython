@@ -16,9 +16,6 @@ stages:
     steps:
     - checkout: self
 
-    - script: git submodule update --init lib/axtls lib/berkeley-db-1.xx
-      displayName: 'Checkout submodules'
-  
     - script: |
         sudo apt-get install python-pip python3-pip
         sudo pip3 install pyparsing
@@ -30,6 +27,7 @@ stages:
     - script: |
         export PATH=$(pwd)/xtensa-lx106-elf/bin:$PATH
         make ${MAKEOPTS} -C mpy-cross
+        make ${MAKEOPTS} -C ports/esp8266 submodules
         make ${MAKEOPTS} -C ports/esp8266
       displayName: 'Build'
 
