@@ -32,7 +32,7 @@ stages:
       displayName: 'Build'
 
     - script: |
-        cd ports/esp8266/build
+        cd ports/esp8266/build-GENERIC
         find . \! -name '*.bin' -delete
         cd -
       displayName: 'Cleanup build before publishing'
