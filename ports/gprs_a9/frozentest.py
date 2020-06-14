@@ -298,9 +298,6 @@ if sim_present:
     print("SMS")
     print("----------------")
 
-    sms_received = cel.SMS.poll()
-    print("SMS received count:", sms_received)
-
     sms_list = cel.SMS.list()
     print("SMS:", sms_list)
     assert len(sms_list) > 0
@@ -322,9 +319,9 @@ if sim_present:
         # LEBARA NL credentials
         assert cel.gprs("internet", "", "")
 
-        cb = cel.network_status_changed()
-        print("Status changed:", cb, "->", cel.get_network_status())
-        assert cb
+        status = cel.get_network_status()
+        print("Status:", status)
+        assert status == 17
 
         import socket as sock
         loc_ip = sock.get_local_ip()
