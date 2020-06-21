@@ -81,6 +81,14 @@ Keywords: **GPRS, background, connection**
 
 Modules: `cellular`, `socket`
 
+[example_43_ussd.py](example_43_ussd.py)
+
+Demonstrates how to preform a simple USSD request.
+
+Keywords: **USSD**
+
+Modules: `cellular`
+
 [example_50_mqtt.py](example_50_mqtt.py)
 
 Reports location to a test MQTT server via cellular connection using `umqtt` from [micropython-lib](https://github.com/micropython/micropython-lib).
