@@ -347,6 +347,20 @@ void EventDispatch(API_Event_t* pEvent)
             modcellular_notify_call_hangup(pEvent);
             break;
 
+        // USSD
+        // ====
+        case API_EVENT_ID_USSD_SEND_SUCCESS:
+            modcellular_notify_ussd_sent(pEvent);
+            break;
+
+        case API_EVENT_ID_USSD_SEND_FAIL:
+            modcellular_notify_ussd_failed(pEvent);
+            break;
+
+        case API_EVENT_ID_USSD_IND:
+            modcellular_notify_incoming_ussd(pEvent);
+            break;
+
         // UART
         // ====
         case API_EVENT_ID_UART_RECEIVED:

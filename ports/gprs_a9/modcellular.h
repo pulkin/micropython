@@ -63,6 +63,10 @@ void modcellular_notify_cell_info(API_Event_t* event);
 void modcellular_notify_call_incoming(API_Event_t* event);
 void modcellular_notify_call_hangup(API_Event_t* event);
 
+void modcellular_notify_ussd_sent(API_Event_t* event);
+void modcellular_notify_ussd_failed(API_Event_t* event);
+void modcellular_notify_incoming_ussd(API_Event_t* event);
+
 #define TIMEOUT_SMS_LIST 10000
 #define TIMEOUT_SMS_SEND 10000
 #define TIMEOUT_GPRS_ATTACHMENT 15000
@@ -71,6 +75,7 @@ void modcellular_notify_call_hangup(API_Event_t* event);
 #define TIMEOUT_LIST_OPERATORS 15000
 #define TIMEOUT_REG 10000
 #define TIMEOUT_STATIONS 2000
+#define TIMEOUT_USSD_RESPONSE 5000
 
 #define REQUIRES_NETWORK_REGISTRATION do {if (!network_status) {mp_raise_RuntimeError("Network is not available: is SIM card inserted?"); return mp_const_none;}} while(0)
 #define REQUIRES_VALID_SMS_STATUS(bits) do {if (bitsum(bits) != 1) {return mp_const_none;}} while(0)

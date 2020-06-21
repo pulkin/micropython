@@ -39,10 +39,12 @@
 #include "api_info.h"
 #include "api_sim.h"
 #include "api_sms.h"
+#include "api_ss.h"
 #include "api_call.h"
 #include "api_os.h"
 #include "api_network.h"
 #include "api_inc_network.h"
+#include "api_charset.h"
 
 #include "time.h"
 #include "py/mperrno.h"
@@ -61,6 +63,7 @@
 #define NTW_EXC_ATT_FAILED 0x6E05
 #define NTW_EXC_ACT_FAILED 0x6E06
 #define NTW_EXC_SMS_DROP 0x6E07
+#define NTW_EXC_USSD_SEND 0x6E08
 
 #define NTW_EXC_CALL_NO_DIAL_TONE 0x6E10
 #define NTW_EXC_CALL_BUSY 0x6E11
@@ -93,11 +96,10 @@ uint8_t network_signal_quality = 0;
 uint8_t network_signal_rx_level = 0;
 mp_obj_t network_status_callback = mp_const_none;
 
-// SMS received
-mp_obj_t sms_callback = mp_const_none;
-
 // SMS send flag
 uint8_t sms_send_flag = 0;
+uint8_t ussd_send_flag = 0;
+mp_obj_t ussd_response = mp_const_none;
 
 // -------------------
 // Vars: SMS retrieval
@@ -106,6 +108,12 @@ uint8_t sms_send_flag = 0;
 // A buffer used for listing messages
 mp_obj_list_t *sms_list_buffer = NULL;
 uint8_t sms_list_buffer_count = 0;
+
+// SMS received
+mp_obj_t sms_callback = mp_const_none;
+
+// USSD received
+mp_obj_t ussd_callback = mp_const_none;
 
 // ---------------------------
 // Vars: Network operator list
@@ -124,11 +132,13 @@ int8_t cells_n = 0;
 // -----------
 // Vars: Calls
 // -----------
-mp_obj_t call_callback = mp_const_none;
 
 // SMS parsing
 STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record);
 STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length, uint8_t* content, uint32_t content_length);
+
+// Incoming call
+mp_obj_t call_callback = mp_const_none;
 
 // ----
 // Init
@@ -139,6 +149,7 @@ void modcellular_init0(void) {
     network_status_callback = mp_const_none;
     sms_callback = mp_const_none;
     call_callback = mp_const_none;
+    ussd_callback = mp_const_none;
 
     // Reset statuses
     network_exception = NTW_NO_EXC;
@@ -327,6 +338,36 @@ void modcellular_notify_call_hangup(API_Event_t* event) {
         network_exception = (uint8_t) event->param2 + 0x0F;
     if (call_callback && call_callback != mp_const_none)
         mp_sched_schedule(call_callback, mp_obj_new_bool(event->param1));
+}
+
+// USSD
+
+mp_obj_t decode_ussd(API_Event_t* event) {
+    USSD_Type_t* incoming = (USSD_Type_t*) event->pParam1;
+    char code[incoming->usdStringSize + 1];
+    int len = GSM_7BitTo8Bit(incoming->usdString, (uint8_t*) code, incoming->usdStringSize);
+
+    mp_obj_t tuple[2] = {
+        mp_obj_new_int(incoming->option),
+        mp_obj_new_str(code, len),
+    };
+    return mp_obj_new_tuple(2, tuple);
+}
+
+void modcellular_notify_ussd_sent(API_Event_t* event) {
+    ussd_send_flag = 1;
+    ussd_response = decode_ussd(event);
+    if (ussd_callback && ussd_callback != mp_const_none)
+        mp_sched_schedule(ussd_callback, ussd_response);
+}
+
+void modcellular_notify_ussd_failed(API_Event_t* event) {
+    network_exception = NTW_EXC_USSD_SEND;
+}
+
+void modcellular_notify_incoming_ussd(API_Event_t* event) {
+    if (ussd_callback && ussd_callback != mp_const_none)
+        mp_sched_schedule(ussd_callback, decode_ussd(event));
 }
 
 // Base stations
@@ -1029,6 +1070,49 @@ STATIC mp_obj_t modcellular_dial(mp_obj_t tn_in) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_dial_obj, modcellular_dial);
 
+STATIC mp_obj_t modcellular_ussd(size_t n_args, const mp_obj_t *args) {
+    // ========================================
+    // USSD request.
+    // Args:
+    //     code (str): the request;
+    //     timeout (int, optional): timeout in ms;
+    // Returns:
+    //     USSD response for non-zero timeouts.
+    // ========================================
+    REQUIRES_NETWORK_REGISTRATION;
+
+    mp_int_t timeout = TIMEOUT_USSD_RESPONSE;
+    if (n_args == 2)
+        timeout = mp_obj_get_int(args[1]);
+
+    const char* code = mp_obj_str_get_str(args[0]);
+    uint8_t code7[2 * strlen(code) + 1];
+    int len = GSM_8BitTo7Bit((const uint8_t*) code, code7, strlen(code));
+
+    USSD_Type_t ussd;
+    ussd.usdString = (uint8_t*) code7;
+    ussd.usdStringSize = len;
+    ussd.option = 3;
+    ussd.dcs = 0x0F;
+
+    ussd_send_flag = 0;
+    ussd_response = mp_const_none;
+    int result = SS_SendUSSD(ussd);
+    if (result)
+        mp_raise_ValueError("Failed to submit USSD");
+
+    if (timeout == 0)
+        return mp_const_none;
+
+    WAIT_UNTIL(ussd_send_flag, timeout, 100, mp_raise_OSError(MP_ETIMEDOUT));
+    mp_obj_t rtn = ussd_response;
+    ussd_send_flag = 0;
+    ussd_response = 0;
+    return rtn;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_ussd_obj, 1, 2, modcellular_ussd);
+
 STATIC mp_obj_t modcellular_stations(void) {
     // ========================================
     // Polls base stations.
@@ -1150,6 +1234,19 @@ STATIC mp_obj_t modcellular_on_call(mp_obj_t callable) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_call_obj, modcellular_on_call);
 
+STATIC mp_obj_t modcellular_on_ussd(mp_obj_t callable) {
+    // ========================================
+    // Sets a callback on USSD.
+    // Args:
+    //     callback (Callable): a callback to
+    //     execute on incoming USSD.
+    // ========================================
+    ussd_callback = callable;
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_ussd_obj, modcellular_on_ussd);
+
 STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_cellular) },
 
@@ -1170,12 +1267,14 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_scan), (mp_obj_t)&modcellular_scan_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&modcellular_register_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_dial), (mp_obj_t)&modcellular_dial_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_ussd), (mp_obj_t)&modcellular_ussd_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_stations), (mp_obj_t)&modcellular_stations_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_agps_station_data), (mp_obj_t)&modcellular_agps_station_data_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_status_event), (mp_obj_t)&modcellular_on_status_event_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_sms), (mp_obj_t)&modcellular_on_sms_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_call), (mp_obj_t)&modcellular_on_call_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_on_ussd), (mp_obj_t)&modcellular_on_ussd_obj },
 
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900P), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900P) },
     { MP_ROM_QSTR(MP_QSTR_NETWORK_FREQ_BAND_GSM_900E), MP_ROM_INT(NETWORK_FREQ_BAND_GSM_900E) },
