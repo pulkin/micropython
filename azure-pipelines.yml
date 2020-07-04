@@ -1,6 +1,6 @@
 variables:
-  GITHUB_OAUTH_CONNECTION_NAME: 'github-pulkin'
-  GITHUB_MICROPY_REPO: 'pulkin/micropython'
+  GITHUB_OAUTH_CONNECTION_NAME: 'github-ens4dz'
+  GITHUB_MICROPY_REPO: 'ens4dz/micropython'
   GITHUB_RELEASE_TAG: 'latest-build'
   MAKEOPTS: "-j4"
 
