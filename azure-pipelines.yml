@@ -8,41 +8,6 @@ stages:
 - stage: build
   displayName: 'Test and build'
   jobs:
-  - job: port_esp8266
-    displayName: 'esp8266 port build'
-    pool:
-      vmImage: 'ubuntu-latest'
-  
-    steps:
-    - checkout: self
-
-    - script: |
-        sudo apt-get install python-pip python3-pip
-        sudo pip3 install pyparsing
-        sudo pip install pyserial
-        wget https://github.com/jepler/esp-open-sdk/releases/download/2018-06-10/xtensa-lx106-elf-standalone.tar.gz
-        zcat xtensa-lx106-elf-standalone.tar.gz | tar x
-      displayName: 'Install dependencies and toolchain'
-  
-    - script: |
-        export PATH=$(pwd)/xtensa-lx106-elf/bin:$PATH
-        make ${MAKEOPTS} -C mpy-cross
-        make ${MAKEOPTS} -C ports/esp8266 submodules
-        make ${MAKEOPTS} -C ports/esp8266
-      displayName: 'Build'
-
-    - script: |
-        cd ports/esp8266/build-GENERIC
-        find . \! -name '*.bin' -delete
-        cd -
-      displayName: 'Cleanup build before publishing'
-
-    - task: PublishPipelineArtifact@1
-      displayName: 'Collect the build'
-      inputs:
-        targetPath: '$(Build.Repository.LocalPath)/ports/esp8266/build-GENERIC'
-        artifact: 'build_esp8266'
-  
   - job: port_gprs_a9
     displayName: 'gprs_a9 build'
     pool:
@@ -87,8 +52,6 @@ stages:
     - script: |
         mv $(Build.BinariesDirectory)/build_gprs_a9/*.lod $(Build.BinariesDirectory)
         rm -rf $(Build.BinariesDirectory)/build_gprs_a9
-        mv $(Build.BinariesDirectory)/build_esp8266/*.bin $(Build.BinariesDirectory)
-        rm -rf $(Build.BinariesDirectory)/build_esp8266
         mv $(Build.BinariesDirectory)/build_unix/micropython $(Build.BinariesDirectory)
         rm -rf $(Build.BinariesDirectory)/build_unix
       displayName: 'Sort and filter binaries'
