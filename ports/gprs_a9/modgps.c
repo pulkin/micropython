@@ -62,16 +62,6 @@ void modgps_notify_gps_update(API_Event_t* event) {
     GPS_Update(event->pParam1,event->param1);
 }
 
-// ----------
-// Exceptions
-// ----------
-
-MP_DEFINE_EXCEPTION(GPSError, OSError)
-
-NORETURN void mp_raise_GPSError(const char *msg) {
-    mp_raise_msg(&mp_type_GPSError, msg);
-}
-
 // -------
 // Methods
 // -------
@@ -122,7 +112,7 @@ STATIC mp_obj_t modgps_get_firmware_version(void) {
     // ========================================
     char buffer[300];
     if (!GPS_GetVersion(buffer, 150)) {
-        mp_raise_GPSError("Failed to get the firmware version: did you run gps.on()?");
+        mp_raise_ValueError("No firmware info");
         return mp_const_none;
     }
     return mp_obj_new_str(buffer, strlen(buffer));
@@ -201,8 +191,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(modgps_time_obj, modgps_time);
 
 STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_gps) },
-
-    { MP_OBJ_NEW_QSTR(MP_QSTR_GPSError), (mp_obj_t)MP_ROM_PTR(&mp_type_GPSError) },
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_on), (mp_obj_t)&modgps_on_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&modgps_off_obj },

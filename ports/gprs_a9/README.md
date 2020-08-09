@@ -229,7 +229,7 @@ Provides SSL over GPRS sockets (axtls).
 Provides the GPS functionality.
 This is only available in the A9G module where GPS is a separate chip connected via UART2.
 
-* `GPSError(message: str)`
+* ~~`GPSError(message: str)`~~ OSError used instead
 * `on()`: turns the GPS on;
 * `off()`: turns the GPS off;
 * `get_firmware_version()` (str): retrieves the firmware version;
