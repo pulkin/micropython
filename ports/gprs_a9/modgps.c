@@ -27,6 +27,7 @@
  */
 
 #include "modgps.h"
+#include "timeout.h"
 
 #include "py/nlr.h"
 #include "py/obj.h"
@@ -42,6 +43,8 @@
 #include "gps.h"
 #include "minmea.h"
 #include "time.h"
+
+#include "py/mperrno.h"
 
 STATIC mp_obj_t modgps_off(void);
 
@@ -93,16 +96,7 @@ STATIC mp_obj_t modgps_on(size_t n_args, const mp_obj_t *arg) {
     gpsInfo->rmc.longitude.value = 0;
     GPS_Init();
     GPS_Open(NULL);
-    clock_t time = clock();
-    while (clock() - time < timeout) {
-        if (gpsInfo->rmc.latitude.value != 0) {
-            break;
-        }
-        OS_Sleep(100);
-    }
-    if (gpsInfo->rmc.latitude.value == 0) {
-        mp_raise_GPSError("Failed to start GPS");
-    }
+    WAIT_UNTIL(gpsInfo->rmc.latitude.value, timeout, 100, mp_raise_OSError(MP_ETIMEDOUT));
     return mp_const_none;
 }
 

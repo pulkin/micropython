@@ -28,6 +28,7 @@
 
 #include "modcellular.h"
 #include "mphalport.h"
+#include "timeout.h"
 
 #include "py/nlr.h"
 #include "py/obj.h"
