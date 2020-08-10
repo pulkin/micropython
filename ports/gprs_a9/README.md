@@ -236,7 +236,21 @@ This is only available in the A9G module where GPS is a separate chip connected 
 * `get_location()` (longitude: float, latitude: float): retrieves the current GPS location;
 * `get_last_location()` (longitude: float, latitude: float): retrieves the last known GPS location without polling the GPS module;
 * `get_satellites()` (tracked: int, visible: int): the numbers of satellites in operation;
-* `time()` (int): the number of seconds since the epoch (2000). Use `time.localtime` for converting it into date/time values (this conversion may result in `OverflowError` until the GPS module starts reading meaningful satellite data).
+* `time()` (int): the number of seconds since the epoch (2000). Use `time.localtime` for converting it into date/time values (this conversion may result in `OverflowError` until the GPS module starts reading meaningful satellite data);
+* `nmea_data()` (tuple): all NMEA data parsed: `(rmc, (gsa[0], ...), gga, gll, gst, (gsv[0], ...), vtg, zda)`:
+  - RMC: `(time: int, valid: bool, latitude, longitude, speed, course, variation: float)`;
+  - GSA: `(mode: int, fix_type: int, satellite_prn: bytearray, pdop, hdop, vdop: float)`;
+  - GGA: `(time_of_day: int, latitude, longitude: float, fix_quality, satellites_tracked: int, hdop, altitude: float, altitude_units: int, height: float, height_units: int, dgps_age: float)`;
+  - GLL: `(latitude, longitude: float, time_of_day, status, mode: int)`;
+  - GST: `(time_of_day: int, rms_deviation, ...: float)`;
+  - GSV: `(total_messages, message_nr, total_satellites: int, satellite_info[4]: (nr, elevation, azimuth, snr: int))`;
+  - VTG: `(true_track_degrees, magnetic_track_degrees, speed_knots, speed_kph: float, faa_mode: int)`;
+  - ZDAL `(time, hour_offset, minute_offset: int)`.
+
+  Latitudes and longitudes are in degrees `x100`.
+  Time is given in seconds since the epoch or since `00:00` today.
+  Status flags `mode`, `status` are ASCII indexes.
+  For more info (units, etc) please consult the [minmea](https://github.com/kosma/minmea) project.
 
 ### `machine`
 
