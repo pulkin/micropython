@@ -148,6 +148,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   * `.send(timeout: int)`: sends a message;
   * `.withdraw()`: withdraws SMS from SIM storage;
   * `.list()` (list) [staticmethod]: all SMS from the SIM card;
+  * `.get_storage_size()` (int, int) [staticmethod]: number of active SMS records and total storage size;
   * ~~`.poll()` (int) [staticmethod]: the number of new SMS received~~ use `on_sms` instead;
 * ~~`CellularError(message: str)`~~ `OSError`, `ValueError`, `RuntimeError` are used instead;
 

@@ -558,6 +558,26 @@ STATIC mp_obj_t modcellular_sms_list(void) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_list_obj, modcellular_sms_list);
 STATIC MP_DEFINE_CONST_STATICMETHOD_OBJ(modcellular_sms_list_static_class_obj, MP_ROM_PTR(&modcellular_sms_list_obj));
 
+STATIC mp_obj_t modcellular_sms_get_storage_size(void) {
+    // ========================================
+    // Retrieves SMS storage size.
+    // Returns:
+    //     Storage used and total size as ints.
+    // ========================================
+    SMS_Storage_Info_t storage;
+
+    SMS_GetStorageInfo(&storage, SMS_STORAGE_SIM_CARD);
+
+    mp_obj_t tuple[2] = {
+        mp_obj_new_int(storage.used),
+        mp_obj_new_int(storage.total),
+    };
+    return mp_obj_new_tuple(2, tuple);
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modcellular_sms_get_storage_size_obj, modcellular_sms_get_storage_size);
+STATIC MP_DEFINE_CONST_STATICMETHOD_OBJ(modcellular_sms_get_storage_size_static_class_obj, MP_ROM_PTR(&modcellular_sms_get_storage_size_obj));
+
 STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     // ========================================
     // SMS.[attr]
@@ -592,6 +612,9 @@ STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         // .list[static]
         } else if (attr == MP_QSTR_list) {
             mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_list_static_class_obj), dest);
+        // .get_storage_size[static]
+        } else if (attr == MP_QSTR_get_storage_size) {
+            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_get_storage_size_static_class_obj), dest);
         }
     }
 }
