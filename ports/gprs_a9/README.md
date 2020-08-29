@@ -145,7 +145,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
   * `.inbox` (bool): incoming message if `True`, outgoing message if `False` or unknown status if `None`;
   * `.unread` (bool): unread message if `True`, previously read message if `False` or unknown status if `None`;
   * `.sent` (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
-  * `.send()`: sends a message;
+  * `.send(timeout: int)`: sends a message;
   * `.withdraw()`: withdraws SMS from SIM storage;
   * `.list()` (list) [staticmethod]: all SMS from the SIM card;
   * ~~`.poll()` (int) [staticmethod]: the number of new SMS received~~ use `on_sms` instead;

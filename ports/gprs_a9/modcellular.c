@@ -461,13 +461,19 @@ STATIC mp_obj_t modcellular_sms_sent(mp_obj_t self_in) {
     return mp_obj_new_bool(!(s | SMS_STATUS_UNSENT));
 }
 
-STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
+STATIC mp_obj_t modcellular_sms_send(size_t n_args, const mp_obj_t *args) {
     // ========================================
     // Sends an SMS messsage.
+    // Args:
+    //     timeout (int): optional timeout in ms;
     // ========================================
     REQUIRES_NETWORK_REGISTRATION;
 
-    sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_int_t timeout = TIMEOUT_SMS_SEND;
+    if (n_args == 2)
+        timeout = mp_obj_get_int(args[1]);
+
+    sms_obj_t *self = MP_OBJ_TO_PTR(args[0]);
 
     if (self->status != 0)
         mp_raise_ValueError("A message with non-zero status cannot be sent");
@@ -487,13 +493,14 @@ STATIC mp_obj_t modcellular_sms_send(mp_obj_t self_in) {
         mp_raise_ValueError("Failed to submit SMS message for sending");
     }
     OS_Free(unicode);
-    WAIT_UNTIL(sms_send_flag, TIMEOUT_SMS_SEND, 100, mp_warning(NULL, "Failed to send SMS. The module will continue attempting sending it"));
+
+    WAIT_UNTIL(sms_send_flag, timeout, 100, mp_warning(NULL, "Failed to send SMS immidiately. The module will continue attempts sending it"));
 
     sms_send_flag = 0;
     return mp_const_none;
 }
 
-MP_DEFINE_CONST_FUN_OBJ_1(modcellular_sms_send_obj, &modcellular_sms_send);
+MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modcellular_sms_send_obj, 1, 2, modcellular_sms_send);
 
 STATIC mp_obj_t modcellular_sms_withdraw(mp_obj_t self_in) {
     // ========================================
