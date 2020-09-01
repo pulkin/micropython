@@ -112,6 +112,8 @@ uint8_t sms_list_buffer_count = 0;
 
 // SMS received
 mp_obj_t sms_callback = mp_const_none;
+mp_obj_t new_sms_callback = mp_const_none;
+
 
 // USSD received
 mp_obj_t ussd_callback = mp_const_none;
@@ -316,8 +318,39 @@ void modcellular_notify_sms_error(API_Event_t* event) {
 }
 
 void modcellular_notify_sms_receipt(API_Event_t* event) {
-    if (sms_callback && sms_callback != mp_const_none)
+    if (sms_callback && sms_callback != mp_const_none) {
         mp_sched_schedule(sms_callback, mp_obj_new_int(SMS_RECEIVED));
+    }
+
+    if (new_sms_callback && new_sms_callback != mp_const_none) {
+        SMS_Encode_Type_t encodeType = event->param1;
+        uint32_t content_length = event->param2;
+        uint8_t* header = event->pParam1;
+        uint8_t* content = event->pParam2;
+
+        uint8_t* gbk = NULL;
+        uint32_t gbkLen = 0;
+
+        if (encodeType == SMS_ENCODE_TYPE_UNICODE) {
+            if (!SMS_Unicode2LocalLanguage(content,content_length,CHARSET_UTF_8,&gbk,&gbkLen)) {
+                 mp_raise_ValueError("Failed to convert sms to Unicode");
+            }
+        }
+        else {
+            gbk = content;
+            gbkLen = content_length;
+        }
+
+//     '"+79169542243",,"2020/08/11,23:25:26+03",145,17,0,2,"+79168960438",145,12\r\n', '\u041f\u0440\u0438\u0432\u0435\u0442'
+
+        mp_obj_t sms = modcellular_sms_from_raw(header, strlen(header), gbk, gbkLen);
+
+        if (encodeType == SMS_ENCODE_TYPE_UNICODE) {
+            OS_Free(gbk);
+        }
+
+        mp_sched_schedule(new_sms_callback, sms);
+    }
 }
 
 // Signal level
@@ -1252,6 +1285,19 @@ STATIC mp_obj_t modcellular_on_sms(mp_obj_t callable) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_sms_obj, modcellular_on_sms);
 
+STATIC mp_obj_t modcellular_on_new_sms(mp_obj_t callable) {
+    // ========================================
+    // Sets a callback on SMS (receive).
+    // Args:
+    //     callback (Callable): a callback to
+    //     execute on SMS receive.
+    // ========================================
+    new_sms_callback = callable;
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_new_sms_obj, modcellular_on_new_sms);
+
 STATIC mp_obj_t modcellular_on_call(mp_obj_t callable) {
     // ========================================
     // Sets a callback on incoming calls.
@@ -1304,6 +1350,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_reset), (mp_obj_t)&modcellular_reset_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_status_event), (mp_obj_t)&modcellular_on_status_event_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_sms), (mp_obj_t)&modcellular_on_sms_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_on_new_sms), (mp_obj_t)&modcellular_on_new_sms_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_call), (mp_obj_t)&modcellular_on_call_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_on_ussd), (mp_obj_t)&modcellular_on_ussd_obj },
 
