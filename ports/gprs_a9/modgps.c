@@ -81,19 +81,6 @@ STATIC mp_obj_t modgps_on_update(mp_obj_t callable) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(modgps_on_update_obj, modgps_on_update);
 
-STATIC mp_obj_t modgps_on_update(mp_obj_t callable) {
-    // ========================================
-    // Sets a callback on GPS update.
-    // Args:
-    //     callback (Callable): a callback to
-    //     execute on GPS data received from UART.
-    // ========================================
-    gps_callback = callable;
-    return mp_const_none;
-}
-
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(modgps_on_update_obj, modgps_on_update);
-
 // -------
 // Methods
 // -------
