@@ -85,7 +85,7 @@ STATIC mp_obj_t modaudio_record_start(size_t n_args, const mp_obj_t *args) {
     Trace(1,"recording");
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modaudio_record_start_obj, 1, 2, modaudio_record_start);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modaudio_record_start_obj, 1, 4, modaudio_record_start);
 
 
 STATIC mp_obj_t modaudio_record_stop(void) {
@@ -137,6 +137,7 @@ STATIC mp_obj_t modaudio_play_start(size_t n_args, const mp_obj_t *args) {
     Trace(1,"play start, filename: %s, volume: %d, channel: %d, type: %d", filename, volume, channel, type);
     AUDIO_Error_t result = AUDIO_Play(filename, type, audioPlayCallback);
     if (result != AUDIO_ERROR_NO) {
+        AUDIO_Stop();
         Trace(1,"play fail: %d", result);
         mp_raise_ValueError("cannot play audio file");        
         return mp_const_none;        
@@ -150,7 +151,7 @@ STATIC mp_obj_t modaudio_play_start(size_t n_args, const mp_obj_t *args) {
     Trace(1,"playing");
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modaudio_play_start_obj, 1, 2, modaudio_play_start);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modaudio_play_start_obj, 1, 4, modaudio_play_start);
 
 
 STATIC mp_obj_t modaudio_play_pause(void) {
