@@ -41,12 +41,14 @@
 #include "api_hal_adc.h"
 
 STATIC mp_obj_t modmachine_watchdog_off(void);
+STATIC mp_obj_t power_key = mp_const_none;
 
 void modmachine_init0(void) {
     PM_SetSysMinFreq(PM_SYS_FREQ_312M);
     modmachine_watchdog_off();
     modmachine_pin_init0();
     modmachine_uart_init0();
+    power_key = mp_const_none;
 }
 
 // ------
@@ -203,6 +205,30 @@ STATIC mp_obj_t modmachine_watchdog_reset(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_watchdog_reset_obj, modmachine_watchdog_reset);
 
+void modmachine_notify_power_key_down(API_Event_t* event) {
+    if (power_key && power_key != mp_const_none) {
+        mp_sched_schedule(power_key, mp_obj_new_int(1));
+    }
+}
+ 
+void modmachine_notify_power_key_up(API_Event_t* event) {
+    if (power_key && power_key != mp_const_none) {
+        mp_sched_schedule(power_key, mp_obj_new_int(0));
+    }
+}
+
+STATIC mp_obj_t modmachine_on_power_key(mp_obj_t callable) {
+    // ========================================
+    // Sets a callback on power key press.
+    // Args:
+    //     callback (Callable): a callback to
+    //     execute on power key press.
+    // ========================================
+    power_key = callable;
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modmachine_on_power_key_obj, modmachine_on_power_key);
+
 STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_umachine) },
     { MP_ROM_QSTR(MP_QSTR_Pin), MP_ROM_PTR(&machine_pin_type) },
@@ -213,6 +239,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_idle), (mp_obj_t)&modmachine_set_idle_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_set_min_freq), (mp_obj_t)&modmachine_set_min_freq_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_power_on_cause), (mp_obj_t)&modmachine_power_on_cause_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_on_power_key), (mp_obj_t)&modmachine_on_power_key_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&modmachine_off_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_input_voltage), (mp_obj_t)&modmachine_get_input_voltage_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_watchdog_on), (mp_obj_t)&modmachine_watchdog_on_obj },

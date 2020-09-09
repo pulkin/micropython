@@ -51,3 +51,5 @@ void modmachine_uart_init0(void);
 void modmachine_init0(void);
 
 void modmachine_notify_power_on(API_Event_t* event);
+void modmachine_notify_power_key_down(API_Event_t* event);
+void modmachine_notify_power_key_up(API_Event_t* event);
