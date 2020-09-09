@@ -242,6 +242,14 @@ void EventDispatch(API_Event_t* pEvent)
             modmachine_notify_power_on(pEvent);
             break;
 
+        case API_EVENT_ID_KEY_DOWN:
+            modmachine_notify_power_key_down(pEvent);
+            break;
+        
+        case API_EVENT_ID_KEY_UP:
+            modmachine_notify_power_key_up(pEvent);
+            break;
+
         // Network
         // =======
 
