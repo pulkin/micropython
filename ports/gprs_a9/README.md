@@ -296,4 +296,5 @@ Available platform-specific modules (not installed by default):
 
 * The module halts on fatal errors; create an empty file `.reboot_on_fatal` if a reboot is desired
 * The size of micropython heap is roughly 512 Kb. 400k can be realistically allocated right after hard reset.
+* The external memory card is [mounted under `/t`](https://ai-thinker-open.github.io/GPRS_C_SDK_DOC/en/c-sdk/function-api/file-system.html).
 

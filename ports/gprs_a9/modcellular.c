@@ -526,6 +526,31 @@ STATIC mp_obj_t modcellular_sms_withdraw(mp_obj_t self_in) {
 
 MP_DEFINE_CONST_FUN_OBJ_1(modcellular_sms_withdraw_obj, &modcellular_sms_withdraw);
 
+STATIC mp_obj_t modcellular_sms__withdraw_by_index(mp_obj_t index) {
+    // ========================================
+    // Withdraw an sms message by its index.
+    // Args:
+    //     index (int): the index of the SMS;
+    // ========================================
+
+    mp_int_t int_index = mp_obj_get_int(index);
+
+    if (!int_index) {
+        mp_raise_ValueError("Cannot withdraw SMS with zero index");
+        return mp_const_none;
+    }
+
+    if (!SMS_DeleteMessage(int_index, SMS_STATUS_ALL, SMS_STORAGE_SIM_CARD)) {
+        mp_raise_ValueError("Failed to withdraw SMS");
+        return mp_const_none;
+    }
+
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_sms__withdraw_by_index_obj, modcellular_sms__withdraw_by_index);
+STATIC MP_DEFINE_CONST_STATICMETHOD_OBJ(modcellular_sms__withdraw_by_index_static_class_obj, MP_ROM_PTR(&modcellular_sms__withdraw_by_index_obj));
+
 STATIC mp_obj_t modcellular_sms_list(void) {
     // ========================================
     // Lists SMS messages.
@@ -615,6 +640,9 @@ STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         // .get_storage_size[static]
         } else if (attr == MP_QSTR_get_storage_size) {
             mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_get_storage_size_static_class_obj), dest);
+        // ._withdraw_by_index[static]
+        } else if (attr == MP_QSTR__withdraw_by_index) {
+            mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms__withdraw_by_index_static_class_obj), dest);
         }
     }
 }
@@ -639,6 +667,8 @@ STATIC const mp_rom_map_elem_t sms_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_send), MP_ROM_PTR(&modcellular_sms_send_obj) },
     { MP_ROM_QSTR(MP_QSTR_withdraw), MP_ROM_PTR(&modcellular_sms_withdraw_obj) },
     { MP_ROM_QSTR(MP_QSTR_list), MP_ROM_PTR(&modcellular_sms_list_static_class_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_storage_size), MP_ROM_PTR(&modcellular_sms_get_storage_size_static_class_obj) },
+    { MP_ROM_QSTR(MP_QSTR__withdraw_by_index), MP_ROM_PTR(&modcellular_sms__withdraw_by_index_static_class_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(sms_locals_dict, sms_locals_dict_table);
