@@ -643,6 +643,12 @@ STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         // .message
         } else if (attr == MP_QSTR_message) {
             dest[0] = self->message;
+        // .pn_type
+        } else if (attr == MP_QSTR_pn_type) {
+            dest[0] = mp_obj_new_int(self->pn_type);
+        // .index
+        } else if (attr == MP_QSTR_index) {
+            dest[0] = mp_obj_new_int(self->index);
         // .purpose
         } else if (attr == MP_QSTR_purpose) {
             dest[0] = mp_obj_new_int(self->purpose);
