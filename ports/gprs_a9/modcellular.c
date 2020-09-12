@@ -411,7 +411,7 @@ typedef struct _sms_obj_t {
     mp_obj_base_t base;
     uint8_t index;
     uint8_t status;
-    uint8_t phone_number_type;
+    uint8_t pn_type;
     mp_obj_t phone_number;
     mp_obj_t message;
 } sms_obj_t;
@@ -424,10 +424,13 @@ mp_obj_t modcellular_sms_make_new(const mp_obj_type_t *type, size_t n_args, size
     //     message (str): message contents;
     // ========================================
 
-    enum { ARG_phone_number, ARG_message };
+    enum { ARG_phone_number, ARG_message, ARG_pn_type, ARG_index, ARG_status };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_phone_number, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
         { MP_QSTR_message, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
+        { MP_QSTR_pn_type, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, 
+        { MP_QSTR_index, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, 
+        { MP_QSTR_status, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, 
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -435,10 +438,9 @@ mp_obj_t modcellular_sms_make_new(const mp_obj_type_t *type, size_t n_args, size
 
     sms_obj_t *self = m_new_obj(sms_obj_t);
     self->base.type = type;
-    self->index = 0;
-    self->status = 0;
-    // TODO: fix the following
-    self->phone_number_type = 0;
+    self->index = args[ARG_index].u_int;
+    self->status = args[ARG_status].u_int;
+    self->pn_type = args[ARG_pn_type].u_int;
     self->phone_number = args[ARG_phone_number].u_obj;
     self->message = args[ARG_message].u_obj;
     return MP_OBJ_FROM_PTR(self);
@@ -677,14 +679,12 @@ STATIC void modcellular_sms_print(const mp_print_t *print, mp_obj_t self_in, mp_
     // SMS.__str__()
     // ========================================
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    mp_printf(print, "SMS(\"%s\"(%s), \"%s\", 0x%02x, #%d)",
+    mp_printf(print, "SMS(\"%s\", \"%s\", pn_type=%d, index=%d, status=%d)",
             mp_obj_str_get_str(self->phone_number),
-            self->phone_number_type == SMS_NUMBER_TYPE_UNKNOWN ? "unk" :
-            self->phone_number_type == SMS_NUMBER_TYPE_INTERNATIONAL ? "int" :
-            self->phone_number_type == SMS_NUMBER_TYPE_NATIONAL ? "loc" : "???",
             mp_obj_str_get_str(self->message),
-            self->status,
-            self->index
+            self->pn_type,
+            self->index,
+            self->status
     );
 }
 
@@ -721,7 +721,7 @@ STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record) {
     self->base.type = &modcellular_sms_type;
     self->index = record->index;
     self->status = (uint8_t)record->status;
-    self->phone_number_type = (uint8_t)record->phoneNumberType;
+    self->pn_type = (uint8_t)record->phoneNumberType;
     self->phone_number = mp_obj_new_str((char*)record->phoneNumber + 1, SMS_PHONE_NUMBER_MAX_LEN - 1);
     self->message = mp_obj_new_str((char*)record->data, record->dataLen);
     return MP_OBJ_FROM_PTR(self);
@@ -755,7 +755,7 @@ STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length
     self->base.type = &modcellular_sms_type;
     self->index = 0;
     self->status = 0;
-    self->phone_number_type = 0;
+    self->pn_type = 0;
     self->phone_number = mp_obj_new_str((char*)header + 1, i - 1);
     self->message = mp_obj_new_str((char*)content, content_length);
     return MP_OBJ_FROM_PTR(self);
