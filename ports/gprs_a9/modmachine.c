@@ -61,6 +61,18 @@ void modmachine_notify_power_on(API_Event_t* event) {
     powerOnCause = event->param1;
 }
 
+void modmachine_notify_power_key_down(API_Event_t* event) {
+    if (power_key && power_key != mp_const_none) {
+        mp_sched_schedule(power_key, mp_obj_new_int(1));
+    }
+}
+ 
+void modmachine_notify_power_key_up(API_Event_t* event) {
+    if (power_key && power_key != mp_const_none) {
+        mp_sched_schedule(power_key, mp_obj_new_int(0));
+    }
+}
+
 // -------
 // Methods
 // -------
@@ -204,18 +216,6 @@ STATIC mp_obj_t modmachine_watchdog_reset(void) {
 }
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modmachine_watchdog_reset_obj, modmachine_watchdog_reset);
-
-void modmachine_notify_power_key_down(API_Event_t* event) {
-    if (power_key && power_key != mp_const_none) {
-        mp_sched_schedule(power_key, mp_obj_new_int(1));
-    }
-}
- 
-void modmachine_notify_power_key_up(API_Event_t* event) {
-    if (power_key && power_key != mp_const_none) {
-        mp_sched_schedule(power_key, mp_obj_new_int(0));
-    }
-}
 
 STATIC mp_obj_t modmachine_on_power_key(mp_obj_t callable) {
     // ========================================

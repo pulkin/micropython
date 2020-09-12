@@ -78,5 +78,4 @@ void modcellular_notify_incoming_ussd(API_Event_t* event);
 #define TIMEOUT_USSD_RESPONSE 5000
 
 #define REQUIRES_NETWORK_REGISTRATION do {if (!network_status) {mp_raise_RuntimeError("Network is not available: is SIM card inserted?"); return mp_const_none;}} while(0)
-#define REQUIRES_VALID_SMS_STATUS(bits) do {if (bitsum(bits) != 1) {return mp_const_none;}} while(0)
 
