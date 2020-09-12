@@ -138,13 +138,14 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 
 #### Classes
 
-* `SMS(phone_number: str, message: str)`: handles SMS messages;
+* `SMS(phone_number: str, message: str[, pn_type: int, index: int, purpose: int])`: handles SMS messages;
   * `.phone_number` (str): phone number (sender or destination);
   * `.message` (str): message contents;
-  * `.status` (int): integer with status bits;
-  * `.inbox` (bool): incoming message if `True`, outgoing message if `False` or unknown status if `None`;
-  * `.unread` (bool): unread message if `True`, previously read message if `False` or unknown status if `None`;
-  * `.sent` (bool): sent message if `True`, not sent message if `False` or unknown status if `None`;
+  * `.purpose` (int): integer with purpose/status bits;
+  * `.is_inbox` (bool): indicates incoming message;
+  * `.is_read` (bool): indicates message was previously read;
+  * `.is_unread` (bool): indicates unread message;
+  * `.is_unsent` (bool): indicates unsent message;
   * `.send(timeout: int)`: sends a message;
   * `.withdraw()`: withdraws SMS from SIM storage;
   * `.list()` (list) [staticmethod]: all SMS from the SIM card;

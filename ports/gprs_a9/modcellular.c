@@ -446,48 +446,6 @@ mp_obj_t modcellular_sms_make_new(const mp_obj_type_t *type, size_t n_args, size
     return MP_OBJ_FROM_PTR(self);
 }
 
-uint8_t bitsum(uint32_t i) {
-     i = i - ((i >> 1) & 0x55555555);
-     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-     return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-}
-
-STATIC mp_obj_t modcellular_sms_inbox(mp_obj_t self_in) {
-    // ========================================
-    // Determines if SMS is inbox or outbox.
-    // Returns:
-    //     True if inbox.
-    // ========================================
-    sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    uint8_t s = self->purpose;
-    REQUIRES_VALID_SMS_STATUS(s);
-    return mp_obj_new_bool(s & (SMS_STATUS_READ | SMS_STATUS_UNREAD));
-}
-
-STATIC mp_obj_t modcellular_sms_unread(mp_obj_t self_in) {
-    // ========================================
-    // Determines if SMS is unread.
-    // Returns:
-    //     True if unread.
-    // ========================================
-    sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    uint8_t s = self->purpose;
-    REQUIRES_VALID_SMS_STATUS(s);
-    return mp_obj_new_bool(s & SMS_STATUS_UNREAD);
-}
-
-STATIC mp_obj_t modcellular_sms_sent(mp_obj_t self_in) {
-    // ========================================
-    // Determines if SMS was sent.
-    // Returns:
-    //     True if it was sent.
-    // ========================================
-    sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    uint8_t s = self->purpose;
-    REQUIRES_VALID_SMS_STATUS(s);
-    return mp_obj_new_bool(!(s | SMS_STATUS_UNSENT));
-}
-
 STATIC mp_obj_t modcellular_sms_send(size_t n_args, const mp_obj_t *args) {
     // ========================================
     // Sends an SMS messsage.
@@ -652,15 +610,18 @@ STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         // .purpose
         } else if (attr == MP_QSTR_purpose) {
             dest[0] = mp_obj_new_int(self->purpose);
-        // .inbox
-        } else if (attr == MP_QSTR_inbox) {
-            dest[0] = modcellular_sms_inbox(self_in);
-        // .unread
-        } else if (attr == MP_QSTR_unread) {
-            dest[0] = modcellular_sms_unread(self_in);
-        // .sent
-        } else if (attr == MP_QSTR_sent) {
-            dest[0] = modcellular_sms_sent(self_in);
+        // .is_inbox
+        } else if (attr == MP_QSTR_is_inbox) {
+            dest[0] = mp_obj_new_bool(self->purpose & (SMS_STATUS_READ | SMS_STATUS_UNREAD));
+        // .is_read
+        } else if (attr == MP_QSTR_is_read) {
+            dest[0] = mp_obj_new_bool(self->purpose & SMS_STATUS_READ);
+        // .is_unread
+        } else if (attr == MP_QSTR_is_unread) {
+            dest[0] = mp_obj_new_bool(self->purpose & SMS_STATUS_UNREAD);
+        // .is_unsent
+        } else if (attr == MP_QSTR_is_unsent) {
+            dest[0] = mp_obj_new_bool(self->purpose & SMS_STATUS_UNSENT);
         // .send
         } else if (attr == MP_QSTR_send) {
             mp_convert_member_lookup(self_in, mp_obj_get_type(self_in), (mp_obj_t)MP_ROM_PTR(&modcellular_sms_send_obj), dest);
