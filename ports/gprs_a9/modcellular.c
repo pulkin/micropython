@@ -409,11 +409,11 @@ void modcellular_notify_cell_info(API_Event_t* event) {
 
 typedef struct _sms_obj_t {
     mp_obj_base_t base;
-    uint8_t index;
-    uint8_t status;
-    uint8_t pn_type;
     mp_obj_t phone_number;
     mp_obj_t message;
+    uint8_t pn_type;
+    uint8_t index;
+    uint8_t purpose;
 } sms_obj_t;
 
 mp_obj_t modcellular_sms_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *all_args) {
@@ -424,13 +424,13 @@ mp_obj_t modcellular_sms_make_new(const mp_obj_type_t *type, size_t n_args, size
     //     message (str): message contents;
     // ========================================
 
-    enum { ARG_phone_number, ARG_message, ARG_pn_type, ARG_index, ARG_status };
+    enum { ARG_phone_number, ARG_message, ARG_pn_type, ARG_index, ARG_purpose };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_phone_number, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
         { MP_QSTR_message, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
         { MP_QSTR_pn_type, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, 
         { MP_QSTR_index, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, 
-        { MP_QSTR_status, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, 
+        { MP_QSTR_purpose, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 0} }, 
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -438,11 +438,11 @@ mp_obj_t modcellular_sms_make_new(const mp_obj_type_t *type, size_t n_args, size
 
     sms_obj_t *self = m_new_obj(sms_obj_t);
     self->base.type = type;
-    self->index = args[ARG_index].u_int;
-    self->status = args[ARG_status].u_int;
-    self->pn_type = args[ARG_pn_type].u_int;
     self->phone_number = args[ARG_phone_number].u_obj;
     self->message = args[ARG_message].u_obj;
+    self->pn_type = args[ARG_pn_type].u_int;
+    self->index = args[ARG_index].u_int;
+    self->purpose = args[ARG_purpose].u_int;
     return MP_OBJ_FROM_PTR(self);
 }
 
@@ -459,7 +459,7 @@ STATIC mp_obj_t modcellular_sms_inbox(mp_obj_t self_in) {
     //     True if inbox.
     // ========================================
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    uint8_t s = self->status;
+    uint8_t s = self->purpose;
     REQUIRES_VALID_SMS_STATUS(s);
     return mp_obj_new_bool(s & (SMS_STATUS_READ | SMS_STATUS_UNREAD));
 }
@@ -471,7 +471,7 @@ STATIC mp_obj_t modcellular_sms_unread(mp_obj_t self_in) {
     //     True if unread.
     // ========================================
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    uint8_t s = self->status;
+    uint8_t s = self->purpose;
     REQUIRES_VALID_SMS_STATUS(s);
     return mp_obj_new_bool(s & SMS_STATUS_UNREAD);
 }
@@ -483,7 +483,7 @@ STATIC mp_obj_t modcellular_sms_sent(mp_obj_t self_in) {
     //     True if it was sent.
     // ========================================
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    uint8_t s = self->status;
+    uint8_t s = self->purpose;
     REQUIRES_VALID_SMS_STATUS(s);
     return mp_obj_new_bool(!(s | SMS_STATUS_UNSENT));
 }
@@ -502,8 +502,8 @@ STATIC mp_obj_t modcellular_sms_send(size_t n_args, const mp_obj_t *args) {
 
     sms_obj_t *self = MP_OBJ_TO_PTR(args[0]);
 
-    if (self->status != 0)
-        mp_raise_ValueError("A message with non-zero status cannot be sent");
+    if (self->purpose != 0)
+        mp_raise_ValueError("A message with non-zero purpose cannot be sent");
 
     const char* destination_c = mp_obj_str_get_str(self->phone_number);
     const char* message_c = mp_obj_str_get_str(self->message);
@@ -536,8 +536,8 @@ STATIC mp_obj_t modcellular_sms_withdraw(mp_obj_t self_in) {
 
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
 
-    if (self->index == 0 || self->status == 0) {
-        mp_raise_ValueError("Cannot withdraw SMS with zero index/status");
+    if (self->index == 0 || self->purpose == 0) {
+        mp_raise_ValueError("Cannot withdraw SMS with zero index/purpose");
         return mp_const_none;
     }
 
@@ -546,7 +546,7 @@ STATIC mp_obj_t modcellular_sms_withdraw(mp_obj_t self_in) {
         return mp_const_none;
     }
 
-    self->status = 0;
+    self->purpose = 0;
     self->index = 0;
     return mp_const_none;
 }
@@ -643,9 +643,9 @@ STATIC void modcellular_sms_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         // .message
         } else if (attr == MP_QSTR_message) {
             dest[0] = self->message;
-        // .status
-        } else if (attr == MP_QSTR_status) {
-            dest[0] = mp_obj_new_int(self->status);
+        // .purpose
+        } else if (attr == MP_QSTR_purpose) {
+            dest[0] = mp_obj_new_int(self->purpose);
         // .inbox
         } else if (attr == MP_QSTR_inbox) {
             dest[0] = modcellular_sms_inbox(self_in);
@@ -679,12 +679,12 @@ STATIC void modcellular_sms_print(const mp_print_t *print, mp_obj_t self_in, mp_
     // SMS.__str__()
     // ========================================
     sms_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    mp_printf(print, "SMS(\"%s\", \"%s\", pn_type=%d, index=%d, status=%d)",
+    mp_printf(print, "SMS(\"%s\", \"%s\", pn_type=%d, index=%d, purpose=%d)",
             mp_obj_str_get_str(self->phone_number),
             mp_obj_str_get_str(self->message),
             self->pn_type,
             self->index,
-            self->status
+            self->purpose
     );
 }
 
@@ -720,7 +720,7 @@ STATIC mp_obj_t modcellular_sms_from_record(SMS_Message_Info_t* record) {
     sms_obj_t *self = m_new_obj_with_finaliser(sms_obj_t);
     self->base.type = &modcellular_sms_type;
     self->index = record->index;
-    self->status = (uint8_t)record->status;
+    self->purpose = (uint8_t)record->status;
     self->pn_type = (uint8_t)record->phoneNumberType;
     self->phone_number = mp_obj_new_str((char*)record->phoneNumber + 1, SMS_PHONE_NUMBER_MAX_LEN - 1);
     self->message = mp_obj_new_str((char*)record->data, record->dataLen);
@@ -754,7 +754,7 @@ STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length
     sms_obj_t *self = m_new_obj_with_finaliser(sms_obj_t);
     self->base.type = &modcellular_sms_type;
     self->index = 0;
-    self->status = 0;
+    self->purpose = 0;
     self->pn_type = 0;
     self->phone_number = mp_obj_new_str((char*)header + 1, i - 1);
     self->message = mp_obj_new_str((char*)content, content_length);
