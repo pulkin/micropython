@@ -259,7 +259,12 @@ This is only available in the A9G module where GPS is a separate chip connected 
 
 Provides power-related functions: power, watchdogs.
 
-* `POWER_ON_CAUSE_ALARM`, `POWER_ON_CAUSE_CHARGE`, `POWER_ON_CAUSE_EXCEPTION`, `POWER_ON_CAUSE_KEY`, `POWER_ON_CAUSE_MAX`, `POWER_ON_CAUSE_RESET`: power-on flags;
+#### Constants
+
+* `POWER_ON_CAUSE_ALARM`, `POWER_ON_CAUSE_CHARGE`, `POWER_ON_CAUSE_EXCEPTION`, `POWER_ON_CAUSE_KEY`, `POWER_ON_CAUSE_MAX`, `POWER_ON_CAUSE_RESET`: power-on flags.
+
+#### Methods
+
 * `reset()`: hard-resets the module;
 * `off()`: powers the module down. **TODO**: By fact, hard-resets the module, at least when USB-powered. Figure out what's wrong;
 * `idle()`: tunes the clock rate down and turns off peripherials;
@@ -268,6 +273,7 @@ Provides power-related functions: power, watchdogs.
 * `watchdog_on(timeout: int)`: arms the hardware watchdog with a timeout in seconds;
 * `watchdog_off()`: disarms the hardware watchdog;
 * `watchdog_reset()`: resets the timer on the hardware watchdog;
+* `on_power_key(callback: Callable)`: sets a callback `function(is_power_key_down: bool)` on power key events.
   
 ### `i2c`
 
