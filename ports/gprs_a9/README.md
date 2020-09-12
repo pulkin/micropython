@@ -174,9 +174,9 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `gprs([apn: {str, bool}[, user: str, pass: str[, timeout: int]]])` (bool): activate (3 or 4 arguments), deactivate (`gprs(False)`) or obtain the status of GPRS (on/off) if no arguments supplied;
 * `dial(tn: {str, bool})`: dial a telephone number if string is supplied or hang up a call if `False`;
 * `ussd(code: str[, timeout: int])` (int, str): USSD request. Unless zero timeout specified, returns USSD response option code and the response text;
-* `on_status_event(callback: Callable)`: sets a callback for network status change. The callback is called with a single integer constant indicating the new network state;
-* `on_sms(callback: Callable)`: sets a callback on SMS sent or received. The callback is called with a single integer constant `SMS_SENT` indicating a sent SMS or with an `SMS` object for received SMS;
-* `on_call(callback: Callable)`: sets a callback on call events (incoming, hangup, etc.);
+* `on_status_event(callback: Callable)`: sets a callback `function(status: int)` for network status change;
+* `on_sms(callback: Callable)`: sets a callback `function(sms_or_status)` on SMS sent or received;;
+* `on_call(callback: Callable)`: sets a callback `function(number_or_hangup)` on call events (incoming, hangup, etc.);
 * ~~`network_status_changed()` (bool): indicates whether the network status changed since the last check~~ use `on_status_event` instead;
 * ~~`call()` (list[str], [str, None]): calls missed (1st output) and the incoming call number or `None` if no incoming calls at the moment (2nd output)~~ use `on_call` instead;
 
