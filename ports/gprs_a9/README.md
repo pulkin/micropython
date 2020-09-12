@@ -133,7 +133,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `NETWORK_FREQ_BAND_GSM_900P`, `NETWORK_FREQ_BAND_GSM_900E`, `NETWORK_FREQ_BAND_GSM_850`, `NETWORK_FREQ_BAND_DCS_1800`, `NETWORK_FREQ_BAND_PCS_1900`, `NETWORK_FREQ_BANDS_ALL`: frequencies;
 * `OPERATOR_STATUS_UNKNOWN`, `OPERATOR_STATUS_AVAILABLE`, `OPERATOR_STATUS_CURRENT`, `OPERATOR_STATUS_DISABLED`: operator statuses;
 * `NETWORK_MODE_MANUAL`, `NETWORK_MODE_AUTO`, `NETWORK_MODE_MANUAL_AUTO`: network registration modes;
-* `SMS_SENT`, `SMS_RECEIVED`: constants for event handler `on_sms`;
+* `SMS_SENT`: constant for event handler `on_sms`;
 * `ENOSIM`, `EREGD`, `ESMSSEND`, `ESMSDROP`, `ESIMDROP`, `EATTACHMENT`, `EACTIVATION`, `ENODIALTONE`, `EBUSY`, `ENOANSWER`, `ENOCARRIER`, `ECALLTIMEOUT`, `ECALLINPROGRESS`, `ECALLUNKNOWN`: extended codes for `OSError`s raised by the module;
 
 #### Classes
@@ -174,7 +174,7 @@ The purpose of this module is to have an access to high-level networking (SMS, G
 * `dial(tn: {str, bool})`: dial a telephone number if string is supplied or hang up a call if `False`;
 * `ussd(code: str[, timeout: int])` (int, str): USSD request. Unless zero timeout specified, returns USSD response option code and the response text;
 * `on_status_event(callback: Callable)`: sets a callback for network status change. The callback is called with a single integer constant indicating the new network state;
-* `on_sms(callback: Callable)`: sets a callback on SMS sent or received. The callback is called with a single integer constant `SMS_SENT` or `SMS_RECEIVED`;
+* `on_sms(callback: Callable)`: sets a callback on SMS sent or received. The callback is called with a single integer constant `SMS_SENT` indicating a sent SMS or with an `SMS` object for received SMS;
 * `on_call(callback: Callable)`: sets a callback on call events (incoming, hangup, etc.);
 * ~~`network_status_changed()` (bool): indicates whether the network status changed since the last check~~ use `on_status_event` instead;
 * ~~`call()` (list[str], [str, None]): calls missed (1st output) and the incoming call number or `None` if no incoming calls at the moment (2nd output)~~ use `on_call` instead;
