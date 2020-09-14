@@ -354,6 +354,10 @@ void EventDispatch(API_Event_t* pEvent)
         case API_EVENT_ID_CALL_HANGUP:
             modcellular_notify_call_hangup(pEvent);
             break;
+    
+        case API_EVENT_ID_CALL_DTMF:
+            modcellular_notify_dtmf_incoming(pEvent);
+            break;
 
         // USSD
         // ====

@@ -62,6 +62,7 @@ void modcellular_notify_cell_info(API_Event_t* event);
 
 void modcellular_notify_call_incoming(API_Event_t* event);
 void modcellular_notify_call_hangup(API_Event_t* event);
+void modcellular_notify_incoming_dtmf(API_Event_t* event);
 
 void modcellular_notify_ussd_sent(API_Event_t* event);
 void modcellular_notify_ussd_failed(API_Event_t* event);
