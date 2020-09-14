@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/pulkin/micropython.svg?branch=master)](https://travis-ci.org/pulkin/micropython)
 [![Build Status](https://dev.azure.com/gpulkin/micropython/_apis/build/status/pulkin.micropython?branchName=master)](https://dev.azure.com/gpulkin/micropython/_build/latest?definitionId=1&branchName=master)
-[![Chat](https://img.shields.io/discord/725112070798049291)](https://discord.com/channels/725112070798049291)
+[![Community chat](https://img.shields.io/badge/chat-telegram-0088cc.svg)](https://t.me/joinchat/CCukvxYGJQDKLjWyaCaaMg)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=2RZCNXCUCP4YG&source=url)
 
 ## Contribute
