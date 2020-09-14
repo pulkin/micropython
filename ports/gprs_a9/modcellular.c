@@ -140,6 +140,7 @@ STATIC mp_obj_t modcellular_sms_from_raw(uint8_t* header, uint32_t header_length
 
 // Incoming call
 mp_obj_t call_callback = mp_const_none;
+mp_obj_t dtmf_callback = mp_const_none;
 
 // ----
 // Init
@@ -150,6 +151,7 @@ void modcellular_init0(void) {
     network_status_callback = mp_const_none;
     sms_callback = mp_const_none;
     call_callback = mp_const_none;
+    dtmf_callback = mp_const_none;
     ussd_callback = mp_const_none;
 
     // Reset statuses
@@ -364,6 +366,14 @@ void modcellular_notify_call_hangup(API_Event_t* event) {
         network_exception = (uint8_t) event->param2 + 0x0F;
     if (call_callback && call_callback != mp_const_none)
         mp_sched_schedule(call_callback, mp_obj_new_bool(event->param1));
+}
+
+void modcellular_notify_dtmf_incoming(API_Event_t* event) {
+   if (dtmf_callback && dtmf_callback != mp_const_none){
+        char dtmf[1];
+        dtmf[0] = event->param1 ;
+        mp_sched_schedule(dtmf_callback, mp_obj_new_str( dtmf,1) );
+   }
 }
 
 // USSD
@@ -1287,6 +1297,21 @@ STATIC mp_obj_t modcellular_on_call(mp_obj_t callable) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_call_obj, modcellular_on_call);
 
+STATIC mp_obj_t modcellular_on_dtmf(mp_obj_t callable) {
+    // ========================================
+    // Sets a callback on incoming calls.
+    // Args:
+    //     callback (Callable): a callback to
+    //     execute on incoming dtmf.
+    // ========================================
+    dtmf_callback = callable;
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modcellular_on_dtmf_obj, modcellular_on_dtmf);
+
+
+
 STATIC mp_obj_t modcellular_on_ussd(mp_obj_t callable) {
     // ========================================
     // Sets a callback on USSD.
@@ -1320,6 +1345,7 @@ STATIC const mp_map_elem_t mp_module_cellular_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_scan), (mp_obj_t)&modcellular_scan_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_register), (mp_obj_t)&modcellular_register_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_dial), (mp_obj_t)&modcellular_dial_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_on_dtmf), (mp_obj_t)&modcellular_on_dtmf_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_ussd), (mp_obj_t)&modcellular_ussd_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_stations), (mp_obj_t)&modcellular_stations_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_agps_station_data), (mp_obj_t)&modcellular_agps_station_data_obj },
