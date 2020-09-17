@@ -102,6 +102,28 @@ STATIC mp_obj_t modgps_off(void) {
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modgps_off_obj, modgps_off);
 
+STATIC mp_obj_t modgps_reboot(mp_obj_t mode) {
+    int requested_mode = mp_obj_get_int(arg[0]);
+
+    GPS_Reboot_Mode_t reboot_mode;
+
+    if (requested_mode == 1) {
+        reboot_mode=GPS_REBOOT_MODE_HOT;
+    }
+    else if (requested_mode == 2) {
+        reboot_mode = GPS_REBOOT_MODE_WARM;
+    }
+    else {
+        reboot_mode = GPS_REBOOT_MODE_COLD;
+    }
+
+    GPS_Reboot(reboot_mode);
+
+    return mp_const_none;
+}
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modgps_reboot_obj, modgps_reboot);
+
 STATIC mp_obj_t modgps_get_firmware_version(void) {
     // ========================================
     // Retrieves firmware version.
@@ -360,6 +382,7 @@ STATIC const mp_map_elem_t mp_module_gps_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_on), (mp_obj_t)&modgps_on_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_off), (mp_obj_t)&modgps_off_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_firmware_version), (mp_obj_t)&modgps_get_firmware_version_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_reboot), (mp_obj_t)&modgps_reboot_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_location), (mp_obj_t)&modgps_get_location_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_last_location), (mp_obj_t)&modgps_get_last_location_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_get_satellites), (mp_obj_t)&modgps_get_satellites_obj },
