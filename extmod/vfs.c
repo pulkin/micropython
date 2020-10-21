@@ -83,12 +83,8 @@ mp_vfs_mount_t *mp_vfs_lookup_path(const char *path, const char **path_out) {
             }
         }
 
-        // if we get here then there's nothing mounted on /
-
-        if (is_abs) {
-            // path began with / and was not found
-            return MP_VFS_NONE;
-        }
+        // if we get here then there's nothing mounted on /, so the path doesn't exist
+        return MP_VFS_NONE;
     }
 
     // a relative path within a mounted device
@@ -322,7 +318,6 @@ MP_DEFINE_CONST_FUN_OBJ_KW(mp_vfs_open_obj, 0, mp_vfs_open);
 mp_obj_t mp_vfs_chdir(mp_obj_t path_in) {
     mp_obj_t path_out;
     mp_vfs_mount_t *vfs = lookup_path(path_in, &path_out);
-    MP_STATE_VM(vfs_cur) = vfs;
     if (vfs == MP_VFS_ROOT) {
         // If we change to the root dir and a VFS is mounted at the root then
         // we must change that VFS's current dir to the root dir so that any
@@ -334,9 +329,11 @@ mp_obj_t mp_vfs_chdir(mp_obj_t path_in) {
                 break;
             }
         }
+        vfs = MP_VFS_ROOT;
     } else {
         mp_vfs_proxy_call(vfs, MP_QSTR_chdir, 1, &path_out);
     }
+    MP_STATE_VM(vfs_cur) = vfs;
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_1(mp_vfs_chdir_obj, mp_vfs_chdir);

@@ -214,3 +214,9 @@ mp_uint_t mp_hal_ticks_us(void) {
     return tv.tv_sec * 1000000 + tv.tv_usec;
     #endif
 }
+
+uint64_t mp_hal_time_ns(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000000000ULL + (uint64_t)tv.tv_usec * 1000ULL;
+}

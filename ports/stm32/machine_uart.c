@@ -73,77 +73,6 @@
 ///
 ///     uart.any()               # returns True if any characters waiting
 
-typedef struct _pyb_uart_irq_map_t {
-    uint16_t irq_en;
-    uint16_t flag;
-} pyb_uart_irq_map_t;
-
-STATIC const pyb_uart_irq_map_t mp_irq_map[] = {
-    { USART_CR1_IDLEIE, UART_FLAG_IDLE}, // RX idle
-    { USART_CR1_PEIE,   UART_FLAG_PE},   // parity error
-    { USART_CR1_TXEIE,  UART_FLAG_TXE},  // TX register empty
-    { USART_CR1_TCIE,   UART_FLAG_TC},   // TX complete
-    { USART_CR1_RXNEIE, UART_FLAG_RXNE}, // RX register not empty
-    #if 0
-    // For now only IRQs selected by CR1 are supported
-    #if defined(STM32F4)
-    { USART_CR2_LBDIE,  UART_FLAG_LBD},  // LIN break detection
-    #else
-    { USART_CR2_LBDIE,  UART_FLAG_LBDF}, // LIN break detection
-    #endif
-    { USART_CR3_CTSIE,  UART_FLAG_CTS},  // CTS
-    #endif
-};
-
-// OR-ed IRQ flags which should not be touched by the user
-STATIC const uint32_t mp_irq_reserved = UART_FLAG_RXNE;
-
-// OR-ed IRQ flags which are allowed to be used by the user
-STATIC const uint32_t mp_irq_allowed = UART_FLAG_IDLE;
-
-STATIC mp_obj_t pyb_uart_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
-
-STATIC void pyb_uart_irq_config(pyb_uart_obj_t *self, bool enable) {
-    if (self->mp_irq_trigger) {
-        for (size_t entry = 0; entry < MP_ARRAY_SIZE(mp_irq_map); ++entry) {
-            if (mp_irq_map[entry].flag & mp_irq_reserved) {
-                continue;
-            }
-            if (mp_irq_map[entry].flag & self->mp_irq_trigger) {
-                if (enable) {
-                    self->uartx->CR1 |= mp_irq_map[entry].irq_en;
-                } else {
-                    self->uartx->CR1 &= ~mp_irq_map[entry].irq_en;
-                }
-            }
-        }
-    }
-}
-
-STATIC mp_uint_t pyb_uart_irq_trigger(mp_obj_t self_in, mp_uint_t new_trigger) {
-    pyb_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    pyb_uart_irq_config(self, false);
-    self->mp_irq_trigger = new_trigger;
-    pyb_uart_irq_config(self, true);
-    return 0;
-}
-
-STATIC mp_uint_t pyb_uart_irq_info(mp_obj_t self_in, mp_uint_t info_type) {
-    pyb_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
-    if (info_type == MP_IRQ_INFO_FLAGS) {
-        return self->mp_irq_flags;
-    } else if (info_type == MP_IRQ_INFO_TRIGGERS) {
-        return self->mp_irq_trigger;
-    }
-    return 0;
-}
-
-STATIC const mp_irq_methods_t pyb_uart_irq_methods = {
-    .init = pyb_uart_irq,
-    .trigger = pyb_uart_irq_trigger,
-    .info = pyb_uart_irq_info,
-};
-
 STATIC void pyb_uart_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     pyb_uart_obj_t *self = MP_OBJ_TO_PTR(self_in);
     if (!self->is_enabled) {
@@ -237,11 +166,6 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
     mp_arg_parse_all(n_args, pos_args, kw_args,
         MP_ARRAY_SIZE(allowed_args), allowed_args, (mp_arg_val_t *)&args);
 
-    // static UARTs are used for internal purposes and shouldn't be reconfigured
-    if (self->is_static) {
-        mp_raise_ValueError(MP_ERROR_TEXT("UART is static and can't be init'd"));
-    }
-
     // baudrate
     uint32_t baudrate = args.baudrate.u_int;
 
@@ -283,10 +207,16 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
     // flow control
     uint32_t flow = args.flow.u_int;
 
+    // Save attach_to_repl setting because uart_init will disable it.
+    bool attach_to_repl = self->attached_to_repl;
+
     // init UART (if it fails, it's because the port doesn't exist)
     if (!uart_init(self, baudrate, bits, parity, stop, flow)) {
         mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("UART(%d) doesn't exist"), self->uart_id);
     }
+
+    // Restore attach_to_repl setting so UART still works if attached to dupterm.
+    uart_attach_to_repl(self, attach_to_repl);
 
     // set timeout
     self->timeout = args.timeout.u_int;
@@ -300,20 +230,28 @@ STATIC mp_obj_t pyb_uart_init_helper(pyb_uart_obj_t *self, size_t n_args, const 
         self->timeout_char = min_timeout_char;
     }
 
-    // setup the read buffer
-    m_del(byte, self->read_buf, self->read_buf_len << self->char_width);
-    if (args.rxbuf.u_int >= 0) {
-        // rxbuf overrides legacy read_buf_len
-        args.read_buf_len.u_int = args.rxbuf.u_int;
-    }
-    if (args.read_buf_len.u_int <= 0) {
-        // no read buffer
-        uart_set_rxbuf(self, 0, NULL);
+    if (self->is_static) {
+        // Static UARTs have fixed memory for the rxbuf and can't be reconfigured.
+        if (args.rxbuf.u_int >= 0) {
+            mp_raise_ValueError(MP_ERROR_TEXT("UART is static and rxbuf can't be changed"));
+        }
+        uart_set_rxbuf(self, self->read_buf_len, self->read_buf);
     } else {
-        // read buffer using interrupts
-        size_t len = args.read_buf_len.u_int + 1; // +1 to adjust for usable length of buffer
-        uint8_t *buf = m_new(byte, len << self->char_width);
-        uart_set_rxbuf(self, len, buf);
+        // setup the read buffer
+        m_del(byte, self->read_buf, self->read_buf_len << self->char_width);
+        if (args.rxbuf.u_int >= 0) {
+            // rxbuf overrides legacy read_buf_len
+            args.read_buf_len.u_int = args.rxbuf.u_int;
+        }
+        if (args.read_buf_len.u_int <= 0) {
+            // no read buffer
+            uart_set_rxbuf(self, 0, NULL);
+        } else {
+            // read buffer using interrupts
+            size_t len = args.read_buf_len.u_int + 1; // +1 to adjust for usable length of buffer
+            uint8_t *buf = m_new(byte, len << self->char_width);
+            uart_set_rxbuf(self, len, buf);
+        }
     }
 
     // compute actual baudrate that was configured
@@ -510,7 +448,7 @@ STATIC mp_obj_t pyb_uart_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
 
     if (self->mp_irq_obj == NULL) {
         self->mp_irq_trigger = 0;
-        self->mp_irq_obj = mp_irq_new(&pyb_uart_irq_methods, MP_OBJ_FROM_PTR(self));
+        self->mp_irq_obj = mp_irq_new(&uart_irq_methods, MP_OBJ_FROM_PTR(self));
     }
 
     if (n_args > 1 || kw_args->used != 0) {
@@ -522,17 +460,17 @@ STATIC mp_obj_t pyb_uart_irq(size_t n_args, const mp_obj_t *pos_args, mp_map_t *
 
         // Check the trigger
         mp_uint_t trigger = args[MP_IRQ_ARG_INIT_trigger].u_int;
-        mp_uint_t not_supported = trigger & ~mp_irq_allowed;
+        mp_uint_t not_supported = trigger & ~MP_UART_ALLOWED_FLAGS;
         if (trigger != 0 && not_supported) {
             mp_raise_msg_varg(&mp_type_ValueError, MP_ERROR_TEXT("trigger 0x%08x unsupported"), not_supported);
         }
 
         // Reconfigure user IRQs
-        pyb_uart_irq_config(self, false);
+        uart_irq_config(self, false);
         self->mp_irq_obj->handler = handler;
         self->mp_irq_obj->ishard = args[MP_IRQ_ARG_INIT_hard].u_bool;
         self->mp_irq_trigger = trigger;
-        pyb_uart_irq_config(self, true);
+        uart_irq_config(self, true);
     }
 
     return MP_OBJ_FROM_PTR(self->mp_irq_obj);
