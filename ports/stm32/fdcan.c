@@ -200,26 +200,38 @@ void can_clearfilter(pyb_can_obj_t *self, uint32_t f, uint8_t bank) {
 
 int can_receive(FDCAN_HandleTypeDef *can, int fifo, FDCAN_RxHeaderTypeDef *hdr, uint8_t *data, uint32_t timeout_ms) {
     volatile uint32_t *rxf, *rxa;
+    uint32_t fl;
+
     if (fifo == FDCAN_RX_FIFO0) {
         rxf = &can->Instance->RXF0S;
         rxa = &can->Instance->RXF0A;
+        fl = FDCAN_RXF0S_F0FL;
     } else {
         rxf = &can->Instance->RXF1S;
         rxa = &can->Instance->RXF1A;
+        fl = FDCAN_RXF1S_F1FL;
     }
 
     // Wait for a message to become available, with timeout
     uint32_t start = HAL_GetTick();
-    while ((*rxf & 7) == 0) {
-        MICROPY_EVENT_POLL_HOOK
-        if (HAL_GetTick() - start >= timeout_ms) {
-            return -MP_ETIMEDOUT;
+    while ((*rxf & fl) == 0) {
+        if (timeout_ms != HAL_MAX_DELAY) {
+            if (HAL_GetTick() - start >= timeout_ms) {
+                return -MP_ETIMEDOUT;
+            }
         }
+        MICROPY_EVENT_POLL_HOOK
     }
 
     // Get pointer to incoming message
-    uint32_t index = (can->Instance->RXF0S & FDCAN_RXF0S_F0GI) >> 8;
-    uint32_t *address = (uint32_t *)(can->msgRam.RxFIFO0SA + (index * can->Init.RxFifo0ElmtSize * 4));
+    uint32_t index, *address;
+    if (fifo == FDCAN_RX_FIFO0) {
+        index = (*rxf & FDCAN_RXF0S_F0GI) >> FDCAN_RXF0S_F0GI_Pos;
+        address = (uint32_t *)(can->msgRam.RxFIFO0SA + (index * can->Init.RxFifo0ElmtSize * 4));
+    } else {
+        index = (*rxf & FDCAN_RXF1S_F1GI) >> FDCAN_RXF1S_F1GI_Pos;
+        address = (uint32_t *)(can->msgRam.RxFIFO1SA + (index * can->Init.RxFifo1ElmtSize * 4));
+    }
 
     // Parse header of message
     hdr->IdType = *address & FDCAN_ELEMENT_MASK_XTD;

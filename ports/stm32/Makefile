@@ -124,7 +124,7 @@ endif
 
 LDFLAGS = -nostdlib -L $(LD_DIR) $(addprefix -T,$(LD_FILES)) -Map=$(@:.elf=.map) --cref
 LDFLAGS += --defsym=_estack_reserve=8
-LIBS = $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
+LIBS = "$(shell $(CC) $(CFLAGS) -print-libgcc-file-name)"
 
 # Remove uncalled code from the final image.
 CFLAGS += -fdata-sections -ffunction-sections
@@ -191,6 +191,7 @@ LIBM_SRC_C = $(addprefix lib/libm_dbl/,\
 	nearbyint.c \
 	pow.c \
 	rint.c \
+	round.c \
 	scalbn.c \
 	sin.c \
 	sinh.c \
@@ -258,7 +259,7 @@ DRIVERS_SRC_C = $(addprefix drivers/,\
 	dht/dht.c \
 	)
 
-SRC_C = \
+SRC_C += \
 	main.c \
 	stm32_it.c \
 	usbd_conf.c \
@@ -329,7 +330,7 @@ SRC_C = \
 	adc.c \
 	$(wildcard $(BOARD_DIR)/*.c)
 
-SRC_O = \
+SRC_O += \
 	$(STARTUP_FILE) \
 	$(SYSTEM_FILE)
 
@@ -472,11 +473,14 @@ endif
 ifeq ($(MICROPY_SSL_MBEDTLS),1)
 CFLAGS_MOD += -DMBEDTLS_CONFIG_FILE='"mbedtls/mbedtls_config.h"'
 SRC_MOD += mbedtls/mbedtls_port.c
+# replace mbedtls' error.c by ours
+SRC_MOD := $(filter-out %/mbedtls/library/error.c, $(SRC_MOD))
+LIB_SRC_C += lib/mbedtls_errors/mp_mbedtls_errors.c
 endif
 
 ifeq ($(MICROPY_PY_BLUETOOTH),1)
 
-SRC_C += modbluetooth_hci.c
+SRC_C += mpbthciport.c
 
 ifeq ($(MICROPY_BLUETOOTH_NIMBLE),1)
 ifeq ($(MICROPY_BLUETOOTH_BTSTACK),1)
@@ -486,12 +490,13 @@ endif
 
 ifeq ($(MICROPY_BLUETOOTH_NIMBLE),1)
 include $(TOP)/extmod/nimble/nimble.mk
-SRC_C += nimble.c
+SRC_C += mpnimbleport.c
 endif
 
 ifeq ($(MICROPY_BLUETOOTH_BTSTACK),1)
+MICROPY_BLUETOOTH_BTSTACK_H4 ?= 1
 include $(TOP)/extmod/btstack/btstack.mk
-SRC_C += btstack.c
+SRC_C += mpbtstackport.c
 endif
 
 ifeq ($(MICROPY_PY_NETWORK_CYW43),1)
@@ -500,7 +505,6 @@ endif
 
 endif
 
-OBJ =
 OBJ += $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(LIB_SRC_C:.c=.o))
 OBJ += $(LIBM_O)

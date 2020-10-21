@@ -28,7 +28,7 @@
 
 // Current version of MicroPython
 #define MICROPY_VERSION_MAJOR 1
-#define MICROPY_VERSION_MINOR 12
+#define MICROPY_VERSION_MINOR 13
 #define MICROPY_VERSION_MICRO 0
 
 // Combined version as a 32-bit number for convenience
@@ -351,6 +351,18 @@
 // Convenience definition for whether any native or inline assembler emitter is enabled
 #define MICROPY_EMIT_MACHINE_CODE (MICROPY_EMIT_NATIVE || MICROPY_EMIT_INLINE_ASM)
 
+// Whether native relocatable code loaded from .mpy files is explicitly tracked
+// so that the GC cannot reclaim it.  Needed on architectures that allocate
+// executable memory on the MicroPython heap and don't explicitly track this
+// data some other way.
+#ifndef MICROPY_PERSISTENT_CODE_TRACK_RELOC_CODE
+#if !MICROPY_EMIT_MACHINE_CODE || defined(MP_PLAT_ALLOC_EXEC) || defined(MP_PLAT_COMMIT_EXEC)
+#define MICROPY_PERSISTENT_CODE_TRACK_RELOC_CODE (0)
+#else
+#define MICROPY_PERSISTENT_CODE_TRACK_RELOC_CODE (1)
+#endif
+#endif
+
 /*****************************************************************************/
 /* Compiler configuration                                                    */
 
@@ -440,6 +452,11 @@
 // Whether to enable debugging versions of MP_OBJ_NULL/STOP_ITERATION/SENTINEL
 #ifndef MICROPY_DEBUG_MP_OBJ_SENTINELS
 #define MICROPY_DEBUG_MP_OBJ_SENTINELS (0)
+#endif
+
+// Whether to print parse rule names (rather than integers) in mp_parse_node_print
+#ifndef MICROPY_DEBUG_PARSE_RULE_NAME
+#define MICROPY_DEBUG_PARSE_RULE_NAME (0)
 #endif
 
 // Whether to enable a simple VM stack overflow check
@@ -835,6 +852,11 @@ typedef double mp_float_t;
 #define MICROPY_PY_ASYNC_AWAIT (1)
 #endif
 
+// Support for assignment expressions with := (see PEP 572, Python 3.8+)
+#ifndef MICROPY_PY_ASSIGN_EXPR
+#define MICROPY_PY_ASSIGN_EXPR (1)
+#endif
+
 // Non-standard .pend_throw() method for generators, allowing for
 // Future-like behavior with respect to exception handling: an
 // exception set with .pend_throw() will activate on the next call
@@ -1126,6 +1148,26 @@ typedef double mp_float_t;
 // Whether to provide math.isclose function
 #ifndef MICROPY_PY_MATH_ISCLOSE
 #define MICROPY_PY_MATH_ISCLOSE (0)
+#endif
+
+// Whether to provide fix for atan2 Inf handling.
+#ifndef MICROPY_PY_MATH_ATAN2_FIX_INFNAN
+#define MICROPY_PY_MATH_ATAN2_FIX_INFNAN (0)
+#endif
+
+// Whether to provide fix for fmod Inf handling.
+#ifndef MICROPY_PY_MATH_FMOD_FIX_INFNAN
+#define MICROPY_PY_MATH_FMOD_FIX_INFNAN (0)
+#endif
+
+// Whether to provide fix for modf negative zero handling.
+#ifndef MICROPY_PY_MATH_MODF_FIX_NEGZERO
+#define MICROPY_PY_MATH_MODF_FIX_NEGZERO (0)
+#endif
+
+// Whether to provide fix for pow(1, NaN) and pow(NaN, 0), which both should be 1 not NaN.
+#ifndef MICROPY_PY_MATH_POW_FIX_NAN
+#define MICROPY_PY_MATH_POW_FIX_NAN (0)
 #endif
 
 // Whether to provide "cmath" module

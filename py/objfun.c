@@ -58,6 +58,7 @@ STATIC mp_obj_t fun_builtin_0_call(mp_obj_t self_in, size_t n_args, size_t n_kw,
 
 const mp_obj_type_t mp_type_fun_builtin_0 = {
     { &mp_type_type },
+    .flags = MP_TYPE_FLAG_BINDS_SELF | MP_TYPE_FLAG_BUILTIN_FUN,
     .name = MP_QSTR_function,
     .call = fun_builtin_0_call,
     .unary_op = mp_generic_unary_op,
@@ -72,6 +73,7 @@ STATIC mp_obj_t fun_builtin_1_call(mp_obj_t self_in, size_t n_args, size_t n_kw,
 
 const mp_obj_type_t mp_type_fun_builtin_1 = {
     { &mp_type_type },
+    .flags = MP_TYPE_FLAG_BINDS_SELF | MP_TYPE_FLAG_BUILTIN_FUN,
     .name = MP_QSTR_function,
     .call = fun_builtin_1_call,
     .unary_op = mp_generic_unary_op,
@@ -86,6 +88,7 @@ STATIC mp_obj_t fun_builtin_2_call(mp_obj_t self_in, size_t n_args, size_t n_kw,
 
 const mp_obj_type_t mp_type_fun_builtin_2 = {
     { &mp_type_type },
+    .flags = MP_TYPE_FLAG_BINDS_SELF | MP_TYPE_FLAG_BUILTIN_FUN,
     .name = MP_QSTR_function,
     .call = fun_builtin_2_call,
     .unary_op = mp_generic_unary_op,
@@ -100,6 +103,7 @@ STATIC mp_obj_t fun_builtin_3_call(mp_obj_t self_in, size_t n_args, size_t n_kw,
 
 const mp_obj_type_t mp_type_fun_builtin_3 = {
     { &mp_type_type },
+    .flags = MP_TYPE_FLAG_BINDS_SELF | MP_TYPE_FLAG_BUILTIN_FUN,
     .name = MP_QSTR_function,
     .call = fun_builtin_3_call,
     .unary_op = mp_generic_unary_op,
@@ -130,6 +134,7 @@ STATIC mp_obj_t fun_builtin_var_call(mp_obj_t self_in, size_t n_args, size_t n_k
 
 const mp_obj_type_t mp_type_fun_builtin_var = {
     { &mp_type_type },
+    .flags = MP_TYPE_FLAG_BINDS_SELF | MP_TYPE_FLAG_BUILTIN_FUN,
     .name = MP_QSTR_function,
     .call = fun_builtin_var_call,
     .unary_op = mp_generic_unary_op,
@@ -197,8 +202,8 @@ STATIC void dump_args(const mp_obj_t *a, size_t sz) {
         MP_BC_PRELUDE_SIG_DECODE_INTO(ip, n_state_out_var, n_exc_stack, scope_flags, n_pos_args, n_kwonly_args, n_def_args); \
                                     \
         /* state size in bytes */                                                 \
-        state_size_out_var = n_state_out_var *sizeof(mp_obj_t)                   \
-            + n_exc_stack *sizeof(mp_exc_stack_t);                \
+        state_size_out_var = n_state_out_var * sizeof(mp_obj_t)                   \
+            + n_exc_stack * sizeof(mp_exc_stack_t);                \
     }
 
 #define INIT_CODESTATE(code_state, _fun_bc, _n_state, n_args, n_kw, args) \
@@ -355,6 +360,7 @@ void mp_obj_fun_bc_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
 
 const mp_obj_type_t mp_type_fun_bc = {
     { &mp_type_type },
+    .flags = MP_TYPE_FLAG_BINDS_SELF,
     .name = MP_QSTR_function,
     #if MICROPY_CPYTHON_COMPAT
     .print = fun_bc_print,
@@ -406,6 +412,7 @@ STATIC mp_obj_t fun_native_call(mp_obj_t self_in, size_t n_args, size_t n_kw, co
 
 STATIC const mp_obj_type_t mp_type_fun_native = {
     { &mp_type_type },
+    .flags = MP_TYPE_FLAG_BINDS_SELF,
     .name = MP_QSTR_function,
     .call = fun_native_call,
     .unary_op = mp_generic_unary_op,
@@ -513,6 +520,7 @@ STATIC mp_obj_t fun_asm_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const
 
 STATIC const mp_obj_type_t mp_type_fun_asm = {
     { &mp_type_type },
+    .flags = MP_TYPE_FLAG_BINDS_SELF,
     .name = MP_QSTR_function,
     .call = fun_asm_call,
     .unary_op = mp_generic_unary_op,

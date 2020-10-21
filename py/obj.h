@@ -407,8 +407,8 @@ typedef struct _mp_rom_map_elem_t {
 
 typedef struct _mp_map_t {
     size_t all_keys_are_qstrs : 1;
-    size_t is_fixed : 1;    // a fixed array that can't be modified; must also be ordered
-    size_t is_ordered : 1;  // an ordered array
+    size_t is_fixed : 1;    // if set, table is fixed/read-only and can't be modified
+    size_t is_ordered : 1;  // if set, table is an ordered array, not a hash map
     size_t used : (8 * sizeof(size_t) - 3);
     size_t alloc;
     mp_map_elem_t *table;
@@ -421,8 +421,6 @@ typedef enum _mp_map_lookup_kind_t {
     MP_MAP_LOOKUP_REMOVE_IF_FOUND = 2,
     MP_MAP_LOOKUP_ADD_IF_NOT_FOUND_OR_REMOVE_IF_FOUND = 3, // only valid for mp_set_lookup
 } mp_map_lookup_kind_t;
-
-extern const mp_map_t mp_const_empty_map;
 
 static inline bool mp_map_slot_is_filled(const mp_map_t *map, size_t pos) {
     assert(pos < map->alloc);
@@ -473,11 +471,15 @@ typedef mp_obj_t (*mp_fun_kw_t)(size_t n, const mp_obj_t *, mp_map_t *);
 // then the type may check for equality against a different type.
 // If MP_TYPE_FLAG_EQ_HAS_NEQ_TEST is clear then the type only implements the __eq__
 // operator and not the __ne__ operator.  If it's set then __ne__ may be implemented.
+// If MP_TYPE_FLAG_BINDS_SELF is set then the type as a method binds self as the first arg.
+// If MP_TYPE_FLAG_BUILTIN_FUN is set then the type is a built-in function type.
 #define MP_TYPE_FLAG_IS_SUBCLASSED (0x0001)
 #define MP_TYPE_FLAG_HAS_SPECIAL_ACCESSORS (0x0002)
-#define MP_TYPE_FLAG_EQ_NOT_REFLEXIVE (0x0040)
-#define MP_TYPE_FLAG_EQ_CHECKS_OTHER_TYPE (0x0080)
+#define MP_TYPE_FLAG_EQ_NOT_REFLEXIVE (0x0004)
+#define MP_TYPE_FLAG_EQ_CHECKS_OTHER_TYPE (0x0008)
 #define MP_TYPE_FLAG_EQ_HAS_NEQ_TEST (0x0010)
+#define MP_TYPE_FLAG_BINDS_SELF (0x0020)
+#define MP_TYPE_FLAG_BUILTIN_FUN (0x0040)
 
 typedef enum {
     PRINT_STR = 0,
@@ -681,16 +683,21 @@ extern const struct _mp_obj_bool_t mp_const_false_obj;
 extern const struct _mp_obj_bool_t mp_const_true_obj;
 #endif
 
-// Constant objects, globally accessible: b'', (), Ellipsis, NotImplemented, GeneratorExit()
+// Constant objects, globally accessible: b'', (), {}, Ellipsis, NotImplemented, GeneratorExit()
 // The below macros are for convenience only.
 #define mp_const_empty_bytes (MP_OBJ_FROM_PTR(&mp_const_empty_bytes_obj))
 #define mp_const_empty_tuple (MP_OBJ_FROM_PTR(&mp_const_empty_tuple_obj))
 #define mp_const_notimplemented (MP_OBJ_FROM_PTR(&mp_const_notimplemented_obj))
 extern const struct _mp_obj_str_t mp_const_empty_bytes_obj;
 extern const struct _mp_obj_tuple_t mp_const_empty_tuple_obj;
+extern const struct _mp_obj_dict_t mp_const_empty_dict_obj;
 extern const struct _mp_obj_singleton_t mp_const_ellipsis_obj;
 extern const struct _mp_obj_singleton_t mp_const_notimplemented_obj;
 extern const struct _mp_obj_exception_t mp_const_GeneratorExit_obj;
+
+// Fixed empty map. Useful when calling keyword-receiving functions
+// without any keywords from C, etc.
+#define mp_const_empty_map (mp_const_empty_dict_obj.map)
 
 // General API for objects
 
@@ -708,6 +715,7 @@ extern const struct _mp_obj_exception_t mp_const_GeneratorExit_obj;
 #define mp_obj_is_int(o) (mp_obj_is_small_int(o) || mp_obj_is_type(o, &mp_type_int))
 #define mp_obj_is_str(o) (mp_obj_is_qstr(o) || mp_obj_is_type(o, &mp_type_str))
 #define mp_obj_is_str_or_bytes(o) (mp_obj_is_qstr(o) || (mp_obj_is_obj(o) && ((mp_obj_base_t *)MP_OBJ_TO_PTR(o))->type->binary_op == mp_obj_str_binary_op))
+#define mp_obj_is_dict_or_ordereddict(o) (mp_obj_is_obj(o) && ((mp_obj_base_t *)MP_OBJ_TO_PTR(o))->type->make_new == mp_obj_dict_make_new)
 #define mp_obj_is_fun(o) (mp_obj_is_obj(o) && (((mp_obj_base_t *)MP_OBJ_TO_PTR(o))->type->name == MP_QSTR_function))
 
 mp_obj_t mp_obj_new_type(qstr name, mp_obj_t bases_tuple, mp_obj_t locals_dict);
@@ -777,6 +785,7 @@ bool mp_obj_get_int_maybe(mp_const_obj_t arg, mp_int_t *value);
 mp_float_t mp_obj_get_float(mp_obj_t self_in);
 bool mp_obj_get_float_maybe(mp_obj_t arg, mp_float_t *value);
 void mp_obj_get_complex(mp_obj_t self_in, mp_float_t *real, mp_float_t *imag);
+bool mp_obj_get_complex_maybe(mp_obj_t self_in, mp_float_t *real, mp_float_t *imag);
 #endif
 void mp_obj_get_array(mp_obj_t o, size_t *len, mp_obj_t **items); // *items may point inside a GC block
 void mp_obj_get_array_fixed_n(mp_obj_t o, size_t len, mp_obj_t **items); // *items may point inside a GC block
@@ -890,11 +899,13 @@ typedef struct _mp_obj_dict_t {
     mp_obj_base_t base;
     mp_map_t map;
 } mp_obj_dict_t;
+mp_obj_t mp_obj_dict_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args);
 void mp_obj_dict_init(mp_obj_dict_t *dict, size_t n_args);
 size_t mp_obj_dict_len(mp_obj_t self_in);
 mp_obj_t mp_obj_dict_get(mp_obj_t self_in, mp_obj_t index);
 mp_obj_t mp_obj_dict_store(mp_obj_t self_in, mp_obj_t key, mp_obj_t value);
 mp_obj_t mp_obj_dict_delete(mp_obj_t self_in, mp_obj_t key);
+mp_obj_t mp_obj_dict_copy(mp_obj_t self_in);
 static inline mp_map_t *mp_obj_dict_get_map(mp_obj_t dict) {
     return &((mp_obj_dict_t *)MP_OBJ_TO_PTR(dict))->map;
 }
@@ -984,17 +995,17 @@ bool mp_seq_cmp_objs(mp_uint_t op, const mp_obj_t *items1, size_t len1, const mp
 mp_obj_t mp_seq_index_obj(const mp_obj_t *items, size_t len, size_t n_args, const mp_obj_t *args);
 mp_obj_t mp_seq_count_obj(const mp_obj_t *items, size_t len, mp_obj_t value);
 mp_obj_t mp_seq_extract_slice(size_t len, const mp_obj_t *seq, mp_bound_slice_t *indexes);
+
 // Helper to clear stale pointers from allocated, but unused memory, to preclude GC problems
 #define mp_seq_clear(start, len, alloc_len, item_sz) memset((byte *)(start) + (len) * (item_sz), 0, ((alloc_len) - (len)) * (item_sz))
+
+// Note: dest and slice regions may overlap
 #define mp_seq_replace_slice_no_grow(dest, dest_len, beg, end, slice, slice_len, item_sz) \
-    /*printf("memcpy(%p, %p, %d)\n", dest + beg, slice, slice_len * (item_sz));*/ \
-    memcpy(((char *)dest) + (beg) * (item_sz), slice, slice_len * (item_sz)); \
-    /*printf("memmove(%p, %p, %d)\n", dest + (beg + slice_len), dest + end, (dest_len - end) * (item_sz));*/ \
+    memmove(((char *)dest) + (beg) * (item_sz), slice, slice_len * (item_sz)); \
     memmove(((char *)dest) + (beg + slice_len) * (item_sz), ((char *)dest) + (end) * (item_sz), (dest_len - end) * (item_sz));
 
 // Note: dest and slice regions may overlap
 #define mp_seq_replace_slice_grow_inplace(dest, dest_len, beg, end, slice, slice_len, len_adj, item_sz) \
-    /*printf("memmove(%p, %p, %d)\n", dest + beg + len_adj, dest + beg, (dest_len - beg) * (item_sz));*/ \
     memmove(((char *)dest) + (beg + slice_len) * (item_sz), ((char *)dest) + (end) * (item_sz), ((dest_len) + (len_adj) - ((beg) + (slice_len))) * (item_sz)); \
     memmove(((char *)dest) + (beg) * (item_sz), slice, slice_len * (item_sz));
 

@@ -32,7 +32,6 @@
 
 #include "py/runtime.h"
 #include "ble_drv.h"
-#include "mpconfigport.h"
 #include "nrf_sdm.h"
 #include "ble_gap.h"
 #include "ble.h" // sd_ble_uuid_encode
@@ -607,12 +606,12 @@ bool ble_drv_advertise_data(ubluepy_advertise_data_t * p_adv_params) {
 #if (BLUETOOTH_SD == 110)
     if ((err_code = sd_ble_gap_adv_data_set(adv_data, byte_pos, NULL, 0)) != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not apply advertisment data. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not apply advertisment data. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
 #else
     if ((err_code = sd_ble_gap_adv_set_configure(&m_adv_handle, &m_adv_data, &m_adv_params)) != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not apply advertisment data. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not apply advertisment data. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
 #endif
     BLE_DRIVER_LOG("Set Adv data size: " UINT_FMT "\n", byte_pos);
@@ -627,7 +626,7 @@ bool ble_drv_advertise_data(ubluepy_advertise_data_t * p_adv_params) {
 #endif
     if (err_code != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not start advertisment. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not start advertisment. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
 
     m_adv_in_progress = true;
@@ -642,12 +641,12 @@ void ble_drv_advertise_stop(void) {
 #if (BLUETOOTH_SD == 110)
         if ((err_code = sd_ble_gap_adv_stop()) != 0) {
             mp_raise_msg_varg(&mp_type_OSError,
-                "Can not stop advertisment. status: 0x" HEX2_FMT, (uint16_t)err_code);
+                MP_ERROR_TEXT("Can not stop advertisment. status: 0x" HEX2_FMT), (uint16_t)err_code);
         }
 #else
         if ((err_code = sd_ble_gap_adv_stop(m_adv_handle)) != 0) {
             mp_raise_msg_varg(&mp_type_OSError,
-                "Can not stop advertisment. status: 0x" HEX2_FMT, (uint16_t)err_code);
+                MP_ERROR_TEXT("Can not stop advertisment. status: 0x" HEX2_FMT), (uint16_t)err_code);
         }
 #endif
     }
@@ -667,7 +666,7 @@ void ble_drv_attr_s_read(uint16_t conn_handle, uint16_t handle, uint16_t len, ui
                                                &gatts_value);
     if (err_code != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not read attribute value. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not read attribute value. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
 
 }
@@ -684,7 +683,7 @@ void ble_drv_attr_s_write(uint16_t conn_handle, uint16_t handle, uint16_t len, u
 
     if (err_code != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not write attribute value. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not write attribute value. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
 }
 
@@ -708,7 +707,7 @@ void ble_drv_attr_s_notify(uint16_t conn_handle, uint16_t handle, uint16_t len, 
     uint32_t err_code;
     if ((err_code = sd_ble_gatts_hvx(conn_handle, &hvx_params)) != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not notify attribute value. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not notify attribute value. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
     m_tx_in_progress++;
     BLE_DRIVER_LOG("Queued TX, m_tx_in_progress: %u\n", m_tx_in_progress);
@@ -747,7 +746,7 @@ void ble_drv_attr_c_read(uint16_t conn_handle, uint16_t handle, mp_obj_t obj, bl
                                           0);
     if (err_code != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not read attribute value. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not read attribute value. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
 
     while (gattc_char_data_handle != NULL) {
@@ -777,7 +776,7 @@ void ble_drv_attr_c_write(uint16_t conn_handle, uint16_t handle, uint16_t len, u
 
     if (err_code != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not write attribute value. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not write attribute value. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
 
     while (m_write_done != true) {
@@ -808,7 +807,7 @@ void ble_drv_scan_start(bool cont) {
     }
     if ((err_code = sd_ble_gap_scan_start(p_scan_params, &scan_buffer)) != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not start scanning. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not start scanning. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
 }
 
@@ -854,7 +853,7 @@ void ble_drv_connect(uint8_t * p_addr, uint8_t addr_type) {
                                        &conn_params,
                                        conn_tag)) != 0) {
         mp_raise_msg_varg(&mp_type_OSError,
-            "Can not connect. status: 0x" HEX2_FMT, (uint16_t)err_code);
+            MP_ERROR_TEXT("Can not connect. status: 0x" HEX2_FMT), (uint16_t)err_code);
     }
 }
 
@@ -1131,6 +1130,12 @@ static void ble_evt_handler(ble_evt_t * p_ble_evt) {
             BLE_DRIVER_LOG("GATTS EVT EXCHANGE MTU REQUEST\n");
             (void)sd_ble_gatts_exchange_mtu_reply(p_ble_evt->evt.gatts_evt.conn_handle, 23); // MAX MTU size
             break;
+
+        case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST:
+            BLE_DRIVER_LOG("BLE GAP EVT DATA LENGTH UPDATE REQUEST\n");
+            sd_ble_gap_data_length_update(p_ble_evt->evt.gap_evt.conn_handle, NULL, NULL);
+            break;
+
 #endif // (BLUETOOTH_SD == 132) || (BLUETOOTH_SD == 140)
 
         default:

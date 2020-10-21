@@ -52,6 +52,8 @@
 #include "i2c.h"
 #include "adc.h"
 #include "rtcounter.h"
+#include "mphalport.h"
+
 #if MICROPY_PY_MACHINE_HW_PWM
 #include "pwm.h"
 #endif
@@ -101,6 +103,9 @@ int main(int argc, char **argv) {
 
 
 soft_reset:
+    #if MICROPY_PY_TIME_TICKS
+    rtc1_init_time_ticks();
+    #endif
 
     led_init();
 
@@ -275,10 +280,10 @@ mp_import_stat_t mp_import_stat(const char *path) {
     return uos_mbfs_import_stat(path);
 }
 
-STATIC mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args) {
+mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
     return uos_mbfs_open(n_args, args);
 }
-MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mp_builtin_open_obj, 1, 2, mp_builtin_open);
+MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
 #else
 // use dummy functions - no filesystem available
@@ -290,7 +295,7 @@ mp_import_stat_t mp_import_stat(const char *path) {
     return MP_IMPORT_STAT_NO_EXIST;
 }
 
-STATIC mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
     mp_raise_OSError(MP_EPERM);
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);

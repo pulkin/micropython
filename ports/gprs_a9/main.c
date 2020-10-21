@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #include "py/compile.h"
 #include "py/runtime.h"
@@ -58,6 +59,8 @@
 #include "modcellular.h"
 #include "modgps.h"
 #include "modmachine.h"
+
+#define SIZE_MAX std::numeric_limits<size_t>::max()
 
 #define AppMain_TASK_STACK_SIZE    (2048 * 2)
 #define AppMain_TASK_PRIORITY      0

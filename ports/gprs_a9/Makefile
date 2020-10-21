@@ -28,14 +28,19 @@ QSTR_DEFS = qstrdefsport.h
 #############################################
 
 # MicroPython feature configurations
+
 MICROPY_PY_USSL = 1
-MICROPY_SSL_AXTLS = 1
-AXTLS_DEFS_EXTRA = -Dabort=abort_ -include time.h -DRT_MAX_PLAIN_LENGTH=1024 -DRT_EXTRA=4096
+MICROPY_SSL_MBEDTLS = 1
+# MICROPY_SSL_AXTLS = 1
+# AXTLS_DEFS_EXTRA = -Dabort=abort_ -include time.h -DRT_MAX_PLAIN_LENGTH=1024 -DRT_EXTRA=4096
 
 FROZEN_MANIFEST ?= boards/manifest.py
 
 # include py core make definitions
 include $(TOP)/py/py.mk
+
+# GIT_SUBMODULES = lib/mbedtls
+GIT_SUBMODULES = lib/mbedtls
 
 #############################################
 
@@ -163,6 +168,16 @@ DRIVERS_SRC_C = $(addprefix drivers/,\
 
 SRC_S = \
 	gchelper.s
+
+
+ifeq ($(MICROPY_SSL_MBEDTLS),1)
+CFLAGS_MOD += -DMBEDTLS_CONFIG_FILE='"mbedtls/mbedtls_config.h"'
+SRC_MOD += mbedtls/mbedtls_port.c
+# replace mbedtls' error.c by ours
+SRC_MOD := $(filter-out %/mbedtls/library/error.c, $(SRC_MOD))
+LIB_SRC_C += lib/mbedtls_errors/mp_mbedtls_errors.c
+# LIB_SRC_C += lib/GPRS_C_SDK/include/api_inc/api
+endif
 
 OBJ_MP =
 OBJ_MP += $(PY_O)

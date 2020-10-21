@@ -138,6 +138,45 @@ Also note that Pin(16) is a special pin (used for wakeup from deepsleep
 mode) and may be not available for use with higher-level classes like
 ``Neopixel``.
 
+UART (serial bus)
+-----------------
+
+See :ref:`machine.UART <machine.UART>`. ::
+
+    from machine import UART
+    uart = UART(0, baudrate=9600)
+    uart.write('hello')
+    uart.read(5) # read up to 5 bytes
+
+Two UARTs are available. UART0 is on Pins 1 (TX) and 3 (RX). UART0 is
+bidirectional, and by default is used for the REPL. UART1 is on Pins 2
+(TX) and 8 (RX) however Pin 8 is used to connect the flash chip, so
+UART1 is TX only.
+
+When UART0 is attached to the REPL, all incoming chars on UART(0) go
+straight to stdin so uart.read() will always return None.  Use
+sys.stdin.read() if it's needed to read characters from the UART(0)
+while it's also used for the REPL (or detach, read, then reattach).
+When detached the UART(0) can be used for other purposes.
+
+If there are no objects in any of the dupterm slots when the REPL is
+started (on hard or soft reset) then UART(0) is automatically attached.
+Without this, the only way to recover a board without a REPL would be to
+completely erase and reflash (which would install the default boot.py which
+attaches the REPL).
+
+To detach the REPL from UART0, use::
+
+    import uos
+    uos.dupterm(None, 1)
+
+The REPL is attached by default. If you have detached it, to reattach
+it use::
+
+    import uos, machine
+    uart = machine.UART(0, 115200)
+    uos.dupterm(uart, 1)
+
 PWM (pulse width modulation)
 ----------------------------
 
@@ -175,15 +214,15 @@ Software SPI bus
 ----------------
 
 There are two SPI drivers. One is implemented in software (bit-banging)
-and works on all pins, and is accessed via the :ref:`machine.SPI <machine.SPI>`
+and works on all pins, and is accessed via the :ref:`machine.SoftSPI <machine.SoftSPI>`
 class::
 
-    from machine import Pin, SPI
+    from machine import Pin, SoftSPI
 
     # construct an SPI bus on the given pins
     # polarity is the idle state of SCK
     # phase=0 means sample on the first edge of SCK, phase=1 means the second
-    spi = SPI(-1, baudrate=100000, polarity=1, phase=0, sck=Pin(0), mosi=Pin(2), miso=Pin(4))
+    spi = SoftSPI(baudrate=100000, polarity=1, phase=0, sck=Pin(0), mosi=Pin(2), miso=Pin(4))
 
     spi.init(baudrate=200000) # set the baudrate
 
@@ -219,7 +258,8 @@ I2C bus
 -------
 
 The I2C driver is implemented in software and works on all pins,
-and is accessed via the :ref:`machine.I2C <machine.I2C>` class::
+and is accessed via the :ref:`machine.I2C <machine.I2C>` class (which is an
+alias of :ref:`machine.SoftI2C <machine.SoftI2C>`)::
 
     from machine import Pin, I2C
 

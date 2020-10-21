@@ -31,30 +31,36 @@
 #include "extmod/crypto-algorithms/sha256.c"
 #include "usbd_core.h"
 #include "storage.h"
+#include "flash.h"
 #include "i2cslave.h"
+#include "irq.h"
 #include "mboot.h"
+#include "powerctrl.h"
 #include "dfu.h"
 
-// Using polling is about 10% faster than not using it (and using IRQ instead)
-// This DFU code with polling runs in about 70% of the time of the ST bootloader
-#define USE_USB_POLLING (1)
+// This option selects whether to use explicit polling or IRQs for USB events.
+// In some test cases polling mode can run slightly faster, but it uses more power.
+// Polling mode will also cause failures with the mass-erase command because USB
+// events will not be serviced for the duration of the mass erase.
+// With STM32WB MCUs only non-polling/IRQ mode is supported.
+#define USE_USB_POLLING (0)
 
 // Using cache probably won't make it faster because we run at a low frequency, and best
 // to keep the MCU config as minimal as possible.
 #define USE_CACHE (0)
 
 // IRQ priorities (encoded values suitable for NVIC_SetPriority)
-#define IRQ_PRI_SYSTICK (NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 0, 0))
+// Most values are defined in irq.h.
 #define IRQ_PRI_I2C (NVIC_EncodePriority(NVIC_PRIORITYGROUP_4, 1, 0))
 
 // Configure PLL to give the desired CPU freq
 #undef MICROPY_HW_FLASH_LATENCY
-#if defined(STM32H7)
-#define CORE_PLL_FREQ (96000000)
-#define MICROPY_HW_FLASH_LATENCY FLASH_LATENCY_2
-#else
+#if defined(STM32F4) || defined(STM32F7)
 #define CORE_PLL_FREQ (48000000)
 #define MICROPY_HW_FLASH_LATENCY FLASH_LATENCY_1
+#elif defined(STM32H7)
+#define CORE_PLL_FREQ (96000000)
+#define MICROPY_HW_FLASH_LATENCY FLASH_LATENCY_2
 #endif
 #undef MICROPY_HW_CLK_PLLM
 #undef MICROPY_HW_CLK_PLLN
@@ -92,7 +98,11 @@ uint32_t get_le32(const uint8_t *b) {
 void mp_hal_delay_us(mp_uint_t usec) {
     // use a busy loop for the delay
     // sys freq is always a multiple of 2MHz, so division here won't lose precision
+    #if defined(CORE_PLL_FREQ)
     const uint32_t ucount = CORE_PLL_FREQ / 2000000 * usec / 2;
+    #else
+    const uint32_t ucount = SystemCoreClock / 2000000 * usec / 2;
+    #endif
     for (uint32_t count = 0; ++count <= ucount;) {
     }
 }
@@ -138,72 +148,6 @@ static void __fatal_error(const char *msg) {
 
 /******************************************************************************/
 // CLOCK
-
-#if defined(STM32F4) || defined(STM32F7)
-
-#define CONFIG_RCC_CR_1ST (RCC_CR_HSION)
-#define CONFIG_RCC_CR_2ND (RCC_CR_HSEON || RCC_CR_CSSON || RCC_CR_PLLON)
-#define CONFIG_RCC_PLLCFGR (0x24003010)
-
-#elif defined(STM32H7)
-
-#define CONFIG_RCC_CR_1ST (RCC_CR_HSION)
-#define CONFIG_RCC_CR_2ND (RCC_CR_PLL3ON | RCC_CR_PLL2ON | RCC_CR_PLL1ON | RCC_CR_CSSHSEON \
-    | RCC_CR_HSEON | RCC_CR_HSI48ON | RCC_CR_CSIKERON | RCC_CR_CSION)
-#define CONFIG_RCC_PLLCFGR (0x00000000)
-
-#else
-#error Unknown processor
-#endif
-
-void SystemInit(void) {
-    #if defined(STM32H7)
-    // Configure write-once power options, and wait for voltage levels to be ready
-    PWR->CR3 = PWR_CR3_LDOEN;
-    while (!(PWR->CSR1 & PWR_CSR1_ACTVOSRDY)) {
-    }
-    #endif
-
-    // Set HSION bit
-    RCC->CR |= CONFIG_RCC_CR_1ST;
-
-    // Reset CFGR register
-    RCC->CFGR = 0x00000000;
-
-    // Reset HSEON, CSSON and PLLON bits
-    RCC->CR &= ~CONFIG_RCC_CR_2ND;
-
-    // Reset PLLCFGR register
-    RCC->PLLCFGR = CONFIG_RCC_PLLCFGR;
-
-    #if defined(STM32H7)
-    // Reset PLL and clock configuration registers
-    RCC->D1CFGR = 0x00000000;
-    RCC->D2CFGR = 0x00000000;
-    RCC->D3CFGR = 0x00000000;
-    RCC->PLLCKSELR = 0x00000000;
-    RCC->D1CCIPR = 0x00000000;
-    RCC->D2CCIP1R = 0x00000000;
-    RCC->D2CCIP2R = 0x00000000;
-    RCC->D3CCIPR = 0x00000000;
-    #endif
-
-    // Reset HSEBYP bit
-    RCC->CR &= (uint32_t)0xFFFBFFFF;
-
-    // Disable all interrupts
-    #if defined(STM32F4) || defined(STM32F7)
-    RCC->CIR = 0x00000000;
-    #elif defined(STM32H7)
-    RCC->CIER = 0x00000000;
-    #endif
-
-    // Set location of vector table
-    SCB->VTOR = FLASH_BASE;
-
-    // Enable 8-byte stack alignment for IRQ handlers, in accord with EABI
-    SCB->CCR |= SCB_CCR_STKALIGN_Msk;
-}
 
 void systick_init(void) {
     // Configure SysTick as 1ms ticker
@@ -378,6 +322,9 @@ uint32_t HAL_RCC_GetHCLKFreq(void) {
 #elif defined(STM32H7)
 #define AHBxENR AHB4ENR
 #define AHBxENR_GPIOAEN_Pos RCC_AHB4ENR_GPIOAEN_Pos
+#elif defined(STM32WB)
+#define AHBxENR AHB2ENR
+#define AHBxENR_GPIOAEN_Pos RCC_AHB2ENR_GPIOAEN_Pos
 #endif
 
 void mp_hal_pin_config(mp_hal_pin_obj_t port_pin, uint32_t mode, uint32_t pull, uint32_t alt) {
@@ -492,6 +439,11 @@ static int usrbtn_state(void) {
 /******************************************************************************/
 // FLASH
 
+#if defined(STM32WB)
+#define FLASH_END FLASH_END_ADDR
+#endif
+#define APPLICATION_FLASH_LENGTH (FLASH_END + 1 - APPLICATION_ADDR)
+
 #ifndef MBOOT_SPIFLASH_LAYOUT
 #define MBOOT_SPIFLASH_LAYOUT ""
 #endif
@@ -500,153 +452,49 @@ static int usrbtn_state(void) {
 #define MBOOT_SPIFLASH2_LAYOUT ""
 #endif
 
-typedef struct {
-    uint32_t base_address;
-    uint32_t sector_size;
-    uint32_t sector_count;
-} flash_layout_t;
-
-#if defined(STM32F7)
-// FLASH_FLAG_PGSERR (Programming Sequence Error) was renamed to
-// FLASH_FLAG_ERSERR (Erasing Sequence Error) in STM32F7
-#define FLASH_FLAG_PGSERR FLASH_FLAG_ERSERR
-#endif
-
 #if defined(STM32F4) \
     || defined(STM32F722xx) \
     || defined(STM32F723xx) \
     || defined(STM32F732xx) \
     || defined(STM32F733xx)
-
 #define FLASH_LAYOUT_STR "@Internal Flash  /0x08000000/04*016Kg,01*064Kg,07*128Kg" MBOOT_SPIFLASH_LAYOUT MBOOT_SPIFLASH2_LAYOUT
-
-static const flash_layout_t flash_layout[] = {
-    { 0x08000000, 0x04000, 4 },
-    { 0x08010000, 0x10000, 1 },
-    { 0x08020000, 0x20000, 3 },
-    #if defined(FLASH_SECTOR_8)
-    { 0x08080000, 0x20000, 4 },
-    #endif
-    #if defined(FLASH_SECTOR_12)
-    { 0x08100000, 0x04000, 4 },
-    { 0x08110000, 0x10000, 1 },
-    { 0x08120000, 0x20000, 7 },
-    #endif
-};
-
 #elif defined(STM32F765xx) || defined(STM32F767xx) || defined(STM32F769xx)
-
 #define FLASH_LAYOUT_STR "@Internal Flash  /0x08000000/04*032Kg,01*128Kg,07*256Kg" MBOOT_SPIFLASH_LAYOUT MBOOT_SPIFLASH2_LAYOUT
-
-// This is for dual-bank mode disabled
-static const flash_layout_t flash_layout[] = {
-    { 0x08000000, 0x08000, 4 },
-    { 0x08020000, 0x20000, 1 },
-    { 0x08040000, 0x40000, 7 },
-};
-
 #elif defined(STM32H743xx)
-
 #define FLASH_LAYOUT_STR "@Internal Flash  /0x08000000/16*128Kg" MBOOT_SPIFLASH_LAYOUT MBOOT_SPIFLASH2_LAYOUT
-
-static const flash_layout_t flash_layout[] = {
-    { 0x08000000, 0x20000, 16 },
-};
-
+#elif defined(STM32WB)
+#define FLASH_LAYOUT_STR "@Internal Flash  /0x08000000/256*04Kg" MBOOT_SPIFLASH_LAYOUT MBOOT_SPIFLASH2_LAYOUT
 #endif
 
-static inline bool flash_is_valid_addr(uint32_t addr) {
-    uint8_t last = MP_ARRAY_SIZE(flash_layout) - 1;
-    uint32_t end_of_flash = flash_layout[last].base_address +
-        flash_layout[last].sector_count * flash_layout[last].sector_size;
-    return flash_layout[0].base_address <= addr && addr < end_of_flash;
+static int mboot_flash_mass_erase(void) {
+    // Erase all flash pages after mboot.
+    int ret = flash_erase(APPLICATION_ADDR, APPLICATION_FLASH_LENGTH / sizeof(uint32_t));
+    return ret;
 }
 
-static uint32_t flash_get_sector_index(uint32_t addr, uint32_t *sector_size) {
-    if (addr >= flash_layout[0].base_address) {
-        uint32_t sector_index = 0;
-        for (int i = 0; i < MP_ARRAY_SIZE(flash_layout); ++i) {
-            for (int j = 0; j < flash_layout[i].sector_count; ++j) {
-                uint32_t sector_start_next = flash_layout[i].base_address
-                    + (j + 1) * flash_layout[i].sector_size;
-                if (addr < sector_start_next) {
-                    *sector_size = flash_layout[i].sector_size;
-                    return sector_index;
-                }
-                ++sector_index;
-            }
-        }
-    }
-    return 0;
-}
-
-#if defined(STM32H7)
-// get the bank of a given flash address
-static uint32_t get_bank(uint32_t addr) {
-    if (READ_BIT(FLASH->OPTCR, FLASH_OPTCR_SWAP_BANK) == 0) {
-        // no bank swap
-        if (addr < (FLASH_BASE + FLASH_BANK_SIZE)) {
-            return FLASH_BANK_1;
-        } else {
-            return FLASH_BANK_2;
-        }
-    } else {
-        // bank swap
-        if (addr < (FLASH_BASE + FLASH_BANK_SIZE)) {
-            return FLASH_BANK_2;
-        } else {
-            return FLASH_BANK_1;
-        }
-    }
-}
-#endif
-
-static int flash_mass_erase(void) {
-    // TODO
-    return -1;
-}
-
-static int flash_page_erase(uint32_t addr, uint32_t *next_addr) {
+static int mboot_flash_page_erase(uint32_t addr, uint32_t *next_addr) {
     uint32_t sector_size = 0;
-    uint32_t sector = flash_get_sector_index(addr, &sector_size);
-    if (sector == 0) {
-        // Don't allow to erase the sector with this bootloader in it
+    uint32_t sector_start = 0;
+    int32_t sector = flash_get_sector_info(addr, &sector_start, &sector_size);
+    if (sector <= 0) {
+        // Don't allow to erase the sector with this bootloader in it, or invalid sectors
         dfu_context.status = DFU_STATUS_ERROR_ADDRESS;
-        dfu_context.error = MBOOT_ERROR_STR_OVERWRITE_BOOTLOADER_IDX;
+        dfu_context.error = (sector == 0) ? MBOOT_ERROR_STR_OVERWRITE_BOOTLOADER_IDX
+                                          : MBOOT_ERROR_STR_INVALID_ADDRESS_IDX;
         return -1;
     }
 
-    *next_addr = addr + sector_size;
+    *next_addr = sector_start + sector_size;
 
-    HAL_FLASH_Unlock();
-
-    // Clear pending flags (if any)
-    #if defined(STM32H7)
-    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS_BANK1 | FLASH_FLAG_ALL_ERRORS_BANK2);
-    #else
-    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
-                           FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
-    #endif
-
-    // erase the sector(s)
-    FLASH_EraseInitTypeDef EraseInitStruct;
-    EraseInitStruct.TypeErase = TYPEERASE_SECTORS;
-    EraseInitStruct.VoltageRange = VOLTAGE_RANGE_3; // voltage range needs to be 2.7V to 3.6V
-    #if defined(STM32H7)
-    EraseInitStruct.Banks = get_bank(addr);
-    #endif
-    EraseInitStruct.Sector = sector;
-    EraseInitStruct.NbSectors = 1;
-
-    uint32_t SectorError = 0;
-    if (HAL_FLASHEx_Erase(&EraseInitStruct, &SectorError) != HAL_OK) {
-        // error occurred during sector erase
-        return -1;
+    // Erase the flash page.
+    int ret = flash_erase(sector_start, sector_size / sizeof(uint32_t));
+    if (ret != 0) {
+        return ret;
     }
 
     // Check the erase set bits to 1, at least for the first 256 bytes
     for (int i = 0; i < 64; ++i) {
-        if (((volatile uint32_t*)addr)[i] != 0xffffffff) {
+        if (((volatile uint32_t*)sector_start)[i] != 0xffffffff) {
             return -2;
         }
     }
@@ -654,41 +502,24 @@ static int flash_page_erase(uint32_t addr, uint32_t *next_addr) {
     return 0;
 }
 
-static int flash_write(uint32_t addr, const uint8_t *src8, size_t len) {
-    if (addr >= flash_layout[0].base_address && addr < flash_layout[0].base_address + flash_layout[0].sector_size) {
+static int mboot_flash_write(uint32_t addr, const uint8_t *src8, size_t len) {
+    int32_t sector = flash_get_sector_info(addr, NULL, NULL);
+    if (sector <= 0) {
         // Don't allow to write the sector with this bootloader in it
         dfu_context.status = DFU_STATUS_ERROR_ADDRESS;
-        dfu_context.error = MBOOT_ERROR_STR_OVERWRITE_BOOTLOADER_IDX;
+        dfu_context.error = (sector == 0) ? MBOOT_ERROR_STR_OVERWRITE_BOOTLOADER_IDX
+                                          : MBOOT_ERROR_STR_INVALID_ADDRESS_IDX;
         return -1;
     }
 
     const uint32_t *src = (const uint32_t*)src8;
     size_t num_word32 = (len + 3) / 4;
-    HAL_FLASH_Unlock();
 
-    #if defined(STM32H7)
-
-    // program the flash 256 bits at a time
-    for (int i = 0; i < num_word32 / 8; ++i) {
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, addr, (uint64_t)(uint32_t)src) != HAL_OK) {
-            return - 1;
-        }
-        addr += 32;
-        src += 8;
+    // Write the data to flash.
+    int ret = flash_write(addr, src, num_word32);
+    if (ret != 0) {
+        return ret;
     }
-
-    #else
-
-    // program the flash word by word
-    for (size_t i = 0; i < num_word32; i++) {
-        if (HAL_FLASH_Program(TYPEPROGRAM_WORD, addr, *src) != HAL_OK) {
-            return -1;
-        }
-        addr += 4;
-        src += 1;
-    }
-
-    #endif
 
     // TODO verify data
 
@@ -699,8 +530,8 @@ static int flash_write(uint32_t addr, const uint8_t *src8, size_t len) {
 // Writable address space interface
 
 static int do_mass_erase(void) {
-    // TODO
-    return flash_mass_erase();
+    // TODO spiflash erase ?
+    return mboot_flash_mass_erase();
 }
 
 #if defined(MBOOT_SPIFLASH_ADDR) || defined(MBOOT_SPIFLASH2_ADDR)
@@ -735,7 +566,7 @@ int do_page_erase(uint32_t addr, uint32_t *next_addr) {
     } else
     #endif
     {
-        ret = flash_page_erase(addr, next_addr);
+        ret = mboot_flash_page_erase(addr, next_addr);
     }
 
     led0_state((ret == 0) ? LED0_STATE_SLOW_FLASH : LED0_STATE_SLOW_INVERTED_FLASH);
@@ -775,7 +606,7 @@ int do_write(uint32_t addr, const uint8_t *src8, size_t len) {
     } else
     #endif
     if (flash_is_valid_addr(addr)) {
-        ret = flash_write(addr, src8, len);
+        ret = mboot_flash_write(addr, src8, len);
     } else {
         dfu_context.status = DFU_STATUS_ERROR_ADDRESS;
         dfu_context.error = MBOOT_ERROR_STR_INVALID_ADDRESS_IDX;
@@ -840,7 +671,7 @@ void i2c_init(int addr) {
     i2c_slave_init(MBOOT_I2Cx, I2Cx_EV_IRQn, IRQ_PRI_I2C, addr);
 }
 
-int i2c_slave_process_addr_match(int rw) {
+int i2c_slave_process_addr_match(i2c_slave_t *i2c, int rw) {
     if (i2c_obj.cmd_arg_sent) {
         i2c_obj.cmd_send_arg = false;
     }
@@ -848,14 +679,14 @@ int i2c_slave_process_addr_match(int rw) {
     return 0; // ACK
 }
 
-int i2c_slave_process_rx_byte(uint8_t val) {
+int i2c_slave_process_rx_byte(i2c_slave_t *i2c, uint8_t val) {
     if (i2c_obj.cmd_buf_pos < sizeof(i2c_obj.cmd_buf)) {
         i2c_obj.cmd_buf[i2c_obj.cmd_buf_pos++] = val;
     }
     return 0; // ACK
 }
 
-void i2c_slave_process_rx_end(void) {
+void i2c_slave_process_rx_end(i2c_slave_t *i2c) {
     if (i2c_obj.cmd_buf_pos == 0) {
         return;
     }
@@ -940,7 +771,7 @@ void i2c_slave_process_rx_end(void) {
     i2c_obj.cmd_arg_sent = false;
 }
 
-uint8_t i2c_slave_process_tx_byte(void) {
+uint8_t i2c_slave_process_tx_byte(i2c_slave_t *i2c) {
     if (i2c_obj.cmd_send_arg) {
         i2c_obj.cmd_arg_sent = true;
         return i2c_obj.cmd_arg;
@@ -949,6 +780,9 @@ uint8_t i2c_slave_process_tx_byte(void) {
     } else {
         return 0;
     }
+}
+
+void i2c_slave_process_tx_end(i2c_slave_t *i2c) {
 }
 
 #endif // defined(MBOOT_I2C_SCL)
@@ -968,16 +802,19 @@ static int dfu_process_dnload(void) {
     int ret = -1;
     if (dfu_context.wBlockNum == 0) {
         // download control commands
-        if (dfu_context.wLength >= 1 && dfu_context.buf[0] == 0x41) {
+        if (dfu_context.wLength >= 1 && dfu_context.buf[0] == DFU_CMD_DNLOAD_ERASE) {
             if (dfu_context.wLength == 1) {
                 // mass erase
                 ret = do_mass_erase();
+                if (ret != 0) {
+                    dfu_context.cmd = DFU_CMD_NONE;
+                }
             } else if (dfu_context.wLength == 5) {
                 // erase page
                 uint32_t next_addr;
                 ret = do_page_erase(get_le32(&dfu_context.buf[1]), &next_addr);
             }
-        } else if (dfu_context.wLength >= 1 && dfu_context.buf[0] == 0x21) {
+        } else if (dfu_context.wLength >= 1 && dfu_context.buf[0] == DFU_CMD_DNLOAD_SET_ADDRESS) {
             if (dfu_context.wLength == 5) {
                 // set address
                 dfu_context.addr = get_le32(&dfu_context.buf[1]);
@@ -1061,13 +898,19 @@ static int dfu_handle_tx(int cmd, int arg, int len, uint8_t *buf, int max_len) {
             default:
                 dfu_context.state = DFU_STATE_BUSY;
         }
-        buf[0] = dfu_context.status; // bStatus
-        buf[1] = 0; // bwPollTimeout (ms)
-        buf[2] = 0; // bwPollTimeout (ms)
-        buf[3] = 0; // bwPollTimeout (ms)
-        buf[4] = dfu_context.state; // bState
-        buf[5] = dfu_context.error; // iString
+        buf[0] = dfu_context.status;          // bStatus
+        buf[1] = 0;                           // bwPollTimeout_lsb (ms)
+        buf[2] = 0;                           // bwPollTimeout     (ms)
+        buf[3] = 0;                           // bwPollTimeout_msb (ms)
+        buf[4] = dfu_context.state;           // bState
+        buf[5] = dfu_context.error;           // iString
+        // Clear errors now they've been sent
+        dfu_context.status = DFU_STATUS_OK;
+        dfu_context.error = 0;
         return 6;
+    } else if (cmd == DFU_GETSTATE && len == 1) {
+        buf[0] = dfu_context.state; // bState
+        return 1;
     }
     return -1;
 }
@@ -1116,12 +959,19 @@ typedef struct _pyb_usbdd_obj_t {
 #define MBOOT_USB_PID BOOTLOADER_DFU_USB_PID
 #endif
 
+#if !MICROPY_HW_USB_IS_MULTI_OTG
+STATIC const uint8_t usbd_fifo_size[USBD_PMA_NUM_FIFO] = {
+    32, 32, // EP0(out), EP0(in)
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 14x unused
+};
+#else
 static const uint8_t usbd_fifo_size[] = {
     32, 8, 16, 8, 16, 0, 0, // FS: RX, EP0(in), 5x IN endpoints
     #if MICROPY_HW_USB_HS
     116, 8, 64, 4, 64, 0, 0, 0, 0, 0, // HS: RX, EP0(in), 8x IN endpoints
     #endif
 };
+#endif
 
 __ALIGN_BEGIN static const uint8_t USBD_LangIDDesc[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
     USB_LEN_LANGID_STR_DESC,
@@ -1437,12 +1287,29 @@ static void do_reset(void) {
     NVIC_SystemReset();
 }
 
-uint32_t SystemCoreClock;
-
 extern PCD_HandleTypeDef pcd_fs_handle;
 extern PCD_HandleTypeDef pcd_hs_handle;
 
 void stm32_main(int initial_r0) {
+    #if defined(STM32H7)
+    // Configure write-once power options, and wait for voltage levels to be ready
+    PWR->CR3 = PWR_CR3_LDOEN;
+    while (!(PWR->CSR1 & PWR_CSR1_ACTVOSRDY)) {
+    }
+
+    // Reset the kernel clock configuration registers for all domains.
+    RCC->D1CCIPR = 0x00000000;
+    RCC->D2CCIP1R = 0x00000000;
+    RCC->D2CCIP2R = 0x00000000;
+    RCC->D3CCIPR = 0x00000000;
+    #endif
+
+    // Make sure IRQ vector table points to flash where this bootloader lives.
+    SCB->VTOR = FLASH_BASE;
+
+    // Enable 8-byte stack alignment for IRQ handlers, in accord with EABI
+    SCB->CCR |= SCB_CCR_STKALIGN_Msk;
+
     #if defined(STM32F4)
     #if INSTRUCTION_CACHE_ENABLE
     __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
@@ -1480,9 +1347,6 @@ void stm32_main(int initial_r0) {
     if ((initial_r0 & 0xffffff00) == 0x70ad0000) {
         goto enter_bootloader;
     }
-
-    // MCU starts up with HSI
-    SystemCoreClock = HSI_VALUE;
 
     int reset_mode = get_reset_mode();
     uint32_t msp = *(volatile uint32_t*)APPLICATION_ADDR;
@@ -1636,6 +1500,15 @@ void I2Cx_EV_IRQHandler(void) {
 #endif
 
 #if !USE_USB_POLLING
+
+#if defined(STM32WB)
+
+void USB_LP_IRQHandler(void) {
+    HAL_PCD_IRQHandler(&pcd_fs_handle);
+}
+
+#else
+
 #if MBOOT_USB_AUTODETECT_PORT || MICROPY_HW_USB_MAIN_DEV == USB_PHY_FS_ID
 void OTG_FS_IRQHandler(void) {
     HAL_PCD_IRQHandler(&pcd_fs_handle);
@@ -1647,4 +1520,6 @@ void OTG_HS_IRQHandler(void) {
     HAL_PCD_IRQHandler(&pcd_hs_handle);
 }
 #endif
+#endif
+
 #endif
