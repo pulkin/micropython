@@ -249,6 +249,8 @@ typedef long mp_off_t;
 
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[8]; \
+    mp_obj_t machine_pin_irq_handler[7]; \
+    mp_obj_t machine_pin_irq_handler_arg[7]; \
     byte *uart_rxbuf[2];
 
 #include "csdk_config.h"
